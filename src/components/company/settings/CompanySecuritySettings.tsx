@@ -1,13 +1,12 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  COMPANY_LOGIN_HISTORY,
   COMPANY_SECURITY_SETTINGS,
   COMPANY_SETTINGS_UNAVAILABLE_NOTE,
 } from "@/constants/company-settings";
@@ -143,27 +142,9 @@ export function CompanySecuritySettings() {
           <p className="mt-0.5 text-xs text-muted-foreground">
             {COMPANY_SECURITY_SETTINGS.loginHistory.description}
           </p>
-          <ul className="mt-3 flex flex-col gap-2.5">
-            {COMPANY_LOGIN_HISTORY.map((item) => (
-              <li
-                key={item.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{item.device}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {item.location} ・ {item.dateLabel}
-                  </p>
-                </div>
-                {item.isCurrent && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                    {COMPANY_SECURITY_SETTINGS.loginHistory.currentLabel}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+          <p className="mt-3 rounded-xl border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
+            {COMPANY_SECURITY_SETTINGS.loginHistory.unavailableMessage}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-4 py-4 last:pb-0">

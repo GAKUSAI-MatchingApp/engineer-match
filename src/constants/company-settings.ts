@@ -114,7 +114,7 @@ export const COMPANY_SECURITY_SETTINGS = {
   loginHistory: {
     label: "ログイン履歴",
     description: "直近のログイン状況を確認できます。",
-    currentLabel: "現在のセッション",
+    unavailableMessage: "ログイン履歴機能は現在準備中です。",
   },
   sessionManagement: {
     label: "セッション管理",
@@ -122,38 +122,6 @@ export const COMPANY_SECURITY_SETTINGS = {
     revokeAllLabel: "他のセッションをすべてログアウト",
   },
 } as const;
-
-export interface CompanyLoginHistoryItem {
-  id: string;
-  device: string;
-  location: string;
-  dateLabel: string;
-  isCurrent: boolean;
-}
-
-export const COMPANY_LOGIN_HISTORY: CompanyLoginHistoryItem[] = [
-  {
-    id: "session-1",
-    device: "Chrome / Windows",
-    location: "東京都",
-    dateLabel: "2026年7月17日 9:12",
-    isCurrent: true,
-  },
-  {
-    id: "session-2",
-    device: "Safari / iPhone",
-    location: "東京都",
-    dateLabel: "2026年7月14日 18:40",
-    isCurrent: false,
-  },
-  {
-    id: "session-3",
-    device: "Chrome / macOS",
-    location: "大阪府",
-    dateLabel: "2026年7月10日 11:05",
-    isCurrent: false,
-  },
-];
 
 // ============================================================
 // 4. 公開設定
