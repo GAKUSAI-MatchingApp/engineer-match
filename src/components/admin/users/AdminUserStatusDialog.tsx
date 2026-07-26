@@ -1,22 +1,26 @@
 "use client";
 
-import { AdminConfirmationDialog } from "@/components/admin/shared/AdminConfirmationDialog";
+import { AdminConfirmDialog } from "@/components/admin/shared/AdminConfirmDialog";
 import { ADMIN_USER_STATUS_DIALOG_LABELS } from "@/constants/admin-users";
 
 interface AdminUserStatusDialogProps {
   mode: "suspend" | "reinstate" | null;
+  isSubmitting: boolean;
+  errorMessage: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
 export function AdminUserStatusDialog({
   mode,
+  isSubmitting,
+  errorMessage,
   onCancel,
   onConfirm,
 }: AdminUserStatusDialogProps) {
   const isSuspend = mode === "suspend";
   return (
-    <AdminConfirmationDialog
+    <AdminConfirmDialog
       isOpen={mode !== null}
       title={
         isSuspend
@@ -28,15 +32,16 @@ export function AdminUserStatusDialog({
           ? ADMIN_USER_STATUS_DIALOG_LABELS.suspendDescription
           : ADMIN_USER_STATUS_DIALOG_LABELS.reinstateDescription
       }
-      cancelLabel={ADMIN_USER_STATUS_DIALOG_LABELS.cancelLabel}
       confirmLabel={
         isSuspend
           ? ADMIN_USER_STATUS_DIALOG_LABELS.suspendConfirmLabel
           : ADMIN_USER_STATUS_DIALOG_LABELS.reinstateConfirmLabel
       }
+      tone={isSuspend ? "danger" : "primary"}
+      isSubmitting={isSubmitting}
+      errorMessage={errorMessage}
       onCancel={onCancel}
       onConfirm={onConfirm}
-      tone={isSuspend ? "danger" : "primary"}
     />
   );
 }

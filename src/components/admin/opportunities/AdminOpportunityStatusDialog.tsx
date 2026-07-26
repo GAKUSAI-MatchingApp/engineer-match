@@ -1,79 +1,57 @@
 "use client";
 
-import { AdminConfirmationDialog } from "@/components/admin/shared/AdminConfirmationDialog";
-import { ADMIN_OPPORTUNITY_ACTION_DIALOG_LABELS as LABELS } from "@/constants/admin-opportunities";
-
-export type AdminOpportunityDialogMode =
-  | "publish"
-  | "unpublish"
-  | "suspend"
-  | "requestEdit"
-  | "delete"
-  | null;
+import { AdminConfirmDialog } from "@/components/admin/shared/AdminConfirmDialog";
+import { ADMIN_OPPORTUNITY_MODERATION_DIALOG_LABELS as LABELS } from "@/constants/admin-opportunities";
+import type { AdminOpportunityModerationAction } from "@/lib/admin/opportunities";
 
 interface AdminOpportunityStatusDialogProps {
-  mode: AdminOpportunityDialogMode;
+  mode: AdminOpportunityModerationAction | null;
+  isSubmitting: boolean;
+  errorMessage: string | null;
   onCancel: () => void;
-  onConfirm: (reason?: string) => void;
+  onConfirm: () => void;
 }
 
 const DIALOG_CONFIG = {
-  publish: {
-    title: LABELS.publishTitle,
-    description: LABELS.publishDescription,
-    confirmLabel: LABELS.publishConfirmLabel,
+  takedown: {
+    title: LABELS.takedownTitle,
+    description: LABELS.takedownDescription,
+    confirmLabel: LABELS.takedownConfirmLabel,
+    tone: "danger" as const,
+  },
+  republish: {
+    title: LABELS.republishTitle,
+    description: LABELS.republishDescription,
+    confirmLabel: LABELS.republishConfirmLabel,
     tone: "primary" as const,
-    needsReason: false,
   },
-  unpublish: {
-    title: LABELS.unpublishTitle,
-    description: LABELS.unpublishDescription,
-    confirmLabel: LABELS.unpublishConfirmLabel,
+  close: {
+    title: LABELS.closeTitle,
+    description: LABELS.closeDescription,
+    confirmLabel: LABELS.closeConfirmLabel,
     tone: "danger" as const,
-    needsReason: false,
-  },
-  suspend: {
-    title: LABELS.suspendTitle,
-    description: LABELS.suspendDescription,
-    confirmLabel: LABELS.suspendConfirmLabel,
-    tone: "danger" as const,
-    needsReason: true,
-  },
-  requestEdit: {
-    title: LABELS.requestEditTitle,
-    description: LABELS.requestEditDescription,
-    confirmLabel: LABELS.requestEditConfirmLabel,
-    tone: "primary" as const,
-    needsReason: true,
-  },
-  delete: {
-    title: LABELS.deleteTitle,
-    description: LABELS.deleteDescription,
-    confirmLabel: LABELS.deleteConfirmLabel,
-    tone: "danger" as const,
-    needsReason: true,
   },
 };
 
 export function AdminOpportunityStatusDialog({
   mode,
+  isSubmitting,
+  errorMessage,
   onCancel,
   onConfirm,
 }: AdminOpportunityStatusDialogProps) {
-  const current = DIALOG_CONFIG[mode ?? "publish"];
+  const current = DIALOG_CONFIG[mode ?? "takedown"];
   return (
-    <AdminConfirmationDialog
+    <AdminConfirmDialog
       isOpen={mode !== null}
       title={current.title}
       description={current.description}
-      cancelLabel={LABELS.cancelLabel}
       confirmLabel={current.confirmLabel}
+      tone={current.tone}
+      isSubmitting={isSubmitting}
+      errorMessage={errorMessage}
       onCancel={onCancel}
       onConfirm={onConfirm}
-      tone={current.tone}
-      reasonLabel={current.needsReason ? LABELS.reasonLabel : undefined}
-      reasonPlaceholder={current.needsReason ? LABELS.reasonPlaceholder : undefined}
-      reasonRequired={current.needsReason}
     />
   );
 }

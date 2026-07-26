@@ -9,6 +9,7 @@ import {
   Settings,
   ShieldAlert,
   Building2,
+  Star,
   Users,
 } from "lucide-react";
 import { ADMIN_BRAND } from "@/constants/admin";
@@ -23,6 +24,7 @@ const ICON_MAP = {
   listChecks: ListChecks,
   messageSquare: MessageSquare,
   shieldAlert: ShieldAlert,
+  star: Star,
   bell: Bell,
   settings: Settings,
 } as const;

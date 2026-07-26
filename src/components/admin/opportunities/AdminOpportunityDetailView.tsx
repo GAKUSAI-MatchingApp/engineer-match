@@ -4,122 +4,84 @@ import { useState } from "react";
 import { AdminOpportunityDetailHeader } from "@/components/admin/opportunities/AdminOpportunityDetailHeader";
 import { AdminOpportunityOverview } from "@/components/admin/opportunities/AdminOpportunityOverview";
 import { AdminOpportunityHistorySection } from "@/components/admin/opportunities/AdminOpportunityHistorySection";
+import { AdminOpportunityStatusDialog } from "@/components/admin/opportunities/AdminOpportunityStatusDialog";
 import {
-  AdminOpportunityStatusDialog,
-  type AdminOpportunityDialogMode,
-} from "@/components/admin/opportunities/AdminOpportunityStatusDialog";
-import { AdminInternalNote, type AdminNoteEntry } from "@/components/admin/shared/AdminInternalNote";
-import {
-  ADMIN_OPPORTUNITY_DEMO_NOTE,
-  ADMIN_OPPORTUNITY_DETAIL_SECTIONS,
+  ADMIN_OPPORTUNITY_MODERATION_ERROR_FALLBACK,
   ADMIN_OPPORTUNITY_TOAST_MESSAGES,
-  type AdminOpportunity,
-  type AdminOpportunityHistoryEntry,
-  type AdminOpportunityPublicationStatus,
 } from "@/constants/admin-opportunities";
+import {
+  updateOpportunityModeration,
+  type AdminOpportunityDetail,
+  type AdminOpportunityModerationAction,
+  type AdminOpportunityStatus,
+} from "@/lib/admin/opportunities";
+import { createClient } from "@/lib/supabase/client";
 
 interface AdminOpportunityDetailViewProps {
-  opportunity: AdminOpportunity;
+  opportunity: AdminOpportunityDetail;
 }
 
-export function AdminOpportunityDetailView({ opportunity }: AdminOpportunityDetailViewProps) {
-  const [publicationStatus, setPublicationStatus] = useState<AdminOpportunityPublicationStatus>(
-    opportunity.publicationStatus,
-  );
-  const [publicationHistory, setPublicationHistory] = useState<AdminOpportunityHistoryEntry[]>(
-    opportunity.publicationHistory,
-  );
-  const [notes, setNotes] = useState<AdminNoteEntry[]>(opportunity.internalNotes);
-  const [dialogMode, setDialogMode] = useState<
-    Exclude<AdminOpportunityDialogMode, null> | null
-  >(null);
+export function AdminOpportunityDetailView({ opportunity: initial }: AdminOpportunityDetailViewProps) {
+  const [status, setStatus] = useState<AdminOpportunityStatus>(initial.status);
+  const [unpublishedByAdmin, setUnpublishedByAdmin] = useState(initial.unpublishedByAdmin);
+  const [dialogAction, setDialogAction] = useState<AdminOpportunityModerationAction | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const opportunity = { ...initial, status, unpublishedByAdmin };
 
   function showToast(message: string) {
     setToastMessage(message);
     window.setTimeout(() => setToastMessage(null), 3000);
   }
 
-  function handleAddNote(body: string) {
-    setNotes((prev) => [
-      {
-        id: `note-${prev.length + 1}-${prev.length}`,
-        author: "佐々木 玲奈（管理者）",
-        body,
-        dateLabel: "たった今",
-      },
-      ...prev,
-    ]);
+  function closeDialog() {
+    setDialogAction(null);
+    setErrorMessage(null);
   }
 
-  function handleConfirmDialog(reason?: string) {
-    if (!dialogMode) return;
-    const actionLabel =
-      dialogMode === "publish"
-        ? "公開承認"
-        : dialogMode === "unpublish"
-          ? "非公開化"
-          : dialogMode === "suspend"
-            ? "掲載停止"
-            : "編集依頼";
-    setPublicationHistory((prev) => [
-      {
-        id: `ph-${prev.length + 1}-${prev.length}`,
-        action: actionLabel,
-        actor: "佐々木 玲奈（管理者）",
-        reason: reason ?? null,
-        dateLabel: "たった今",
-      },
-      ...prev,
-    ]);
-    if (dialogMode === "publish") setPublicationStatus("公開中");
-    if (dialogMode === "unpublish" || dialogMode === "suspend") setPublicationStatus("非公開");
+  async function handleConfirmDialog() {
+    if (!dialogAction) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
 
-    const toastKey =
-      dialogMode === "publish"
-        ? "published"
-        : dialogMode === "unpublish"
-          ? "unpublished"
-          : dialogMode === "suspend"
-            ? "suspended"
-            : "editRequested";
-    showToast(ADMIN_OPPORTUNITY_TOAST_MESSAGES[toastKey]);
-    setDialogMode(null);
+    const supabase = createClient();
+    const { error } = await updateOpportunityModeration(supabase, opportunity.id, dialogAction);
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setErrorMessage(error || ADMIN_OPPORTUNITY_MODERATION_ERROR_FALLBACK);
+      return;
+    }
+
+    if (dialogAction === "takedown") setUnpublishedByAdmin(true);
+    else if (dialogAction === "republish") setUnpublishedByAdmin(false);
+    else setStatus("closed");
+
+    showToast(ADMIN_OPPORTUNITY_TOAST_MESSAGES[dialogAction]);
+    setDialogAction(null);
   }
-
-  const opportunityWithLiveHistory = { ...opportunity, publicationHistory };
 
   return (
     <div className="flex flex-col gap-6">
-      <AdminOpportunityDetailHeader
-        opportunity={opportunity}
-        publicationStatus={publicationStatus}
-        onAction={setDialogMode}
-      />
+      <AdminOpportunityDetailHeader opportunity={opportunity} onAction={setDialogAction} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
           <AdminOpportunityOverview opportunity={opportunity} />
-          <AdminOpportunityHistorySection opportunity={opportunityWithLiveHistory} />
         </div>
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-7">
-            <AdminInternalNote
-              title={ADMIN_OPPORTUNITY_DETAIL_SECTIONS.internalNotes}
-              placeholder="メモを入力"
-              addLabel="メモを追加"
-              emptyMessage="管理メモはまだありません。"
-              notes={notes}
-              onAdd={handleAddNote}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">{ADMIN_OPPORTUNITY_DEMO_NOTE}</p>
+          <AdminOpportunityHistorySection opportunity={opportunity} />
         </div>
       </div>
 
       <AdminOpportunityStatusDialog
-        mode={dialogMode}
-        onCancel={() => setDialogMode(null)}
+        mode={dialogAction}
+        isSubmitting={isSubmitting}
+        errorMessage={errorMessage}
+        onCancel={closeDialog}
         onConfirm={handleConfirmDialog}
       />
 

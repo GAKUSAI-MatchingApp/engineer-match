@@ -1,43 +1,32 @@
-import { Ban, Building2, CheckCircle2, Clock, RotateCcw, UserPlus } from "lucide-react";
+import { Ban, Building2, CheckCircle2, UserPlus } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
-import { ADMIN_COMPANY_SUMMARY_LABELS, type AdminCompany } from "@/constants/admin-companies";
-
-const CURRENT_MONTH_PREFIX = "2026-07";
+import { ADMIN_COMPANY_SUMMARY_LABELS } from "@/constants/admin-companies";
+import type { AdminCompanyListItem } from "@/lib/admin/companies";
 
 interface AdminCompanySummaryCardsProps {
-  companies: AdminCompany[];
+  companies: AdminCompanyListItem[];
+}
+
+function isThisMonth(iso: string): boolean {
+  const date = new Date(iso);
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
 }
 
 export function AdminCompanySummaryCards({ companies }: AdminCompanySummaryCardsProps) {
   const total = companies.length;
-  const approved = companies.filter((c) => c.reviewStatus === "承認済み").length;
-  const underReview = companies.filter((c) => c.reviewStatus === "審査中").length;
-  const returned = companies.filter((c) => c.reviewStatus === "差し戻し").length;
-  const suspended = companies.filter((c) => c.usageStatus === "利用停止中").length;
-  const newThisMonth = companies.filter((c) =>
-    c.registeredDateISO.startsWith(CURRENT_MONTH_PREFIX),
-  ).length;
+  const active = companies.filter((c) => c.usageStatus === "ACTIVE").length;
+  const suspended = companies.filter((c) => c.usageStatus === "SUSPENDED").length;
+  const newThisMonth = companies.filter((c) => isThisMonth(c.createdAtISO)).length;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <AdminSummaryCard label={ADMIN_COMPANY_SUMMARY_LABELS.total} value={`${total}社`} icon={Building2} />
       <AdminSummaryCard
-        label={ADMIN_COMPANY_SUMMARY_LABELS.approved}
-        value={`${approved}社`}
+        label={ADMIN_COMPANY_SUMMARY_LABELS.active}
+        value={`${active}社`}
         icon={CheckCircle2}
         tone="positive"
-      />
-      <AdminSummaryCard
-        label={ADMIN_COMPANY_SUMMARY_LABELS.underReview}
-        value={`${underReview}社`}
-        icon={Clock}
-        tone="warning"
-      />
-      <AdminSummaryCard
-        label={ADMIN_COMPANY_SUMMARY_LABELS.returned}
-        value={`${returned}社`}
-        icon={RotateCcw}
-        tone="warning"
       />
       <AdminSummaryCard
         label={ADMIN_COMPANY_SUMMARY_LABELS.suspended}

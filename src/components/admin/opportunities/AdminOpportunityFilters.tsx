@@ -5,20 +5,17 @@ import {
   AdminFilterChipGroup,
   toggleFilterValue,
 } from "@/components/admin/shared/AdminFilterBar";
-import { CONTRACT_TYPE_FILTER_OPTIONS } from "@/constants/jobs";
 import {
+  ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL,
+  ADMIN_OPPORTUNITY_CONTRACT_TYPE_OPTIONS,
   ADMIN_OPPORTUNITY_DATE_RANGE_OPTIONS,
   ADMIN_OPPORTUNITY_FILTER_LABELS,
-  ADMIN_OPPORTUNITY_PUBLICATION_STATUSES,
-  ADMIN_OPPORTUNITY_RECRUITMENT_STATUSES,
-  ADMIN_OPPORTUNITY_SERVICE_CATEGORIES,
-  ADMIN_OPPORTUNITY_WORK_STYLES,
+  ADMIN_OPPORTUNITY_STATUS_LABEL,
+  ADMIN_OPPORTUNITY_STATUS_OPTIONS,
   DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE,
   type AdminOpportunityFilterState,
-  type AdminOpportunityPublicationStatus,
-  type AdminOpportunityRecruitmentStatus,
-  type AdminOpportunityServiceCategory,
 } from "@/constants/admin-opportunities";
+import type { AdminOpportunityContractType, AdminOpportunityStatus } from "@/lib/admin/opportunities";
 import { cn } from "@/lib/utils";
 
 interface AdminOpportunityFiltersProps {
@@ -27,6 +24,11 @@ interface AdminOpportunityFiltersProps {
 }
 
 export function AdminOpportunityFilters({ filters, onChange }: AdminOpportunityFiltersProps) {
+  const contractTypeLabels = ADMIN_OPPORTUNITY_CONTRACT_TYPE_OPTIONS.map(
+    (code) => ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL[code],
+  );
+  const statusLabels = ADMIN_OPPORTUNITY_STATUS_OPTIONS.map((code) => ADMIN_OPPORTUNITY_STATUS_LABEL[code]);
+
   return (
     <AdminFilterBar
       title={ADMIN_OPPORTUNITY_FILTER_LABELS.title}
@@ -34,62 +36,32 @@ export function AdminOpportunityFilters({ filters, onChange }: AdminOpportunityF
       onReset={() => onChange(DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE)}
     >
       <AdminFilterChipGroup
-        legend={ADMIN_OPPORTUNITY_FILTER_LABELS.serviceCategory}
-        idPrefix="opp-category"
-        options={ADMIN_OPPORTUNITY_SERVICE_CATEGORIES}
-        selected={filters.serviceCategories}
-        onToggle={(value) =>
-          onChange({
-            serviceCategories: toggleFilterValue(
-              filters.serviceCategories,
-              value as AdminOpportunityServiceCategory,
-            ),
-          })
-        }
-      />
-      <AdminFilterChipGroup
         legend={ADMIN_OPPORTUNITY_FILTER_LABELS.contractType}
         idPrefix="opp-contract"
-        options={CONTRACT_TYPE_FILTER_OPTIONS}
-        selected={filters.contractTypes}
-        onToggle={(value) =>
-          onChange({ contractTypes: toggleFilterValue(filters.contractTypes, value) })
-        }
+        options={contractTypeLabels}
+        selected={filters.contractTypes.map(
+          (code) => ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL[code as AdminOpportunityContractType],
+        )}
+        onToggle={(label) => {
+          const code = ADMIN_OPPORTUNITY_CONTRACT_TYPE_OPTIONS.find(
+            (c) => ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL[c] === label,
+          ) as string;
+          onChange({ contractTypes: toggleFilterValue(filters.contractTypes, code) });
+        }}
       />
       <AdminFilterChipGroup
-        legend={ADMIN_OPPORTUNITY_FILTER_LABELS.publicationStatus}
-        idPrefix="opp-publication"
-        options={ADMIN_OPPORTUNITY_PUBLICATION_STATUSES}
-        selected={filters.publicationStatuses}
-        onToggle={(value) =>
-          onChange({
-            publicationStatuses: toggleFilterValue(
-              filters.publicationStatuses,
-              value as AdminOpportunityPublicationStatus,
-            ),
-          })
-        }
-      />
-      <AdminFilterChipGroup
-        legend={ADMIN_OPPORTUNITY_FILTER_LABELS.recruitmentStatus}
-        idPrefix="opp-recruitment"
-        options={ADMIN_OPPORTUNITY_RECRUITMENT_STATUSES}
-        selected={filters.recruitmentStatuses}
-        onToggle={(value) =>
-          onChange({
-            recruitmentStatuses: toggleFilterValue(
-              filters.recruitmentStatuses,
-              value as AdminOpportunityRecruitmentStatus,
-            ),
-          })
-        }
-      />
-      <AdminFilterChipGroup
-        legend={ADMIN_OPPORTUNITY_FILTER_LABELS.workStyle}
-        idPrefix="opp-work-style"
-        options={ADMIN_OPPORTUNITY_WORK_STYLES}
-        selected={filters.workStyles}
-        onToggle={(value) => onChange({ workStyles: toggleFilterValue(filters.workStyles, value) })}
+        legend={ADMIN_OPPORTUNITY_FILTER_LABELS.status}
+        idPrefix="opp-status"
+        options={statusLabels}
+        selected={filters.statuses.map(
+          (code) => ADMIN_OPPORTUNITY_STATUS_LABEL[code as AdminOpportunityStatus],
+        )}
+        onToggle={(label) => {
+          const code = ADMIN_OPPORTUNITY_STATUS_OPTIONS.find(
+            (c) => ADMIN_OPPORTUNITY_STATUS_LABEL[c] === label,
+          ) as string;
+          onChange({ statuses: toggleFilterValue(filters.statuses, code) });
+        }}
       />
       <fieldset className="flex flex-col gap-2">
         <legend className="text-xs font-semibold text-muted-foreground">

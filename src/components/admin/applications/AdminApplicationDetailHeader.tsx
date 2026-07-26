@@ -1,23 +1,14 @@
 import Link from "next/link";
 import { Send } from "lucide-react";
 import { AdminStatusBadge } from "@/components/admin/shared/AdminStatusBadge";
-import {
-  ADMIN_APPLICATION_ACTION_LABELS,
-  ADMIN_APPLICATION_STATUS_TONE,
-  type AdminApplication,
-} from "@/constants/admin-applications";
+import { ADMIN_APPLICATION_STATUS_LABEL, ADMIN_APPLICATION_STATUS_TONE } from "@/constants/admin-applications";
+import type { AdminApplicationDetail } from "@/lib/admin/applications";
 
 interface AdminApplicationDetailHeaderProps {
-  application: AdminApplication;
-  handled: boolean;
-  onToggleHandled: () => void;
+  application: AdminApplicationDetail;
 }
 
-export function AdminApplicationDetailHeader({
-  application,
-  handled,
-  onToggleHandled,
-}: AdminApplicationDetailHeaderProps) {
+export function AdminApplicationDetailHeader({ application }: AdminApplicationDetailHeaderProps) {
   return (
     <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-6">
@@ -32,25 +23,22 @@ export function AdminApplicationDetailHeader({
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-bold text-foreground">{application.applicantName}</h2>
               <AdminStatusBadge
-                label={application.status}
+                label={ADMIN_APPLICATION_STATUS_LABEL[application.status]}
                 tone={ADMIN_APPLICATION_STATUS_TONE[application.status]}
               />
-              {handled && <AdminStatusBadge label="対応済み" tone="positive" />}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{application.jobTitle}</p>
-            <p className="text-sm text-muted-foreground">{application.company}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{application.opportunityTitle}</p>
+            <p className="text-sm text-muted-foreground">{application.companyName}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {application.applicantId && (
-            <Link
-              href={`/admin/users/${application.applicantId}`}
-              className="inline-flex h-9 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-            >
-              応募者アカウントを開く
-            </Link>
-          )}
+          <Link
+            href={`/admin/users/${application.applicantId}`}
+            className="inline-flex h-9 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            応募者アカウントを開く
+          </Link>
           {application.companyId && (
             <Link
               href={`/admin/companies/${application.companyId}`}
@@ -59,15 +47,6 @@ export function AdminApplicationDetailHeader({
               企業アカウントを開く
             </Link>
           )}
-          <button
-            type="button"
-            onClick={onToggleHandled}
-            className="inline-flex h-9 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-          >
-            {handled
-              ? ADMIN_APPLICATION_ACTION_LABELS.markUnhandled
-              : ADMIN_APPLICATION_ACTION_LABELS.markHandled}
-          </button>
         </div>
       </div>
     </div>

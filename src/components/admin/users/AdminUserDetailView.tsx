@@ -5,105 +5,81 @@ import { AdminUserDetailHeader } from "@/components/admin/users/AdminUserDetailH
 import { AdminUserProfileSection } from "@/components/admin/users/AdminUserProfileSection";
 import { AdminUserActivitySection } from "@/components/admin/users/AdminUserActivitySection";
 import { AdminUserStatusDialog } from "@/components/admin/users/AdminUserStatusDialog";
-import { AdminUserDeleteDialog } from "@/components/admin/users/AdminUserDeleteDialog";
-import { AdminInternalNote, type AdminNoteEntry } from "@/components/admin/shared/AdminInternalNote";
 import {
-  ADMIN_USER_DEMO_NOTE,
-  ADMIN_USER_DETAIL_SECTIONS,
+  ADMIN_USER_STATUS_ERROR_FALLBACK,
   ADMIN_USER_TOAST_MESSAGES,
-  type AdminUser,
-  type AdminUserAccountStatus,
 } from "@/constants/admin-users";
+import { updateUserStatus, type AdminUserDetail, type AdminUserStatus } from "@/lib/admin/users";
+import { createClient } from "@/lib/supabase/client";
 
 interface AdminUserDetailViewProps {
-  user: AdminUser;
+  user: AdminUserDetail;
 }
 
-type DialogState = "suspend" | "reinstate" | "delete" | null;
-
-export function AdminUserDetailView({ user }: AdminUserDetailViewProps) {
-  const [accountStatus, setAccountStatus] = useState<AdminUserAccountStatus>(user.accountStatus);
-  const [notes, setNotes] = useState<AdminNoteEntry[]>(user.internalNotes);
-  const [dialog, setDialog] = useState<DialogState>(null);
+export function AdminUserDetailView({ user: initialUser }: AdminUserDetailViewProps) {
+  const [status, setStatus] = useState<AdminUserStatus>(initialUser.status);
+  const [dialogMode, setDialogMode] = useState<"suspend" | "reinstate" | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isDeleted, setIsDeleted] = useState(false);
+
+  const user = { ...initialUser, status };
 
   function showToast(message: string) {
     setToastMessage(message);
     window.setTimeout(() => setToastMessage(null), 3000);
   }
 
-  function handleAddNote(body: string) {
-    setNotes((prev) => [
-      {
-        id: `note-${prev.length + 1}-${prev.length}`,
-        author: "佐々木 玲奈（管理者）",
-        body,
-        dateLabel: "たった今",
-      },
-      ...prev,
-    ]);
+  function closeDialog() {
+    setDialogMode(null);
+    setErrorMessage(null);
   }
 
-  function handleConfirmDialog() {
-    if (dialog === "suspend") {
-      setAccountStatus("利用停止中");
-      showToast(ADMIN_USER_TOAST_MESSAGES.suspended);
-    } else if (dialog === "reinstate") {
-      setAccountStatus("有効");
-      showToast(ADMIN_USER_TOAST_MESSAGES.reinstated);
-    } else if (dialog === "delete") {
-      setIsDeleted(true);
-      showToast(ADMIN_USER_TOAST_MESSAGES.deleted);
+  async function handleConfirmDialog() {
+    if (!dialogMode) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    const supabase = createClient();
+    const nextStatus: AdminUserStatus = dialogMode === "suspend" ? "SUSPENDED" : "ACTIVE";
+    const { error } = await updateUserStatus(supabase, user.id, nextStatus);
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setErrorMessage(error || ADMIN_USER_STATUS_ERROR_FALLBACK);
+      return;
     }
-    setDialog(null);
+
+    setStatus(nextStatus);
+    showToast(
+      dialogMode === "suspend" ? ADMIN_USER_TOAST_MESSAGES.suspended : ADMIN_USER_TOAST_MESSAGES.reinstated,
+    );
+    setDialogMode(null);
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {isDeleted && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-          このユーザーは削除済みとしてマークされました。（{ADMIN_USER_DEMO_NOTE}）
-        </div>
-      )}
-
       <AdminUserDetailHeader
         user={user}
-        accountStatus={accountStatus}
-        onEdit={() => showToast(ADMIN_USER_DEMO_NOTE)}
-        onSuspend={() => setDialog("suspend")}
-        onReinstate={() => setDialog("reinstate")}
-        onDelete={() => setDialog("delete")}
+        onSuspend={() => setDialogMode("suspend")}
+        onReinstate={() => setDialogMode("reinstate")}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
           <AdminUserProfileSection user={user} />
-          <AdminUserActivitySection user={user} />
         </div>
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-7">
-            <AdminInternalNote
-              title={ADMIN_USER_DETAIL_SECTIONS.internalNotes}
-              placeholder="メモを入力"
-              addLabel="メモを追加"
-              emptyMessage="管理メモはまだありません。"
-              notes={notes}
-              onAdd={handleAddNote}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">{ADMIN_USER_DEMO_NOTE}</p>
+          <AdminUserActivitySection user={user} />
         </div>
       </div>
 
       <AdminUserStatusDialog
-        mode={dialog === "suspend" ? "suspend" : dialog === "reinstate" ? "reinstate" : null}
-        onCancel={() => setDialog(null)}
-        onConfirm={handleConfirmDialog}
-      />
-      <AdminUserDeleteDialog
-        isOpen={dialog === "delete"}
-        onCancel={() => setDialog(null)}
+        mode={dialogMode}
+        isSubmitting={isSubmitting}
+        errorMessage={errorMessage}
+        onCancel={closeDialog}
         onConfirm={handleConfirmDialog}
       />
 

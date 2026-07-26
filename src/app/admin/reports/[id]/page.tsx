@@ -3,38 +3,42 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
 import { AdminReportDetailView } from "@/components/admin/reports/AdminReportDetailView";
-import { ADMIN_NAV, ADMIN_USER } from "@/constants/admin";
-import { ADMIN_REPORTS, ADMIN_REPORT_NOT_FOUND } from "@/constants/admin-reports";
+import { ADMIN_NAV } from "@/constants/admin";
+import { ADMIN_REPORT_NOT_FOUND } from "@/constants/admin-reports";
+import { getAdminIdentity } from "@/lib/admin/identity";
+import { getAdminReportDetail } from "@/lib/admin/reports";
+import { createClient } from "@/lib/supabase/server";
 
 interface AdminReportDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-export function generateStaticParams() {
-  return ADMIN_REPORTS.map((report) => ({ id: report.id }));
 }
 
 export async function generateMetadata({
   params,
 }: AdminReportDetailPageProps): Promise<Metadata> {
   const { id } = await params;
-  const report = ADMIN_REPORTS.find((item) => item.id === id);
+  const supabase = await createClient();
+  const report = await getAdminReportDetail(supabase, id);
   return {
-    title: report ? `${report.id} | 通報管理 | ENGINEER MATCH` : `通報管理 | ENGINEER MATCH`,
+    title: report ? `${report.id.slice(0, 8)} | 通報管理 | ENGINEER MATCH` : `通報管理 | ENGINEER MATCH`,
   };
 }
 
 export default async function AdminReportDetailPage({ params }: AdminReportDetailPageProps) {
   const { id } = await params;
-  const report = ADMIN_REPORTS.find((item) => item.id === id);
+  const supabase = await createClient();
+  const [identity, report] = await Promise.all([
+    getAdminIdentity(supabase),
+    getAdminReportDetail(supabase, id),
+  ]);
 
   return (
     <AdminShell
       navItems={ADMIN_NAV}
       activeHref="/admin/reports"
-      pageTitle={report ? report.id : ADMIN_REPORT_NOT_FOUND.title}
-      userName={ADMIN_USER.name}
-      userInitials={ADMIN_USER.initials}
+      pageTitle={report ? report.id.slice(0, 8) : ADMIN_REPORT_NOT_FOUND.title}
+      userName={identity.name}
+      userInitials={identity.initials}
     >
       {report ? (
         <AdminReportDetailView report={report} />

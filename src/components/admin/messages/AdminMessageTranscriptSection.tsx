@@ -1,54 +1,51 @@
-import { MessageBubble } from "@/components/messages/MessageBubble";
 import { AdminDetailField, AdminDetailGrid, AdminDetailSection } from "@/components/admin/shared/AdminDetailSection";
 import { ADMIN_MESSAGE_DETAIL_SECTIONS } from "@/constants/admin-messages";
-import type { Conversation } from "@/constants/messages";
+import type { AdminConversationDetail } from "@/lib/admin/messages";
 import { cn } from "@/lib/utils";
 
 interface AdminMessageTranscriptSectionProps {
-  conversation: Conversation;
-  reportedMessageIds: string[];
+  conversation: AdminConversationDetail;
 }
 
-export function AdminMessageTranscriptSection({
-  conversation,
-  reportedMessageIds,
-}: AdminMessageTranscriptSectionProps) {
+export function AdminMessageTranscriptSection({ conversation }: AdminMessageTranscriptSectionProps) {
   return (
     <div className="flex flex-col gap-6">
       <AdminDetailSection title={ADMIN_MESSAGE_DETAIL_SECTIONS.participants}>
         <AdminDetailGrid>
-          <AdminDetailField label="参加者" value={conversation.participantName} />
-          <AdminDetailField label="役職" value={conversation.participantRole} />
-          <AdminDetailField label="企業名" value={conversation.participantCompany} />
-          <AdminDetailField label="会話種別" value={conversation.status} />
+          <AdminDetailField label="エンジニア" value={conversation.engineerName} />
+          <AdminDetailField label="企業" value={conversation.companyName} />
         </AdminDetailGrid>
       </AdminDetailSection>
 
       <AdminDetailSection title={ADMIN_MESSAGE_DETAIL_SECTIONS.relatedOpportunity}>
-        <p className="text-sm text-foreground">{conversation.jobTitle}</p>
+        <p className="text-sm text-foreground">{conversation.opportunityTitle}</p>
       </AdminDetailSection>
 
       <AdminDetailSection title={ADMIN_MESSAGE_DETAIL_SECTIONS.transcript}>
-        <div className="flex flex-col gap-4">
-          {conversation.messages.map((message) => {
-            const isReported = reportedMessageIds.includes(message.id);
-            return (
+        {conversation.messages.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {conversation.messages.map((message) => (
               <div
                 key={message.id}
-                className={cn(
-                  isReported && "rounded-2xl bg-red-50/60 p-2 ring-1 ring-red-300",
-                )}
+                className={cn("flex flex-col gap-1", message.isEngineer ? "items-start" : "items-end")}
               >
-                {isReported && (
-                  <p className="mb-1 px-1 text-[11px] font-semibold text-red-600">
-                    通報対象のメッセージ
-                  </p>
-                )}
-                <MessageBubble message={message} isOwnMessage={message.senderRole === "engineer"} />
+                <div
+                  className={cn(
+                    "max-w-[80%] rounded-2xl px-4 py-2 text-sm",
+                    message.isEngineer ? "bg-muted text-foreground" : "bg-primary/10 text-foreground",
+                  )}
+                >
+                  {message.body}
+                </div>
+                <p className="px-1 text-[11px] text-muted-foreground">
+                  {message.senderName} ・ {message.sentAtLabel}
+                </p>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">メッセージはまだありません。</p>
+        )}
       </AdminDetailSection>
     </div>
   );

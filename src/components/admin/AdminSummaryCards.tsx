@@ -1,20 +1,12 @@
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Briefcase,
   Building2,
-  Minus,
   Send,
   ShieldAlert,
   UserPlus,
   UserRound,
 } from "lucide-react";
-import {
-  ADMIN_SUMMARY_CARDS,
-  type AdminSummaryCard,
-  type AdminTrendTone,
-} from "@/constants/admin";
-import { cn } from "@/lib/utils";
+import type { AdminSummaryCardData } from "@/lib/admin/dashboard";
 
 const ICON_MAP = {
   userRound: UserRound,
@@ -25,21 +17,8 @@ const ICON_MAP = {
   userPlus: UserPlus,
 } as const;
 
-const TREND_ICON_MAP = {
-  up: ArrowUpRight,
-  down: ArrowDownRight,
-  flat: Minus,
-} as const;
-
-const TONE_STYLES: Record<AdminTrendTone, string> = {
-  positive: "text-emerald-700",
-  negative: "text-red-700",
-  neutral: "text-muted-foreground",
-};
-
-function AdminSummaryCardItem({ card }: { card: AdminSummaryCard }) {
+function AdminSummaryCardItem({ card }: { card: AdminSummaryCardData }) {
   const Icon = ICON_MAP[card.icon as keyof typeof ICON_MAP];
-  const TrendIcon = TREND_ICON_MAP[card.trend];
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
@@ -52,23 +31,18 @@ function AdminSummaryCardItem({ card }: { card: AdminSummaryCard }) {
       <p className="mt-4 text-3xl font-bold tracking-tight text-foreground">
         {card.value}
       </p>
-      <p
-        className={cn(
-          "mt-1 flex items-center gap-1 text-xs font-medium",
-          TONE_STYLES[card.tone],
-        )}
-      >
-        <TrendIcon className="h-3.5 w-3.5" aria-hidden="true" />
-        {card.comparisonLabel}
-      </p>
     </div>
   );
 }
 
-export function AdminSummaryCards() {
+interface AdminSummaryCardsProps {
+  cards: AdminSummaryCardData[];
+}
+
+export function AdminSummaryCards({ cards }: AdminSummaryCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {ADMIN_SUMMARY_CARDS.map((card) => (
+      {cards.map((card) => (
         <AdminSummaryCardItem key={card.id} card={card} />
       ))}
     </div>

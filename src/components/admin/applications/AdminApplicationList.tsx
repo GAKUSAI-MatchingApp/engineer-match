@@ -10,41 +10,27 @@ import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
 import { AdminPagination } from "@/components/admin/shared/AdminPagination";
 import {
   ADMIN_APPLICATION_RESULTS_META,
-  ADMIN_APPLICATION_TOAST_MESSAGES,
   DEFAULT_ADMIN_APPLICATION_FILTER_STATE,
-  type AdminApplication,
   type AdminApplicationFilterState,
 } from "@/constants/admin-applications";
+import type { AdminApplicationListItem } from "@/lib/admin/applications";
 
 const PAGE_SIZE = 8;
-const REFERENCE_NOW_MS = new Date("2026-07-17T12:00:00").getTime();
 
 function daysSince(iso: string): number {
-  return Math.floor((REFERENCE_NOW_MS - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+  return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
 }
 
 interface AdminApplicationListProps {
-  initialApplications: AdminApplication[];
+  initialApplications: AdminApplicationListItem[];
 }
 
 export function AdminApplicationList({ initialApplications }: AdminApplicationListProps) {
-  const [applications, setApplications] = useState<AdminApplication[]>(initialApplications);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<AdminApplicationFilterState>(
     DEFAULT_ADMIN_APPLICATION_FILTER_STATE,
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const companyOptions = useMemo(
-    () => Array.from(new Set(initialApplications.map((app) => app.company))),
-    [initialApplications],
-  );
-
-  function showToast(message: string) {
-    setToastMessage(message);
-    window.setTimeout(() => setToastMessage(null), 3000);
-  }
 
   function handleFilterChange(patch: Partial<AdminApplicationFilterState>) {
     setFilters((prev) => ({ ...prev, ...patch }));
@@ -57,47 +43,27 @@ export function AdminApplicationList({ initialApplications }: AdminApplicationLi
     setCurrentPage(1);
   }
 
-  function handleToggleHandled(id: string) {
-    setApplications((prev) =>
-      prev.map((app) => (app.id === id ? { ...app, handled: !app.handled } : app)),
-    );
-    const target = applications.find((app) => app.id === id);
-    showToast(
-      target?.handled
-        ? ADMIN_APPLICATION_TOAST_MESSAGES.unhandled
-        : ADMIN_APPLICATION_TOAST_MESSAGES.handled,
-    );
-  }
-
   const filteredApplications = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return applications.filter((app) => {
+    return initialApplications.filter((app) => {
       if (query) {
         const haystack =
-          `${app.applicantName} ${app.company} ${app.jobTitle} ${app.id}`.toLowerCase();
+          `${app.applicantName} ${app.companyName} ${app.opportunityTitle} ${app.id}`.toLowerCase();
         if (!haystack.includes(query)) return false;
       }
       if (filters.statuses.length > 0 && !filters.statuses.includes(app.status)) return false;
-      if (
-        filters.serviceCategories.length > 0 &&
-        !filters.serviceCategories.includes(app.serviceCategory)
-      ) {
+      if (filters.contractTypes.length > 0 && !filters.contractTypes.includes(app.contractType)) {
         return false;
-      }
-      if (filters.companies.length > 0 && !filters.companies.includes(app.company)) return false;
-      if (filters.problemReported.length > 0) {
-        const value = app.hasProblemReport ? "あり" : "なし";
-        if (!filters.problemReported.includes(value)) return false;
       }
       if (
         filters.appliedWithinDays !== null &&
-        daysSince(app.appliedDateISO) > filters.appliedWithinDays
+        daysSince(app.appliedAtISO) > filters.appliedWithinDays
       ) {
         return false;
       }
       return true;
     });
-  }, [applications, searchQuery, filters]);
+  }, [initialApplications, searchQuery, filters]);
 
   const totalPages = Math.max(1, Math.ceil(filteredApplications.length / PAGE_SIZE));
   const pagedApplications = filteredApplications.slice(
@@ -107,7 +73,7 @@ export function AdminApplicationList({ initialApplications }: AdminApplicationLi
 
   return (
     <div className="flex flex-col gap-6">
-      <AdminApplicationSummaryCards applications={applications} />
+      <AdminApplicationSummaryCards applications={initialApplications} />
       <AdminApplicationToolbar
         value={searchQuery}
         onChange={(value) => {
@@ -115,11 +81,7 @@ export function AdminApplicationList({ initialApplications }: AdminApplicationLi
           setCurrentPage(1);
         }}
       />
-      <AdminApplicationFilters
-        filters={filters}
-        onChange={handleFilterChange}
-        companyOptions={companyOptions}
-      />
+      <AdminApplicationFilters filters={filters} onChange={handleFilterChange} />
 
       <p className="text-sm text-muted-foreground">
         {filteredApplications.length}
@@ -134,14 +96,8 @@ export function AdminApplicationList({ initialApplications }: AdminApplicationLi
         />
       ) : (
         <>
-          <AdminApplicationTable
-            applications={pagedApplications}
-            onToggleHandled={handleToggleHandled}
-          />
-          <AdminApplicationMobileCards
-            applications={pagedApplications}
-            onToggleHandled={handleToggleHandled}
-          />
+          <AdminApplicationTable applications={pagedApplications} />
+          <AdminApplicationMobileCards applications={pagedApplications} />
           <AdminPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -151,18 +107,6 @@ export function AdminApplicationList({ initialApplications }: AdminApplicationLi
             pageLabelPrefix="ページ"
           />
         </>
-      )}
-
-      {toastMessage && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4 sm:justify-end sm:pr-6"
-        >
-          <div className="flex items-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-medium text-white shadow-lg">
-            {toastMessage}
-          </div>
-        </div>
       )}
     </div>
   );

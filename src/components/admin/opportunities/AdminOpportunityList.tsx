@@ -6,42 +6,45 @@ import { AdminOpportunityToolbar } from "@/components/admin/opportunities/AdminO
 import { AdminOpportunityFilters } from "@/components/admin/opportunities/AdminOpportunityFilters";
 import { AdminOpportunityTable } from "@/components/admin/opportunities/AdminOpportunityTable";
 import { AdminOpportunityMobileCards } from "@/components/admin/opportunities/AdminOpportunityMobileCards";
-import {
-  AdminOpportunityStatusDialog,
-  type AdminOpportunityDialogMode,
-} from "@/components/admin/opportunities/AdminOpportunityStatusDialog";
+import { AdminOpportunityStatusDialog } from "@/components/admin/opportunities/AdminOpportunityStatusDialog";
 import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
 import { AdminPagination } from "@/components/admin/shared/AdminPagination";
 import {
+  ADMIN_OPPORTUNITY_MODERATION_ERROR_FALLBACK,
   ADMIN_OPPORTUNITY_RESULTS_META,
   ADMIN_OPPORTUNITY_TOAST_MESSAGES,
   DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE,
-  type AdminOpportunity,
   type AdminOpportunityFilterState,
 } from "@/constants/admin-opportunities";
+import {
+  updateOpportunityModeration,
+  type AdminOpportunityListItem,
+  type AdminOpportunityModerationAction,
+} from "@/lib/admin/opportunities";
+import { createClient } from "@/lib/supabase/client";
 
 const PAGE_SIZE = 8;
-const REFERENCE_NOW_MS = new Date("2026-07-17T12:00:00").getTime();
 
 function daysSince(iso: string): number {
-  return Math.floor((REFERENCE_NOW_MS - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+  return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
 }
 
 interface AdminOpportunityListProps {
-  initialOpportunities: AdminOpportunity[];
+  initialOpportunities: AdminOpportunityListItem[];
 }
 
+type DialogState = { action: AdminOpportunityModerationAction; opportunityId: string } | null;
+
 export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityListProps) {
-  const [opportunities, setOpportunities] = useState<AdminOpportunity[]>(initialOpportunities);
+  const [opportunities, setOpportunities] = useState(initialOpportunities);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<AdminOpportunityFilterState>(
     DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE,
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const [dialog, setDialog] = useState<{
-    mode: Exclude<AdminOpportunityDialogMode, null>;
-    opportunityId: string;
-  } | null>(null);
+  const [dialog, setDialog] = useState<DialogState>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   function showToast(message: string) {
@@ -60,62 +63,35 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
     setCurrentPage(1);
   }
 
-  function handleConfirmDialog(reason?: string) {
-    if (!dialog) return;
-    const { mode, opportunityId } = dialog;
+  function closeDialog() {
+    setDialog(null);
+    setErrorMessage(null);
+  }
 
-    if (mode === "delete") {
-      setOpportunities((prev) => prev.filter((opp) => opp.id !== opportunityId));
-      showToast(ADMIN_OPPORTUNITY_TOAST_MESSAGES.deleted);
-      setDialog(null);
+  async function handleConfirmDialog() {
+    if (!dialog) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    const supabase = createClient();
+    const { error } = await updateOpportunityModeration(supabase, dialog.opportunityId, dialog.action);
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setErrorMessage(error || ADMIN_OPPORTUNITY_MODERATION_ERROR_FALLBACK);
       return;
     }
 
     setOpportunities((prev) =>
       prev.map((opp) => {
-        if (opp.id !== opportunityId) return opp;
-        const historyEntry = {
-          id: `ph-${opp.publicationHistory.length + 1}-${opp.id}`,
-          action:
-            mode === "publish"
-              ? "公開承認"
-              : mode === "unpublish"
-                ? "非公開化"
-                : mode === "suspend"
-                  ? "掲載停止"
-                  : "編集依頼",
-          actor: "佐々木 玲奈（管理者）",
-          reason: reason ?? null,
-          dateLabel: "たった今",
-        };
-        if (mode === "publish") {
-          return {
-            ...opp,
-            publicationStatus: "公開中",
-            publicationHistory: [historyEntry, ...opp.publicationHistory],
-          };
-        }
-        if (mode === "unpublish" || mode === "suspend") {
-          return {
-            ...opp,
-            publicationStatus: "非公開",
-            publicationHistory: [historyEntry, ...opp.publicationHistory],
-          };
-        }
-        return { ...opp, publicationHistory: [historyEntry, ...opp.publicationHistory] };
+        if (opp.id !== dialog.opportunityId) return opp;
+        if (dialog.action === "takedown") return { ...opp, unpublishedByAdmin: true };
+        if (dialog.action === "republish") return { ...opp, unpublishedByAdmin: false };
+        return { ...opp, status: "closed" as const };
       }),
     );
-    showToast(
-      ADMIN_OPPORTUNITY_TOAST_MESSAGES[
-        mode === "publish"
-          ? "published"
-          : mode === "unpublish"
-            ? "unpublished"
-            : mode === "suspend"
-              ? "suspended"
-              : "editRequested"
-      ],
-    );
+    showToast(ADMIN_OPPORTUNITY_TOAST_MESSAGES[dialog.action]);
     setDialog(null);
   }
 
@@ -123,40 +99,18 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
     const query = searchQuery.trim().toLowerCase();
     return opportunities.filter((opp) => {
       if (query) {
-        const haystack =
-          `${opp.title} ${opp.company} ${opp.requiredSkills.join(" ")} ${opp.id}`.toLowerCase();
+        const haystack = `${opp.title} ${opp.companyName} ${opp.id}`.toLowerCase();
         if (!haystack.includes(query)) return false;
       }
-      if (
-        filters.serviceCategories.length > 0 &&
-        !filters.serviceCategories.includes(opp.serviceCategory)
-      ) {
+      if (filters.contractTypes.length > 0 && !filters.contractTypes.includes(opp.contractType)) {
         return false;
       }
-      if (
-        filters.contractTypes.length > 0 &&
-        !filters.contractTypes.includes(opp.contractType)
-      ) {
-        return false;
-      }
-      if (
-        filters.publicationStatuses.length > 0 &&
-        !filters.publicationStatuses.includes(opp.publicationStatus)
-      ) {
-        return false;
-      }
-      if (
-        filters.recruitmentStatuses.length > 0 &&
-        !filters.recruitmentStatuses.includes(opp.recruitmentStatus)
-      ) {
-        return false;
-      }
-      if (filters.workStyles.length > 0 && !filters.workStyles.includes(opp.workStyle)) {
+      if (filters.statuses.length > 0 && !filters.statuses.includes(opp.status)) {
         return false;
       }
       if (
         filters.postedWithinDays !== null &&
-        daysSince(opp.postedDateISO) > filters.postedWithinDays
+        daysSince(opp.createdAtISO) > filters.postedWithinDays
       ) {
         return false;
       }
@@ -197,11 +151,11 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
         <>
           <AdminOpportunityTable
             opportunities={pagedOpportunities}
-            onAction={(id, mode) => setDialog({ mode, opportunityId: id })}
+            onAction={(id, action) => setDialog({ action, opportunityId: id })}
           />
           <AdminOpportunityMobileCards
             opportunities={pagedOpportunities}
-            onAction={(id, mode) => setDialog({ mode, opportunityId: id })}
+            onAction={(id, action) => setDialog({ action, opportunityId: id })}
           />
           <AdminPagination
             currentPage={currentPage}
@@ -215,8 +169,10 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
       )}
 
       <AdminOpportunityStatusDialog
-        mode={dialog?.mode ?? null}
-        onCancel={() => setDialog(null)}
+        mode={dialog?.action ?? null}
+        isSubmitting={isSubmitting}
+        errorMessage={errorMessage}
+        onCancel={closeDialog}
         onConfirm={handleConfirmDialog}
       />
 

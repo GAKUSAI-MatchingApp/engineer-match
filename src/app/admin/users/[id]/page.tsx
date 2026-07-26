@@ -3,22 +3,22 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
 import { AdminUserDetailView } from "@/components/admin/users/AdminUserDetailView";
-import { ADMIN_NAV, ADMIN_USER } from "@/constants/admin";
-import { ADMIN_USERS, ADMIN_USER_NOT_FOUND } from "@/constants/admin-users";
+import { ADMIN_NAV } from "@/constants/admin";
+import { ADMIN_USER_NOT_FOUND } from "@/constants/admin-users";
+import { getAdminIdentity } from "@/lib/admin/identity";
+import { getAdminUserDetail } from "@/lib/admin/users";
+import { createClient } from "@/lib/supabase/server";
 
 interface AdminUserDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-export function generateStaticParams() {
-  return ADMIN_USERS.map((user) => ({ id: user.id }));
 }
 
 export async function generateMetadata({
   params,
 }: AdminUserDetailPageProps): Promise<Metadata> {
   const { id } = await params;
-  const user = ADMIN_USERS.find((item) => item.id === id);
+  const supabase = await createClient();
+  const user = await getAdminUserDetail(supabase, id);
   return {
     title: user
       ? `${user.name} | ユーザー管理 | ENGINEER MATCH`
@@ -28,15 +28,19 @@ export async function generateMetadata({
 
 export default async function AdminUserDetailPage({ params }: AdminUserDetailPageProps) {
   const { id } = await params;
-  const user = ADMIN_USERS.find((item) => item.id === id);
+  const supabase = await createClient();
+  const [identity, user] = await Promise.all([
+    getAdminIdentity(supabase),
+    getAdminUserDetail(supabase, id),
+  ]);
 
   return (
     <AdminShell
       navItems={ADMIN_NAV}
       activeHref="/admin/users"
       pageTitle={user ? user.name : ADMIN_USER_NOT_FOUND.title}
-      userName={ADMIN_USER.name}
-      userInitials={ADMIN_USER.initials}
+      userName={identity.name}
+      userInitials={identity.initials}
     >
       {user ? (
         <AdminUserDetailView user={user} />

@@ -3,10 +3,11 @@ import {
   AdminDetailGrid,
   AdminDetailSection,
 } from "@/components/admin/shared/AdminDetailSection";
-import { ADMIN_COMPANY_DETAIL_SECTIONS, type AdminCompany } from "@/constants/admin-companies";
+import { ADMIN_COMPANY_DETAIL_SECTIONS, ADMIN_COMPANY_SIZE_LABEL } from "@/constants/admin-companies";
+import type { AdminCompanyDetail } from "@/lib/admin/companies";
 
 interface AdminCompanyOverviewProps {
-  company: AdminCompany;
+  company: AdminCompanyDetail;
 }
 
 export function AdminCompanyOverview({ company }: AdminCompanyOverviewProps) {
@@ -16,25 +17,27 @@ export function AdminCompanyOverview({ company }: AdminCompanyOverviewProps) {
         <AdminDetailGrid>
           <AdminDetailField label="企業名" value={company.name} />
           <AdminDetailField label="企業ID" value={company.id} />
-          <AdminDetailField label="代表者" value={company.representativeName} />
-          <AdminDetailField label="業種" value={company.industry} />
-          <AdminDetailField label="企業規模" value={company.companySize} />
-          <AdminDetailField label="所在地" value={company.address} />
-          <AdminDetailField label="コーポレートサイト" value={company.website} />
-          <AdminDetailField label="登録日" value={company.registeredDateLabel} />
+          <AdminDetailField label="業種" value={company.industry ?? "—"} />
+          <AdminDetailField
+            label="企業規模"
+            value={company.companySize ? (ADMIN_COMPANY_SIZE_LABEL[company.companySize] ?? company.companySize) : "—"}
+          />
+          <AdminDetailField label="設立年" value={company.establishedYear ? `${company.establishedYear}年` : "—"} />
+          <AdminDetailField label="所在地" value={company.address ?? "—"} />
+          <AdminDetailField label="コーポレートサイト" value={company.websiteUrl ?? "—"} />
+          <AdminDetailField label="登録日" value={company.createdAtLabel} />
         </AdminDetailGrid>
       </AdminDetailSection>
 
       <AdminDetailSection title={ADMIN_COMPANY_DETAIL_SECTIONS.contactInfo}>
         <AdminDetailGrid>
-          <AdminDetailField label="担当者名" value={company.contactName} />
-          <AdminDetailField label="メールアドレス" value={company.contactEmail} />
-          <AdminDetailField label="電話番号" value={company.contactPhone} />
+          <AdminDetailField label="担当者名" value={company.contactName ?? "—"} />
+          <AdminDetailField label="メールアドレス" value={company.contactEmail || "—"} />
         </AdminDetailGrid>
       </AdminDetailSection>
 
       <AdminDetailSection title={ADMIN_COMPANY_DETAIL_SECTIONS.profile}>
-        <p className="text-sm text-foreground">{company.description}</p>
+        <p className="text-sm text-foreground">{company.businessDescription || "未設定"}</p>
       </AdminDetailSection>
     </div>
   );

@@ -5,29 +5,31 @@ import {
   AdminFilterChipGroup,
   toggleFilterValue,
 } from "@/components/admin/shared/AdminFilterBar";
-import { ADMIN_OPPORTUNITY_SERVICE_CATEGORIES } from "@/constants/admin-opportunities";
 import {
+  ADMIN_APPLICATION_CONTRACT_TYPE_OPTIONS,
   ADMIN_APPLICATION_DATE_RANGE_OPTIONS,
   ADMIN_APPLICATION_FILTER_LABELS,
-  ADMIN_APPLICATION_PROBLEM_OPTIONS,
-  ADMIN_APPLICATION_STATUSES,
+  ADMIN_APPLICATION_STATUS_LABEL,
+  ADMIN_APPLICATION_STATUS_OPTIONS,
+  ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL,
   DEFAULT_ADMIN_APPLICATION_FILTER_STATE,
   type AdminApplicationFilterState,
-  type AdminApplicationStatus,
 } from "@/constants/admin-applications";
+import type { AdminApplicationStatus } from "@/lib/admin/applications";
+import type { AdminOpportunityContractType } from "@/lib/admin/opportunities";
 import { cn } from "@/lib/utils";
 
 interface AdminApplicationFiltersProps {
   filters: AdminApplicationFilterState;
   onChange: (patch: Partial<AdminApplicationFilterState>) => void;
-  companyOptions: string[];
 }
 
-export function AdminApplicationFilters({
-  filters,
-  onChange,
-  companyOptions,
-}: AdminApplicationFiltersProps) {
+export function AdminApplicationFilters({ filters, onChange }: AdminApplicationFiltersProps) {
+  const statusLabels = ADMIN_APPLICATION_STATUS_OPTIONS.map((code) => ADMIN_APPLICATION_STATUS_LABEL[code]);
+  const contractTypeLabels = ADMIN_APPLICATION_CONTRACT_TYPE_OPTIONS.map(
+    (code) => ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL[code],
+  );
+
   return (
     <AdminFilterBar
       title={ADMIN_APPLICATION_FILTER_LABELS.title}
@@ -37,43 +39,28 @@ export function AdminApplicationFilters({
       <AdminFilterChipGroup
         legend={ADMIN_APPLICATION_FILTER_LABELS.status}
         idPrefix="application-status"
-        options={ADMIN_APPLICATION_STATUSES}
-        selected={filters.statuses}
-        onToggle={(value) =>
-          onChange({
-            statuses: toggleFilterValue(filters.statuses, value as AdminApplicationStatus),
-          })
-        }
+        options={statusLabels}
+        selected={filters.statuses.map((code) => ADMIN_APPLICATION_STATUS_LABEL[code as AdminApplicationStatus])}
+        onToggle={(label) => {
+          const code = ADMIN_APPLICATION_STATUS_OPTIONS.find(
+            (c) => ADMIN_APPLICATION_STATUS_LABEL[c] === label,
+          ) as string;
+          onChange({ statuses: toggleFilterValue(filters.statuses, code) });
+        }}
       />
       <AdminFilterChipGroup
-        legend={ADMIN_APPLICATION_FILTER_LABELS.serviceCategory}
-        idPrefix="application-category"
-        options={ADMIN_OPPORTUNITY_SERVICE_CATEGORIES}
-        selected={filters.serviceCategories}
-        onToggle={(value) =>
-          onChange({ serviceCategories: toggleFilterValue(filters.serviceCategories, value) })
-        }
-      />
-      <AdminFilterChipGroup
-        legend={ADMIN_APPLICATION_FILTER_LABELS.company}
-        idPrefix="application-company"
-        options={companyOptions}
-        selected={filters.companies}
-        onToggle={(value) => onChange({ companies: toggleFilterValue(filters.companies, value) })}
-      />
-      <AdminFilterChipGroup
-        legend={ADMIN_APPLICATION_FILTER_LABELS.problemReported}
-        idPrefix="application-problem"
-        options={ADMIN_APPLICATION_PROBLEM_OPTIONS}
-        selected={filters.problemReported}
-        onToggle={(value) =>
-          onChange({
-            problemReported: toggleFilterValue(
-              filters.problemReported,
-              value as (typeof ADMIN_APPLICATION_PROBLEM_OPTIONS)[number],
-            ),
-          })
-        }
+        legend={ADMIN_APPLICATION_FILTER_LABELS.contractType}
+        idPrefix="application-contract"
+        options={contractTypeLabels}
+        selected={filters.contractTypes.map(
+          (code) => ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL[code as AdminOpportunityContractType],
+        )}
+        onToggle={(label) => {
+          const code = ADMIN_APPLICATION_CONTRACT_TYPE_OPTIONS.find(
+            (c) => ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL[c] === label,
+          ) as string;
+          onChange({ contractTypes: toggleFilterValue(filters.contractTypes, code) });
+        }}
       />
       <fieldset className="flex flex-col gap-2">
         <legend className="text-xs font-semibold text-muted-foreground">

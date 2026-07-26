@@ -3,16 +3,16 @@ import { AdminDataTable } from "@/components/admin/shared/AdminDataTable";
 import { AdminStatusBadge } from "@/components/admin/shared/AdminStatusBadge";
 import {
   ADMIN_OPPORTUNITY_ACTION_LABELS,
-  ADMIN_OPPORTUNITY_PUBLICATION_STATUS_TONE,
-  ADMIN_OPPORTUNITY_RECRUITMENT_STATUS_TONE,
+  ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL,
+  ADMIN_OPPORTUNITY_STATUS_LABEL,
+  ADMIN_OPPORTUNITY_STATUS_TONE,
   ADMIN_OPPORTUNITY_TABLE_COLUMNS,
-  type AdminOpportunity,
 } from "@/constants/admin-opportunities";
-import type { AdminOpportunityDialogMode } from "@/components/admin/opportunities/AdminOpportunityStatusDialog";
+import type { AdminOpportunityListItem, AdminOpportunityModerationAction } from "@/lib/admin/opportunities";
 
 interface AdminOpportunityTableProps {
-  opportunities: AdminOpportunity[];
-  onAction: (id: string, mode: Exclude<AdminOpportunityDialogMode, null>) => void;
+  opportunities: AdminOpportunityListItem[];
+  onAction: (id: string, action: AdminOpportunityModerationAction) => void;
 }
 
 export function AdminOpportunityTable({ opportunities, onAction }: AdminOpportunityTableProps) {
@@ -26,35 +26,24 @@ export function AdminOpportunityTable({ opportunities, onAction }: AdminOpportun
           <td className="px-4 py-3">
             <Link
               href={`/admin/opportunities/${opp.id}`}
-              className="line-clamp-2 max-w-xs text-sm font-semibold text-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none rounded"
+              className="line-clamp-2 max-w-xs rounded text-sm font-semibold text-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               {opp.title}
             </Link>
           </td>
-          <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">{opp.company}</td>
+          <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">{opp.companyName}</td>
           <td className="px-4 py-3 text-sm whitespace-nowrap text-muted-foreground">
-            {opp.serviceCategory}
+            {ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL[opp.contractType]}
           </td>
-          <td className="px-4 py-3 text-sm whitespace-nowrap text-muted-foreground">
-            {opp.contractType}
-          </td>
-          <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">
-            {opp.applicantCount}名
-          </td>
+          <td className="px-4 py-3 text-sm whitespace-nowrap text-foreground">{opp.applicantCount}名</td>
           <td className="px-4 py-3">
             <AdminStatusBadge
-              label={opp.publicationStatus}
-              tone={ADMIN_OPPORTUNITY_PUBLICATION_STATUS_TONE[opp.publicationStatus]}
-            />
-          </td>
-          <td className="px-4 py-3">
-            <AdminStatusBadge
-              label={opp.recruitmentStatus}
-              tone={ADMIN_OPPORTUNITY_RECRUITMENT_STATUS_TONE[opp.recruitmentStatus]}
+              label={opp.unpublishedByAdmin ? "管理者非公開" : ADMIN_OPPORTUNITY_STATUS_LABEL[opp.status]}
+              tone={opp.unpublishedByAdmin ? "negative" : ADMIN_OPPORTUNITY_STATUS_TONE[opp.status]}
             />
           </td>
           <td className="px-4 py-3 text-sm whitespace-nowrap text-muted-foreground">
-            {opp.postedDateLabel}
+            {opp.createdAtLabel}
           </td>
           <td className="px-4 py-3">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -64,47 +53,34 @@ export function AdminOpportunityTable({ opportunities, onAction }: AdminOpportun
               >
                 {ADMIN_OPPORTUNITY_ACTION_LABELS.viewDetails}
               </Link>
-              {opp.publicationStatus !== "公開中" && (
+              {opp.unpublishedByAdmin ? (
                 <button
                   type="button"
-                  onClick={() => onAction(opp.id, "publish")}
+                  onClick={() => onAction(opp.id, "republish")}
                   className="rounded text-xs font-semibold text-emerald-600 hover:text-emerald-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                  {ADMIN_OPPORTUNITY_ACTION_LABELS.publish}
+                  {ADMIN_OPPORTUNITY_ACTION_LABELS.republish}
                 </button>
-              )}
-              {opp.publicationStatus === "公開中" && (
-                <>
+              ) : (
+                opp.status === "published" && (
                   <button
                     type="button"
-                    onClick={() => onAction(opp.id, "unpublish")}
+                    onClick={() => onAction(opp.id, "takedown")}
                     className="rounded text-xs font-semibold text-amber-600 hover:text-amber-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                   >
-                    {ADMIN_OPPORTUNITY_ACTION_LABELS.unpublish}
+                    {ADMIN_OPPORTUNITY_ACTION_LABELS.takedown}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => onAction(opp.id, "suspend")}
-                    className="rounded text-xs font-semibold text-red-600 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                  >
-                    {ADMIN_OPPORTUNITY_ACTION_LABELS.suspend}
-                  </button>
-                </>
+                )
               )}
-              <button
-                type="button"
-                onClick={() => onAction(opp.id, "requestEdit")}
-                className="rounded text-xs font-semibold text-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-              >
-                {ADMIN_OPPORTUNITY_ACTION_LABELS.requestEdit}
-              </button>
-              <button
-                type="button"
-                onClick={() => onAction(opp.id, "delete")}
-                className="rounded text-xs font-semibold text-red-600 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-              >
-                {ADMIN_OPPORTUNITY_ACTION_LABELS.delete}
-              </button>
+              {opp.status !== "closed" && (
+                <button
+                  type="button"
+                  onClick={() => onAction(opp.id, "close")}
+                  className="rounded text-xs font-semibold text-red-600 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                  {ADMIN_OPPORTUNITY_ACTION_LABELS.close}
+                </button>
+              )}
             </div>
           </td>
         </tr>

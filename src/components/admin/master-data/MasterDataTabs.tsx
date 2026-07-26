@@ -1,11 +1,11 @@
 "use client";
 
-import { MASTER_DATA_CATEGORIES, type MasterDataCategoryKey } from "@/constants/admin-master-data";
+import { MASTER_DATA_TABS, type MasterDataTabKey } from "@/constants/admin-master-data";
 import { cn } from "@/lib/utils";
 
 interface MasterDataTabsProps {
-  active: MasterDataCategoryKey;
-  onChange: (category: MasterDataCategoryKey) => void;
+  active: MasterDataTabKey;
+  onChange: (tab: MasterDataTabKey) => void;
 }
 
 export function MasterDataTabs({ active, onChange }: MasterDataTabsProps) {
@@ -15,18 +15,18 @@ export function MasterDataTabs({ active, onChange }: MasterDataTabsProps) {
       aria-label="マスタデータのカテゴリ"
       className="flex flex-wrap gap-2 border-b border-border pb-3"
     >
-      {MASTER_DATA_CATEGORIES.map((category) => {
-        const isActive = category === active;
+      {MASTER_DATA_TABS.map((tab) => {
+        const isActive = tab.key === active;
         return (
           <button
-            key={category}
+            key={tab.key}
             type="button"
             role="tab"
-            id={`master-data-tab-${category}`}
+            id={`master-data-tab-${tab.key}`}
             aria-selected={isActive}
             aria-controls="master-data-panel"
             tabIndex={isActive ? 0 : -1}
-            onClick={() => onChange(category)}
+            onClick={() => onChange(tab.key)}
             className={cn(
               "inline-flex h-9 items-center justify-center rounded-xl px-3.5 text-sm font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
               isActive
@@ -34,7 +34,7 @@ export function MasterDataTabs({ active, onChange }: MasterDataTabsProps) {
                 : "border border-border bg-surface text-muted-foreground hover:bg-muted",
             )}
           >
-            {category}
+            {tab.label}
           </button>
         );
       })}

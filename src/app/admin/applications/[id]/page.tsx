@@ -3,25 +3,22 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
 import { AdminApplicationDetailView } from "@/components/admin/applications/AdminApplicationDetailView";
-import { ADMIN_NAV, ADMIN_USER } from "@/constants/admin";
-import {
-  ADMIN_APPLICATIONS,
-  ADMIN_APPLICATION_NOT_FOUND,
-} from "@/constants/admin-applications";
+import { ADMIN_NAV } from "@/constants/admin";
+import { ADMIN_APPLICATION_NOT_FOUND } from "@/constants/admin-applications";
+import { getAdminIdentity } from "@/lib/admin/identity";
+import { getAdminApplicationDetail } from "@/lib/admin/applications";
+import { createClient } from "@/lib/supabase/server";
 
 interface AdminApplicationDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-export function generateStaticParams() {
-  return ADMIN_APPLICATIONS.map((app) => ({ id: app.id }));
 }
 
 export async function generateMetadata({
   params,
 }: AdminApplicationDetailPageProps): Promise<Metadata> {
   const { id } = await params;
-  const application = ADMIN_APPLICATIONS.find((item) => item.id === id);
+  const supabase = await createClient();
+  const application = await getAdminApplicationDetail(supabase, id);
   return {
     title: application
       ? `${application.applicantName} | 応募管理 | ENGINEER MATCH`
@@ -33,15 +30,19 @@ export default async function AdminApplicationDetailPage({
   params,
 }: AdminApplicationDetailPageProps) {
   const { id } = await params;
-  const application = ADMIN_APPLICATIONS.find((item) => item.id === id);
+  const supabase = await createClient();
+  const [identity, application] = await Promise.all([
+    getAdminIdentity(supabase),
+    getAdminApplicationDetail(supabase, id),
+  ]);
 
   return (
     <AdminShell
       navItems={ADMIN_NAV}
       activeHref="/admin/applications"
       pageTitle={application ? application.applicantName : ADMIN_APPLICATION_NOT_FOUND.title}
-      userName={ADMIN_USER.name}
-      userInitials={ADMIN_USER.initials}
+      userName={identity.name}
+      userInitials={identity.initials}
     >
       {application ? (
         <AdminApplicationDetailView application={application} />

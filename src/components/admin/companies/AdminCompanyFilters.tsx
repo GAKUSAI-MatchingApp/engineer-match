@@ -8,23 +8,26 @@ import {
 import {
   ADMIN_COMPANY_DATE_RANGE_OPTIONS,
   ADMIN_COMPANY_FILTER_LABELS,
-  ADMIN_COMPANY_INDUSTRIES,
-  ADMIN_COMPANY_REVIEW_STATUSES,
-  ADMIN_COMPANY_SIZES,
-  ADMIN_COMPANY_USAGE_STATUSES,
+  ADMIN_COMPANY_SIZE_LABEL,
+  ADMIN_COMPANY_SIZE_OPTIONS,
+  ADMIN_COMPANY_USAGE_STATUS_LABEL,
+  ADMIN_COMPANY_USAGE_STATUS_OPTIONS,
   DEFAULT_ADMIN_COMPANY_FILTER_STATE,
   type AdminCompanyFilterState,
-  type AdminCompanyReviewStatus,
-  type AdminCompanyUsageStatus,
 } from "@/constants/admin-companies";
+import type { AdminUserStatus } from "@/lib/admin/users";
 import { cn } from "@/lib/utils";
 
 interface AdminCompanyFiltersProps {
   filters: AdminCompanyFilterState;
   onChange: (patch: Partial<AdminCompanyFilterState>) => void;
+  availableIndustries: string[];
 }
 
-export function AdminCompanyFilters({ filters, onChange }: AdminCompanyFiltersProps) {
+export function AdminCompanyFilters({ filters, onChange, availableIndustries }: AdminCompanyFiltersProps) {
+  const statusLabels = ADMIN_COMPANY_USAGE_STATUS_OPTIONS.map((code) => ADMIN_COMPANY_USAGE_STATUS_LABEL[code]);
+  const sizeLabels = ADMIN_COMPANY_SIZE_OPTIONS.map((code) => ADMIN_COMPANY_SIZE_LABEL[code]);
+
   return (
     <AdminFilterBar
       title={ADMIN_COMPANY_FILTER_LABELS.title}
@@ -32,43 +35,33 @@ export function AdminCompanyFilters({ filters, onChange }: AdminCompanyFiltersPr
       onReset={() => onChange(DEFAULT_ADMIN_COMPANY_FILTER_STATE)}
     >
       <AdminFilterChipGroup
-        legend={ADMIN_COMPANY_FILTER_LABELS.reviewStatus}
-        idPrefix="company-review-status"
-        options={ADMIN_COMPANY_REVIEW_STATUSES}
-        selected={filters.reviewStatuses}
-        onToggle={(value) =>
-          onChange({
-            reviewStatuses: toggleFilterValue(
-              filters.reviewStatuses,
-              value as AdminCompanyReviewStatus,
-            ),
-          })
-        }
-      />
-      <AdminFilterChipGroup
         legend={ADMIN_COMPANY_FILTER_LABELS.usageStatus}
         idPrefix="company-usage-status"
-        options={ADMIN_COMPANY_USAGE_STATUSES}
-        selected={filters.usageStatuses}
-        onToggle={(value) =>
-          onChange({
-            usageStatuses: toggleFilterValue(filters.usageStatuses, value as AdminCompanyUsageStatus),
-          })
-        }
+        options={statusLabels}
+        selected={filters.usageStatuses.map((code) => ADMIN_COMPANY_USAGE_STATUS_LABEL[code])}
+        onToggle={(label) => {
+          const code = ADMIN_COMPANY_USAGE_STATUS_OPTIONS.find(
+            (c) => ADMIN_COMPANY_USAGE_STATUS_LABEL[c] === label,
+          ) as AdminUserStatus;
+          onChange({ usageStatuses: toggleFilterValue(filters.usageStatuses, code) });
+        }}
       />
       <AdminFilterChipGroup
         legend={ADMIN_COMPANY_FILTER_LABELS.industry}
         idPrefix="company-industry"
-        options={ADMIN_COMPANY_INDUSTRIES}
+        options={availableIndustries}
         selected={filters.industries}
         onToggle={(value) => onChange({ industries: toggleFilterValue(filters.industries, value) })}
       />
       <AdminFilterChipGroup
         legend={ADMIN_COMPANY_FILTER_LABELS.companySize}
         idPrefix="company-size"
-        options={ADMIN_COMPANY_SIZES}
-        selected={filters.companySizes}
-        onToggle={(value) => onChange({ companySizes: toggleFilterValue(filters.companySizes, value) })}
+        options={sizeLabels}
+        selected={filters.companySizes.map((code) => ADMIN_COMPANY_SIZE_LABEL[code])}
+        onToggle={(label) => {
+          const code = ADMIN_COMPANY_SIZE_OPTIONS.find((c) => ADMIN_COMPANY_SIZE_LABEL[c] === label) as string;
+          onChange({ companySizes: toggleFilterValue(filters.companySizes, code) });
+        }}
       />
       <fieldset className="flex flex-col gap-2">
         <legend className="text-xs font-semibold text-muted-foreground">

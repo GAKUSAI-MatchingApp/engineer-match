@@ -6,16 +6,16 @@ import {
   toggleFilterValue,
 } from "@/components/admin/shared/AdminFilterBar";
 import {
-  ADMIN_USER_ACCOUNT_STATUSES,
   ADMIN_USER_DATE_RANGE_OPTIONS,
   ADMIN_USER_FILTER_LABELS,
-  ADMIN_USER_ROLES,
-  ADMIN_USER_VERIFICATION_STATUSES,
+  ADMIN_USER_ROLE_LABEL,
+  ADMIN_USER_ROLE_OPTIONS,
+  ADMIN_USER_STATUS_LABEL,
+  ADMIN_USER_STATUS_OPTIONS,
   DEFAULT_ADMIN_USER_FILTER_STATE,
-  type AdminUserAccountStatus,
   type AdminUserFilterState,
   type AdminUserRole,
-  type AdminUserVerificationStatus,
+  type AdminUserStatus,
 } from "@/constants/admin-users";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +62,9 @@ function DateRangeGroup({
 }
 
 export function AdminUserFilters({ filters, onChange }: AdminUserFiltersProps) {
+  const roleLabels = ADMIN_USER_ROLE_OPTIONS.map((code) => ADMIN_USER_ROLE_LABEL[code]);
+  const statusLabels = ADMIN_USER_STATUS_OPTIONS.map((code) => ADMIN_USER_STATUS_LABEL[code]);
+
   return (
     <AdminFilterBar
       title={ADMIN_USER_FILTER_LABELS.title}
@@ -71,52 +74,32 @@ export function AdminUserFilters({ filters, onChange }: AdminUserFiltersProps) {
       <AdminFilterChipGroup
         legend={ADMIN_USER_FILTER_LABELS.role}
         idPrefix="user-role"
-        options={ADMIN_USER_ROLES}
-        selected={filters.roles}
-        onToggle={(value) =>
-          onChange({ roles: toggleFilterValue(filters.roles, value as AdminUserRole) })
-        }
+        options={roleLabels}
+        selected={filters.roles.map((code) => ADMIN_USER_ROLE_LABEL[code])}
+        onToggle={(label) => {
+          const code = ADMIN_USER_ROLE_OPTIONS.find(
+            (c) => ADMIN_USER_ROLE_LABEL[c] === label,
+          ) as AdminUserRole;
+          onChange({ roles: toggleFilterValue(filters.roles, code) });
+        }}
       />
       <AdminFilterChipGroup
         legend={ADMIN_USER_FILTER_LABELS.accountStatus}
         idPrefix="user-account-status"
-        options={ADMIN_USER_ACCOUNT_STATUSES}
-        selected={filters.accountStatuses}
-        onToggle={(value) =>
-          onChange({
-            accountStatuses: toggleFilterValue(
-              filters.accountStatuses,
-              value as AdminUserAccountStatus,
-            ),
-          })
-        }
+        options={statusLabels}
+        selected={filters.statuses.map((code) => ADMIN_USER_STATUS_LABEL[code])}
+        onToggle={(label) => {
+          const code = ADMIN_USER_STATUS_OPTIONS.find(
+            (c) => ADMIN_USER_STATUS_LABEL[c] === label,
+          ) as AdminUserStatus;
+          onChange({ statuses: toggleFilterValue(filters.statuses, code) });
+        }}
       />
-      <AdminFilterChipGroup
-        legend={ADMIN_USER_FILTER_LABELS.verificationStatus}
-        idPrefix="user-verification"
-        options={ADMIN_USER_VERIFICATION_STATUSES}
-        selected={filters.verificationStatuses}
-        onToggle={(value) =>
-          onChange({
-            verificationStatuses: toggleFilterValue(
-              filters.verificationStatuses,
-              value as AdminUserVerificationStatus,
-            ),
-          })
-        }
+      <DateRangeGroup
+        legend={ADMIN_USER_FILTER_LABELS.registeredWithin}
+        selected={filters.registeredWithinDays}
+        onSelect={(days) => onChange({ registeredWithinDays: days })}
       />
-      <div className="flex flex-col gap-5">
-        <DateRangeGroup
-          legend={ADMIN_USER_FILTER_LABELS.registeredWithin}
-          selected={filters.registeredWithinDays}
-          onSelect={(days) => onChange({ registeredWithinDays: days })}
-        />
-        <DateRangeGroup
-          legend={ADMIN_USER_FILTER_LABELS.lastLoginWithin}
-          selected={filters.lastLoginWithinDays}
-          onSelect={(days) => onChange({ lastLoginWithinDays: days })}
-        />
-      </div>
     </AdminFilterBar>
   );
 }

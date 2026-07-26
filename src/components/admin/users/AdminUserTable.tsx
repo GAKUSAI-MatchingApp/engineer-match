@@ -2,29 +2,23 @@ import Link from "next/link";
 import { AdminDataTable } from "@/components/admin/shared/AdminDataTable";
 import { AdminStatusBadge } from "@/components/admin/shared/AdminStatusBadge";
 import {
-  ADMIN_USER_ACCOUNT_STATUS_TONE,
   ADMIN_USER_ACTION_LABELS,
+  ADMIN_USER_ROLE_LABEL,
   ADMIN_USER_ROLE_STYLES,
+  ADMIN_USER_STATUS_LABEL,
+  ADMIN_USER_STATUS_TONE,
   ADMIN_USER_TABLE_COLUMNS,
-  type AdminUser,
 } from "@/constants/admin-users";
+import type { AdminUserListItem } from "@/lib/admin/users";
 import { cn } from "@/lib/utils";
 
 interface AdminUserTableProps {
-  users: AdminUser[];
-  onEdit: (id: string) => void;
+  users: AdminUserListItem[];
   onSuspend: (id: string) => void;
   onReinstate: (id: string) => void;
-  onDelete: (id: string) => void;
 }
 
-export function AdminUserTable({
-  users,
-  onEdit,
-  onSuspend,
-  onReinstate,
-  onDelete,
-}: AdminUserTableProps) {
+export function AdminUserTable({ users, onSuspend, onReinstate }: AdminUserTableProps) {
   return (
     <AdminDataTable columns={[...ADMIN_USER_TABLE_COLUMNS]} caption={ADMIN_USER_TABLE_COLUMNS.join("、")}>
       {users.map((user) => (
@@ -50,20 +44,17 @@ export function AdminUserTable({
                 ADMIN_USER_ROLE_STYLES[user.role],
               )}
             >
-              {user.role}
+              {ADMIN_USER_ROLE_LABEL[user.role]}
             </span>
           </td>
           <td className="px-4 py-3 text-sm text-foreground">{user.companyName ?? "—"}</td>
           <td className="px-4 py-3 text-sm whitespace-nowrap text-muted-foreground">
-            {user.registeredDateLabel}
-          </td>
-          <td className="px-4 py-3 text-sm whitespace-nowrap text-muted-foreground">
-            {user.lastLoginLabel}
+            {user.createdAtLabel}
           </td>
           <td className="px-4 py-3">
             <AdminStatusBadge
-              label={user.accountStatus}
-              tone={ADMIN_USER_ACCOUNT_STATUS_TONE[user.accountStatus]}
+              label={ADMIN_USER_STATUS_LABEL[user.status]}
+              tone={ADMIN_USER_STATUS_TONE[user.status]}
             />
           </td>
           <td className="px-4 py-3">
@@ -74,37 +65,24 @@ export function AdminUserTable({
               >
                 {ADMIN_USER_ACTION_LABELS.viewDetails}
               </Link>
-              <button
-                type="button"
-                onClick={() => onEdit(user.id)}
-                className="rounded text-xs font-semibold text-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-              >
-                {ADMIN_USER_ACTION_LABELS.edit}
-              </button>
-              {user.accountStatus === "利用停止中" ? (
-                <button
-                  type="button"
-                  onClick={() => onReinstate(user.id)}
-                  className="rounded text-xs font-semibold text-emerald-600 hover:text-emerald-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                >
-                  {ADMIN_USER_ACTION_LABELS.reinstate}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => onSuspend(user.id)}
-                  className="rounded text-xs font-semibold text-amber-600 hover:text-amber-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                >
-                  {ADMIN_USER_ACTION_LABELS.suspend}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => onDelete(user.id)}
-                className="rounded text-xs font-semibold text-red-600 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-              >
-                {ADMIN_USER_ACTION_LABELS.delete}
-              </button>
+              {user.status !== "WITHDRAWN" &&
+                (user.status === "SUSPENDED" ? (
+                  <button
+                    type="button"
+                    onClick={() => onReinstate(user.id)}
+                    className="rounded text-xs font-semibold text-emerald-600 hover:text-emerald-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  >
+                    {ADMIN_USER_ACTION_LABELS.reinstate}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onSuspend(user.id)}
+                    className="rounded text-xs font-semibold text-amber-600 hover:text-amber-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  >
+                    {ADMIN_USER_ACTION_LABELS.suspend}
+                  </button>
+                ))}
             </div>
           </td>
         </tr>

@@ -7,8 +7,11 @@ import { updateSession } from "@/lib/supabase/middleware";
  * Next.js 16.2.10, so this is the file the framework actually looks for —
  * see node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md.
  *
- * Only session refresh happens here (auth foundation). Route protection /
- * redirects are a business-logic decision left for a later change.
+ * Session refresh AND route protection both happen here: updateSession()
+ * (src/lib/supabase/middleware.ts) revalidates the Supabase session, then
+ * checks the requester's public.users role/status against
+ * PROTECTED_PREFIXES (/admin, /engineer, /company) and redirects away from
+ * mismatched or unauthenticated requests.
  */
 export async function proxy(request: NextRequest) {
   return updateSession(request);

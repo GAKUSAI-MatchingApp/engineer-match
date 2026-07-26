@@ -6,19 +6,16 @@ import {
   toggleFilterValue,
 } from "@/components/admin/shared/AdminFilterBar";
 import {
-  ADMIN_REPORT_CATEGORIES,
   ADMIN_REPORT_DATE_RANGE_OPTIONS,
   ADMIN_REPORT_FILTER_LABELS,
-  ADMIN_REPORT_PRIORITIES,
-  ADMIN_REPORT_STATUSES,
-  ADMIN_REPORT_TARGET_TYPES,
+  ADMIN_REPORT_STATUS_LABEL,
+  ADMIN_REPORT_STATUS_OPTIONS,
+  ADMIN_REPORT_TARGET_TYPE_LABEL,
+  ADMIN_REPORT_TARGET_TYPE_OPTIONS,
   DEFAULT_ADMIN_REPORT_FILTER_STATE,
-  type AdminReportCategory,
   type AdminReportFilterState,
-  type AdminReportPriority,
-  type AdminReportStatus,
-  type AdminReportTargetType,
 } from "@/constants/admin-reports";
+import type { AdminReportStatus, AdminReportTargetType } from "@/lib/admin/reports";
 import { cn } from "@/lib/utils";
 
 interface AdminReportFiltersProps {
@@ -27,6 +24,9 @@ interface AdminReportFiltersProps {
 }
 
 export function AdminReportFilters({ filters, onChange }: AdminReportFiltersProps) {
+  const statusLabels = ADMIN_REPORT_STATUS_OPTIONS.map((code) => ADMIN_REPORT_STATUS_LABEL[code]);
+  const targetTypeLabels = ADMIN_REPORT_TARGET_TYPE_OPTIONS.map((code) => ADMIN_REPORT_TARGET_TYPE_LABEL[code]);
+
   return (
     <AdminFilterBar
       title={ADMIN_REPORT_FILTER_LABELS.title}
@@ -34,42 +34,28 @@ export function AdminReportFilters({ filters, onChange }: AdminReportFiltersProp
       onReset={() => onChange(DEFAULT_ADMIN_REPORT_FILTER_STATE)}
     >
       <AdminFilterChipGroup
-        legend={ADMIN_REPORT_FILTER_LABELS.category}
-        idPrefix="report-category"
-        options={ADMIN_REPORT_CATEGORIES}
-        selected={filters.categories}
-        onToggle={(value) =>
-          onChange({ categories: toggleFilterValue(filters.categories, value as AdminReportCategory) })
-        }
-      />
-      <AdminFilterChipGroup
-        legend={ADMIN_REPORT_FILTER_LABELS.priority}
-        idPrefix="report-priority"
-        options={ADMIN_REPORT_PRIORITIES}
-        selected={filters.priorities}
-        onToggle={(value) =>
-          onChange({ priorities: toggleFilterValue(filters.priorities, value as AdminReportPriority) })
-        }
-      />
-      <AdminFilterChipGroup
         legend={ADMIN_REPORT_FILTER_LABELS.status}
         idPrefix="report-status"
-        options={ADMIN_REPORT_STATUSES}
-        selected={filters.statuses}
-        onToggle={(value) =>
-          onChange({ statuses: toggleFilterValue(filters.statuses, value as AdminReportStatus) })
-        }
+        options={statusLabels}
+        selected={filters.statuses.map((code) => ADMIN_REPORT_STATUS_LABEL[code as AdminReportStatus])}
+        onToggle={(label) => {
+          const code = ADMIN_REPORT_STATUS_OPTIONS.find((c) => ADMIN_REPORT_STATUS_LABEL[c] === label) as string;
+          onChange({ statuses: toggleFilterValue(filters.statuses, code) });
+        }}
       />
       <AdminFilterChipGroup
         legend={ADMIN_REPORT_FILTER_LABELS.targetType}
         idPrefix="report-target"
-        options={ADMIN_REPORT_TARGET_TYPES}
-        selected={filters.targetTypes}
-        onToggle={(value) =>
-          onChange({
-            targetTypes: toggleFilterValue(filters.targetTypes, value as AdminReportTargetType),
-          })
-        }
+        options={targetTypeLabels}
+        selected={filters.targetTypes.map(
+          (code) => ADMIN_REPORT_TARGET_TYPE_LABEL[code as AdminReportTargetType],
+        )}
+        onToggle={(label) => {
+          const code = ADMIN_REPORT_TARGET_TYPE_OPTIONS.find(
+            (c) => ADMIN_REPORT_TARGET_TYPE_LABEL[c] === label,
+          ) as string;
+          onChange({ targetTypes: toggleFilterValue(filters.targetTypes, code) });
+        }}
       />
       <fieldset className="flex flex-col gap-2">
         <legend className="text-xs font-semibold text-muted-foreground">

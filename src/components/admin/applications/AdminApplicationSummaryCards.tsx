@@ -1,34 +1,26 @@
-import { Award, CalendarClock, ClipboardList, Send, XCircle } from "lucide-react";
+import { Award, CalendarClock, CheckCircle2, ClipboardList, Send, XCircle } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
-import {
-  ADMIN_APPLICATION_SUMMARY_LABELS,
-  type AdminApplication,
-} from "@/constants/admin-applications";
+import { ADMIN_APPLICATION_SUMMARY_LABELS } from "@/constants/admin-applications";
+import type { AdminApplicationListItem } from "@/lib/admin/applications";
 
 interface AdminApplicationSummaryCardsProps {
-  applications: AdminApplication[];
+  applications: AdminApplicationListItem[];
 }
 
-export function AdminApplicationSummaryCards({
-  applications,
-}: AdminApplicationSummaryCardsProps) {
+export function AdminApplicationSummaryCards({ applications }: AdminApplicationSummaryCardsProps) {
   const total = applications.length;
-  const underReview = applications.filter((a) => a.status === "選考中").length;
-  const interview = applications.filter((a) => a.status === "面接予定").length;
-  const offer = applications.filter((a) => a.status === "内定").length;
-  const rejected = applications.filter((a) => a.status === "不採用").length;
-  const withdrawn = applications.filter((a) => a.status === "辞退").length;
+  const screening = applications.filter((a) => a.status === "applied" || a.status === "screening").length;
+  const interview = applications.filter((a) => a.status === "interview").length;
+  const accepted = applications.filter((a) => a.status === "accepted").length;
+  const rejected = applications.filter((a) => a.status === "rejected" || a.status === "withdrawn").length;
+  const completed = applications.filter((a) => a.status === "completed").length;
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <AdminSummaryCard label={ADMIN_APPLICATION_SUMMARY_LABELS.total} value={`${total}件`} icon={Send} />
       <AdminSummaryCard
-        label={ADMIN_APPLICATION_SUMMARY_LABELS.total}
-        value={`${total}件`}
-        icon={Send}
-      />
-      <AdminSummaryCard
-        label={ADMIN_APPLICATION_SUMMARY_LABELS.underReview}
-        value={`${underReview}件`}
+        label={ADMIN_APPLICATION_SUMMARY_LABELS.screening}
+        value={`${screening}件`}
         icon={ClipboardList}
       />
       <AdminSummaryCard
@@ -38,8 +30,8 @@ export function AdminApplicationSummaryCards({
         tone="warning"
       />
       <AdminSummaryCard
-        label={ADMIN_APPLICATION_SUMMARY_LABELS.offer}
-        value={`${offer}件`}
+        label={ADMIN_APPLICATION_SUMMARY_LABELS.accepted}
+        value={`${accepted}件`}
         icon={Award}
         tone="positive"
       />
@@ -50,9 +42,10 @@ export function AdminApplicationSummaryCards({
         tone="negative"
       />
       <AdminSummaryCard
-        label={ADMIN_APPLICATION_SUMMARY_LABELS.withdrawn}
-        value={`${withdrawn}件`}
-        icon={XCircle}
+        label={ADMIN_APPLICATION_SUMMARY_LABELS.completed}
+        value={`${completed}件`}
+        icon={CheckCircle2}
+        tone="positive"
       />
     </div>
   );

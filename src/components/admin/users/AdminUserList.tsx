@@ -7,41 +7,38 @@ import { AdminUserFilters } from "@/components/admin/users/AdminUserFilters";
 import { AdminUserTable } from "@/components/admin/users/AdminUserTable";
 import { AdminUserMobileCards } from "@/components/admin/users/AdminUserMobileCards";
 import { AdminUserStatusDialog } from "@/components/admin/users/AdminUserStatusDialog";
-import { AdminUserDeleteDialog } from "@/components/admin/users/AdminUserDeleteDialog";
 import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
 import { AdminPagination } from "@/components/admin/shared/AdminPagination";
 import {
-  ADMIN_USER_DEMO_NOTE,
   ADMIN_USER_RESULTS_META,
+  ADMIN_USER_STATUS_ERROR_FALLBACK,
   ADMIN_USER_TOAST_MESSAGES,
   DEFAULT_ADMIN_USER_FILTER_STATE,
-  type AdminUser,
   type AdminUserFilterState,
 } from "@/constants/admin-users";
+import { updateUserStatus, type AdminUserListItem } from "@/lib/admin/users";
+import { createClient } from "@/lib/supabase/client";
 
 const PAGE_SIZE = 8;
-const REFERENCE_NOW_MS = new Date("2026-07-17T12:00:00").getTime();
 
 function daysSince(iso: string): number {
-  return Math.floor((REFERENCE_NOW_MS - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+  return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
 }
 
 interface AdminUserListProps {
-  initialUsers: AdminUser[];
+  initialUsers: AdminUserListItem[];
 }
 
-type DialogState =
-  | { type: "suspend"; userId: string }
-  | { type: "reinstate"; userId: string }
-  | { type: "delete"; userId: string }
-  | null;
+type DialogState = { mode: "suspend" | "reinstate"; userId: string } | null;
 
 export function AdminUserList({ initialUsers }: AdminUserListProps) {
-  const [users, setUsers] = useState<AdminUser[]>(initialUsers);
+  const [users, setUsers] = useState(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<AdminUserFilterState>(DEFAULT_ADMIN_USER_FILTER_STATE);
   const [currentPage, setCurrentPage] = useState(1);
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   function showToast(message: string) {
@@ -60,32 +57,33 @@ export function AdminUserList({ initialUsers }: AdminUserListProps) {
     setCurrentPage(1);
   }
 
-  function handleEdit() {
-    showToast(ADMIN_USER_DEMO_NOTE);
-  }
-
   function closeDialog() {
     setDialog(null);
+    setErrorMessage(null);
   }
 
-  function confirmDialog() {
+  async function handleConfirmDialog() {
     if (!dialog) return;
-    if (dialog.type === "suspend") {
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === dialog.userId ? { ...user, accountStatus: "利用停止中" } : user,
-        ),
-      );
-      showToast(ADMIN_USER_TOAST_MESSAGES.suspended);
-    } else if (dialog.type === "reinstate") {
-      setUsers((prev) =>
-        prev.map((user) => (user.id === dialog.userId ? { ...user, accountStatus: "有効" } : user)),
-      );
-      showToast(ADMIN_USER_TOAST_MESSAGES.reinstated);
-    } else if (dialog.type === "delete") {
-      setUsers((prev) => prev.filter((user) => user.id !== dialog.userId));
-      showToast(ADMIN_USER_TOAST_MESSAGES.deleted);
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    const supabase = createClient();
+    const nextStatus = dialog.mode === "suspend" ? "SUSPENDED" : "ACTIVE";
+    const { error } = await updateUserStatus(supabase, dialog.userId, nextStatus);
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setErrorMessage(error || ADMIN_USER_STATUS_ERROR_FALLBACK);
+      return;
     }
+
+    setUsers((prev) =>
+      prev.map((user) => (user.id === dialog.userId ? { ...user, status: nextStatus } : user)),
+    );
+    showToast(
+      dialog.mode === "suspend" ? ADMIN_USER_TOAST_MESSAGES.suspended : ADMIN_USER_TOAST_MESSAGES.reinstated,
+    );
     setDialog(null);
   }
 
@@ -97,27 +95,10 @@ export function AdminUserList({ initialUsers }: AdminUserListProps) {
         if (!haystack.includes(query)) return false;
       }
       if (filters.roles.length > 0 && !filters.roles.includes(user.role)) return false;
-      if (
-        filters.accountStatuses.length > 0 &&
-        !filters.accountStatuses.includes(user.accountStatus)
-      ) {
-        return false;
-      }
-      if (
-        filters.verificationStatuses.length > 0 &&
-        !filters.verificationStatuses.includes(user.verificationStatus)
-      ) {
-        return false;
-      }
+      if (filters.statuses.length > 0 && !filters.statuses.includes(user.status)) return false;
       if (
         filters.registeredWithinDays !== null &&
-        daysSince(user.registeredDateISO) > filters.registeredWithinDays
-      ) {
-        return false;
-      }
-      if (
-        filters.lastLoginWithinDays !== null &&
-        daysSince(user.lastLoginISO) > filters.lastLoginWithinDays
+        daysSince(user.createdAtISO) > filters.registeredWithinDays
       ) {
         return false;
       }
@@ -155,17 +136,13 @@ export function AdminUserList({ initialUsers }: AdminUserListProps) {
         <>
           <AdminUserTable
             users={pagedUsers}
-            onEdit={handleEdit}
-            onSuspend={(id) => setDialog({ type: "suspend", userId: id })}
-            onReinstate={(id) => setDialog({ type: "reinstate", userId: id })}
-            onDelete={(id) => setDialog({ type: "delete", userId: id })}
+            onSuspend={(id) => setDialog({ mode: "suspend", userId: id })}
+            onReinstate={(id) => setDialog({ mode: "reinstate", userId: id })}
           />
           <AdminUserMobileCards
             users={pagedUsers}
-            onEdit={handleEdit}
-            onSuspend={(id) => setDialog({ type: "suspend", userId: id })}
-            onReinstate={(id) => setDialog({ type: "reinstate", userId: id })}
-            onDelete={(id) => setDialog({ type: "delete", userId: id })}
+            onSuspend={(id) => setDialog({ mode: "suspend", userId: id })}
+            onReinstate={(id) => setDialog({ mode: "reinstate", userId: id })}
           />
           <AdminPagination
             currentPage={currentPage}
@@ -179,16 +156,11 @@ export function AdminUserList({ initialUsers }: AdminUserListProps) {
       )}
 
       <AdminUserStatusDialog
-        mode={
-          dialog?.type === "suspend" ? "suspend" : dialog?.type === "reinstate" ? "reinstate" : null
-        }
+        mode={dialog?.mode ?? null}
+        isSubmitting={isSubmitting}
+        errorMessage={errorMessage}
         onCancel={closeDialog}
-        onConfirm={confirmDialog}
-      />
-      <AdminUserDeleteDialog
-        isOpen={dialog?.type === "delete"}
-        onCancel={closeDialog}
-        onConfirm={confirmDialog}
+        onConfirm={handleConfirmDialog}
       />
 
       {toastMessage && (

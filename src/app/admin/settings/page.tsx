@@ -1,59 +1,55 @@
 import type { Metadata } from "next";
+import { Settings } from "lucide-react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { AdminAccountSettings } from "@/components/admin/settings/AdminAccountSettings";
-import { AdminSettingsToggleList } from "@/components/admin/settings/AdminSettingsToggleList";
-import { AdminSecuritySettings } from "@/components/admin/settings/AdminSecuritySettings";
-import { AdminMaintenanceSettings } from "@/components/admin/settings/AdminMaintenanceSettings";
-import { AdminSettingsDangerZone } from "@/components/admin/settings/AdminSettingsDangerZone";
-import { ADMIN_NAV, ADMIN_USER } from "@/constants/admin";
+import { AdminPageHeader } from "@/components/admin/shared/AdminPageHeader";
+import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
 import {
-  ADMIN_NOTIFICATION_SETTINGS_SECTION,
-  ADMIN_NOTIFICATION_TOGGLES,
-  ADMIN_PLATFORM_SETTINGS_SECTION,
-  ADMIN_PLATFORM_TOGGLES,
-  ADMIN_SETTINGS_PAGE,
-} from "@/constants/admin-settings";
+  AdminDetailField,
+  AdminDetailGrid,
+  AdminDetailSection,
+} from "@/components/admin/shared/AdminDetailSection";
+import { ADMIN_NAV } from "@/constants/admin";
+import { getAdminIdentity } from "@/lib/admin/identity";
+import { createClient } from "@/lib/supabase/server";
+
+const PAGE_META = {
+  title: "システム設定",
+  description: "管理者アカウント情報とシステム設定です。",
+} as const;
 
 export const metadata: Metadata = {
-  title: `${ADMIN_SETTINGS_PAGE.title} | ENGINEER MATCH`,
-  description: ADMIN_SETTINGS_PAGE.description,
+  title: `${PAGE_META.title} | ENGINEER MATCH`,
+  description: PAGE_META.description,
 };
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  const supabase = await createClient();
+  const identity = await getAdminIdentity(supabase);
+
   return (
     <AdminShell
       navItems={ADMIN_NAV}
       activeHref="/admin/settings"
-      pageTitle={ADMIN_SETTINGS_PAGE.title}
-      userName={ADMIN_USER.name}
-      userInitials={ADMIN_USER.initials}
+      pageTitle={PAGE_META.title}
+      userName={identity.name}
+      userInitials={identity.initials}
     >
-      <div>
-        <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          {ADMIN_SETTINGS_PAGE.title}
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">{ADMIN_SETTINGS_PAGE.description}</p>
-      </div>
+      <AdminPageHeader title={PAGE_META.title} description={PAGE_META.description} />
 
       <div className="mt-6 flex flex-col gap-6">
-        <AdminAccountSettings />
-        <AdminSettingsToggleList
-          idPrefix="admin-notif"
-          title={ADMIN_NOTIFICATION_SETTINGS_SECTION.title}
-          description={ADMIN_NOTIFICATION_SETTINGS_SECTION.description}
-          toggles={ADMIN_NOTIFICATION_TOGGLES}
-          savedMessage={ADMIN_NOTIFICATION_SETTINGS_SECTION.savedMessage}
+        <AdminDetailSection title="アカウント情報">
+          <AdminDetailGrid>
+            <AdminDetailField label="氏名" value={identity.name} />
+            <AdminDetailField label="メールアドレス" value={identity.email || "—"} />
+            <AdminDetailField label="ロール" value="管理者" />
+          </AdminDetailGrid>
+        </AdminDetailSection>
+
+        <AdminEmptyState
+          icon={Settings}
+          title="その他の設定機能は現在利用できません。"
+          description="通知設定・セキュリティ設定・メンテナンスモードなどを保存するテーブルはまだ存在しません。実装され次第、ここに表示されます。"
         />
-        <AdminSecuritySettings />
-        <AdminSettingsToggleList
-          idPrefix="admin-platform"
-          title={ADMIN_PLATFORM_SETTINGS_SECTION.title}
-          description={ADMIN_PLATFORM_SETTINGS_SECTION.description}
-          toggles={ADMIN_PLATFORM_TOGGLES}
-          savedMessage={ADMIN_PLATFORM_SETTINGS_SECTION.savedMessage}
-        />
-        <AdminMaintenanceSettings />
-        <AdminSettingsDangerZone />
       </div>
     </AdminShell>
   );
