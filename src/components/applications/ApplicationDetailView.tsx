@@ -36,7 +36,7 @@ export function ApplicationDetailView({ detail }: ApplicationDetailViewProps) {
 
   async function handleConfirmWithdraw() {
     const supabase = createClient();
-    const { data, error } = await withdrawApplication(supabase, detail.id);
+    const { data, error } = await withdrawApplication(supabase, detail.id, status);
     setIsDialogOpen(false);
 
     if (error || !data) {

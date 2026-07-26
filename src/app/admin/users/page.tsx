@@ -33,7 +33,7 @@ export default async function AdminUsersPage() {
         description={ADMIN_USERS_PAGE.description}
       />
       <div className="mt-6">
-        <AdminUserList initialUsers={users} />
+        <AdminUserList initialUsers={users} currentAdminId={identity.id} />
       </div>
     </AdminShell>
   );

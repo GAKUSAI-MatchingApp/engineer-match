@@ -13,9 +13,16 @@ interface AdminUserDetailHeaderProps {
   user: AdminUserDetail;
   onSuspend: () => void;
   onReinstate: () => void;
+  /** Non-null when suspend must be blocked (self / sole active admin) — disables the button and shows this as the reason. */
+  suspendDisabledReason?: string | null;
 }
 
-export function AdminUserDetailHeader({ user, onSuspend, onReinstate }: AdminUserDetailHeaderProps) {
+export function AdminUserDetailHeader({
+  user,
+  onSuspend,
+  onReinstate,
+  suspendDisabledReason,
+}: AdminUserDetailHeaderProps) {
   return (
     <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-6">
@@ -63,7 +70,9 @@ export function AdminUserDetailHeader({ user, onSuspend, onReinstate }: AdminUse
               <button
                 type="button"
                 onClick={onSuspend}
-                className="inline-flex h-9 items-center justify-center rounded-xl border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-600 transition-colors duration-200 hover:bg-amber-50 focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 focus-visible:outline-none"
+                disabled={Boolean(suspendDisabledReason)}
+                title={suspendDisabledReason ?? undefined}
+                className="inline-flex h-9 items-center justify-center rounded-xl border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-600 transition-colors duration-200 hover:bg-amber-50 focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:hover:bg-muted"
               >
                 {ADMIN_USER_ACTION_LABELS.suspend}
               </button>
@@ -71,6 +80,9 @@ export function AdminUserDetailHeader({ user, onSuspend, onReinstate }: AdminUse
           </div>
         )}
       </div>
+      {suspendDisabledReason && (
+        <p className="mt-3 text-xs text-muted-foreground">{suspendDisabledReason}</p>
+      )}
     </div>
   );
 }

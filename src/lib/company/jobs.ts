@@ -217,6 +217,25 @@ export async function getCompanyOpportunity(
   };
 }
 
+/**
+ * RD-2026-001 BR-23/BR-27: an opportunity may never reach status='published'
+ * while its owning company has no registered company_name (NULL, empty, or
+ * whitespace-only all count as unregistered). Draft saves are unaffected —
+ * this is only ever checked when the target status is 'published'.
+ */
+async function hasRegisteredCompanyName(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("company_profiles")
+    .select("company_name")
+    .eq("id", userId)
+    .maybeSingle();
+  const name = (data?.company_name as string | null | undefined) ?? "";
+  return name.trim().length > 0;
+}
+
 async function upsertChildRow(
   supabase: SupabaseClient,
   opportunityId: string,
@@ -303,6 +322,10 @@ export async function createCompanyOpportunity(
   userId: string,
   input: OpportunityInput,
 ) {
+  if (input.status === "published" && !(await hasRegisteredCompanyName(supabase, userId))) {
+    return { data: null, error: null, stage: "company_name_required" as const };
+  }
+
   const { data: opportunity, error: opportunityError } = await supabase
     .from("opportunities")
     .insert({
@@ -354,6 +377,10 @@ export async function updateCompanyOpportunity(
   id: string,
   input: OpportunityInput,
 ) {
+  if (input.status === "published" && !(await hasRegisteredCompanyName(supabase, userId))) {
+    return { error: null, stage: "company_name_required" as const };
+  }
+
   const { error: opportunityError } = await supabase
     .from("opportunities")
     .update({
@@ -393,6 +420,13 @@ export async function setCompanyOpportunityStatus(
   id: string,
   status: JobStatus,
 ) {
+  if (status === "published" && !(await hasRegisteredCompanyName(supabase, userId))) {
+    return {
+      data: null,
+      error: { message: "求人を公開するには企業プロフィールに会社名を登録してください。" },
+    };
+  }
+
   return supabase
     .from("opportunities")
     .update({ status })

@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCompanyProfile, type CompanyProfile } from "@/lib/company/profile";
+import {
+  canTransitionApplicationStatus,
+  type ApplicationStatusValue,
+} from "@/lib/application-status";
 
 /** public.applications, per 011_applications.sql. */
 export interface Application {
@@ -158,18 +162,43 @@ export async function applyToOpportunity(
     .single();
 }
 
+export interface WithdrawApplicationResult {
+  data: Application | null;
+  error: { message: string } | null;
+}
+
 /**
  * Withdraws an application. applications has no owner-DELETE RLS policy
  * (025_application_policies.sql: "application history is never physically
  * deleted") — the only self-service cancellation path is
- * applications_update_withdraw, an UPDATE to status='withdrawn', which is
- * also only allowed while the current status isn't already 'withdrawn'.
+ * applications_update_withdraw, an UPDATE to status='withdrawn'.
+ *
+ * currentStatus is required and checked against the shared transition graph
+ * (src/lib/application-status.ts) before any request is sent — 'accepted'
+ * (and the terminal 'rejected'/'withdrawn'/'completed' states) are rejected
+ * here client-side. This is UX only: the real boundary is
+ * trg_applications_status_transition (DB trigger) and, for the withdrawn
+ * target specifically, applications_update_withdraw RLS, both of which
+ * reject the same transition even if this check is bypassed.
  */
-export async function withdrawApplication(supabase: SupabaseClient, id: string) {
-  return supabase
+export async function withdrawApplication(
+  supabase: SupabaseClient,
+  id: string,
+  currentStatus: ApplicationStatusValue,
+): Promise<WithdrawApplicationResult> {
+  if (!canTransitionApplicationStatus(currentStatus, "withdrawn")) {
+    return {
+      data: null,
+      error: { message: "この応募は現在のステータスから取り消すことはできません。" },
+    };
+  }
+
+  const { data, error } = await supabase
     .from("applications")
     .update({ status: "withdrawn" })
     .eq("id", id)
     .select("*")
     .single();
+
+  return { data: data as Application | null, error };
 }

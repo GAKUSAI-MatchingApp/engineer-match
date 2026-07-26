@@ -4,6 +4,7 @@ import {
   listHumanAssessments,
   listLatestAttempts,
 } from "@/lib/engineer/skill-assessments";
+import { canTransitionApplicationStatus } from "@/lib/application-status";
 
 /**
  * Supabase's untyped client (no generated schema types in this project) can't
@@ -477,12 +478,26 @@ export const COMPANY_REJECTABLE_STATUSES: readonly ApplicationStatus[] = [
  * posted_by filter is possible here since applications has no posted_by column
  * of its own (only reachable via its parent opportunity). Stamps completed_at
  * (049_application_completion_status.sql) when transitioning into 'completed'.
+ *
+ * currentStatus is required and checked against the shared transition graph
+ * (src/lib/application-status.ts, RD-2026-001 BR-53/BR-54) before any request
+ * is sent — this is UX only, the real boundary is
+ * trg_applications_status_transition (DB trigger), so a direct API call that
+ * skips this function is still rejected by Postgres.
  */
 export async function updateApplicationStatus(
   supabase: SupabaseClient,
   applicationId: string,
+  currentStatus: ApplicationStatus,
   nextStatus: ApplicationStatus,
 ) {
+  if (!canTransitionApplicationStatus(currentStatus, nextStatus)) {
+    return {
+      data: null,
+      error: { message: "この応募は現在のステータスからこの操作を行うことはできません。" },
+    };
+  }
+
   const payload: { status: ApplicationStatus; completed_at?: string } = { status: nextStatus };
   if (nextStatus === "completed") {
     payload.completed_at = new Date().toISOString();

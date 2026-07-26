@@ -48,8 +48,11 @@ export function ApplicationList({ applications: initialApplications }: Applicati
   }
 
   async function handleWithdraw(id: string) {
+    const current = applications.find((item) => item.id === id);
+    if (!current) return;
+
     const supabase = createClient();
-    const { data, error } = await withdrawApplication(supabase, id);
+    const { data, error } = await withdrawApplication(supabase, id, current.status);
 
     if (error || !data) {
       console.error("[application-list] withdraw failed:", error);

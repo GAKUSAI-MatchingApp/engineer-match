@@ -53,8 +53,14 @@ export const APPLICATION_STATUS_BADGE_STYLES: Record<string, string> = {
   completed: "bg-teal-50 text-teal-700",
 };
 
-/** Per applications_update_withdraw RLS: any status other than 'withdrawn' may transition to withdrawn. */
-export const WITHDRAWABLE_STATUSES = ["applied", "screening", "interview", "accepted"] as const;
+/**
+ * Statuses an applicant may still withdraw from. 'accepted' is deliberately
+ * excluded (RD-2026-001 BR-53/BR-54): once an offer is accepted, the only
+ * legal forward transition is accepted -> completed, not a withdrawal. See
+ * src/lib/application-status.ts for the full transition graph, enforced at
+ * the UI, data, and DB layers alike.
+ */
+export const WITHDRAWABLE_STATUSES = ["applied", "screening", "interview"] as const;
 
 // ============================================================
 // Contract type (shared badge vocabulary with Job Search)

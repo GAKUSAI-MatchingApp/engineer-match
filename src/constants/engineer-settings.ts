@@ -39,6 +39,7 @@ export const ENGINEER_PRIVACY_SETTINGS = {
 export const ENGINEER_SECURITY_SETTINGS = {
   title: "セキュリティ設定",
   description: "ログインパスワードを変更できます。",
+  currentPasswordLabel: "現在のパスワード",
   newPasswordLabel: "新しいパスワード",
   confirmPasswordLabel: "新しいパスワード（確認）",
   submitLabel: "パスワードを変更",
@@ -46,5 +47,6 @@ export const ENGINEER_SECURITY_SETTINGS = {
   successMessage: "パスワードを変更しました。",
   errorMismatch: "パスワードが一致しません。",
   errorTooShort: "パスワードは8文字以上で入力してください。",
+  errorCurrentPasswordInvalid: "現在のパスワードが正しくありません。",
   errorGeneric: "パスワードの変更に失敗しました。しばらくしてから再度お試しください。",
 } as const;

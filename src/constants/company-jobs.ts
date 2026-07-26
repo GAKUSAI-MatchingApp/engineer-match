@@ -228,4 +228,5 @@ export const JOB_FORM_ERRORS = {
     "求人の基本情報は保存されましたが、契約形態の詳細情報の保存に失敗しました。もう一度保存し直してください。",
   skillsSaveFailed:
     "求人は保存されましたが、必須スキルの保存に失敗しました。もう一度保存し直してください。",
+  companyNameRequiredToPublish: "求人を公開するには企業プロフィールに会社名を登録してください。",
 } as const;

@@ -9,8 +9,10 @@ import { ENGINEER_SECURITY_SETTINGS } from "@/constants/engineer-settings";
 import { createClient } from "@/lib/supabase/client";
 
 export function EngineerSecuritySettings() {
+  const currentPasswordId = useId();
   const newPasswordId = useId();
   const confirmPasswordId = useId();
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [visible, setVisible] = useState(false);
@@ -34,6 +36,24 @@ export function EngineerSecuritySettings() {
 
     setIsSubmitting(true);
     const supabase = createClient();
+
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user?.email) {
+      setIsSubmitting(false);
+      setMessage({ type: "error", text: ENGINEER_SECURITY_SETTINGS.errorGeneric });
+      return;
+    }
+
+    const { error: reauthError } = await supabase.auth.signInWithPassword({
+      email: userData.user.email,
+      password: currentPassword,
+    });
+    if (reauthError) {
+      setIsSubmitting(false);
+      setMessage({ type: "error", text: ENGINEER_SECURITY_SETTINGS.errorCurrentPasswordInvalid });
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setIsSubmitting(false);
 
@@ -43,6 +63,7 @@ export function EngineerSecuritySettings() {
       return;
     }
 
+    setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
     setMessage({ type: "success", text: ENGINEER_SECURITY_SETTINGS.successMessage });
@@ -54,6 +75,21 @@ export function EngineerSecuritySettings() {
       description={ENGINEER_SECURITY_SETTINGS.description}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={currentPasswordId}>
+            {ENGINEER_SECURITY_SETTINGS.currentPasswordLabel}
+          </Label>
+          <Input
+            id={currentPasswordId}
+            type={visible ? "text" : "password"}
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+            className="h-11"
+            required
+          />
+        </div>
+
         <div className="flex flex-col gap-2">
           <Label htmlFor={newPasswordId}>{ENGINEER_SECURITY_SETTINGS.newPasswordLabel}</Label>
           <div className="relative">
@@ -99,7 +135,9 @@ export function EngineerSecuritySettings() {
 
         <button
           type="submit"
-          disabled={isSubmitting || newPassword === "" || confirmPassword === ""}
+          disabled={
+            isSubmitting || currentPassword === "" || newPassword === "" || confirmPassword === ""
+          }
           className="inline-flex h-10 w-fit items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSubmitting

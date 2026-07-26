@@ -27,11 +27,12 @@ function daysSince(iso: string): number {
 
 interface AdminUserListProps {
   initialUsers: AdminUserListItem[];
+  currentAdminId: string | null;
 }
 
 type DialogState = { mode: "suspend" | "reinstate"; userId: string } | null;
 
-export function AdminUserList({ initialUsers }: AdminUserListProps) {
+export function AdminUserList({ initialUsers, currentAdminId }: AdminUserListProps) {
   const [users, setUsers] = useState(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<AdminUserFilterState>(DEFAULT_ADMIN_USER_FILTER_STATE);
@@ -109,6 +110,13 @@ export function AdminUserList({ initialUsers }: AdminUserListProps) {
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const pagedUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  // RD-2026-001 BR-103/BR-104, UI-side mirror of the backend/DB guard in
+  // updateUserStatus() and trg_users_admin_status_protection. Derived from
+  // the same users list already loaded here, no extra query needed.
+  const activeAdminCount = users.filter(
+    (u) => u.role === "ADMIN" && u.status === "ACTIVE",
+  ).length;
+
   return (
     <div className="flex flex-col gap-6">
       <AdminUserSummaryCards users={users} />
@@ -136,11 +144,15 @@ export function AdminUserList({ initialUsers }: AdminUserListProps) {
         <>
           <AdminUserTable
             users={pagedUsers}
+            currentAdminId={currentAdminId}
+            activeAdminCount={activeAdminCount}
             onSuspend={(id) => setDialog({ mode: "suspend", userId: id })}
             onReinstate={(id) => setDialog({ mode: "reinstate", userId: id })}
           />
           <AdminUserMobileCards
             users={pagedUsers}
+            currentAdminId={currentAdminId}
+            activeAdminCount={activeAdminCount}
             onSuspend={(id) => setDialog({ mode: "suspend", userId: id })}
             onReinstate={(id) => setDialog({ mode: "reinstate", userId: id })}
           />

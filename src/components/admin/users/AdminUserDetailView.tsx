@@ -14,9 +14,15 @@ import { createClient } from "@/lib/supabase/client";
 
 interface AdminUserDetailViewProps {
   user: AdminUserDetail;
+  currentAdminId: string | null;
+  activeAdminCount: number;
 }
 
-export function AdminUserDetailView({ user: initialUser }: AdminUserDetailViewProps) {
+export function AdminUserDetailView({
+  user: initialUser,
+  currentAdminId,
+  activeAdminCount,
+}: AdminUserDetailViewProps) {
   const [status, setStatus] = useState<AdminUserStatus>(initialUser.status);
   const [dialogMode, setDialogMode] = useState<"suspend" | "reinstate" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,6 +30,20 @@ export function AdminUserDetailView({ user: initialUser }: AdminUserDetailViewPr
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const user = { ...initialUser, status };
+
+  // RD-2026-001 BR-103/BR-104, UI-side mirror of the backend/DB guard in
+  // updateUserStatus() and trg_users_admin_status_protection: hide the
+  // suspend action instead of letting the admin hit the backend error. Not a
+  // security boundary by itself -- the backend still rejects both cases
+  // independently even if this check is bypassed.
+  const isSelf = currentAdminId !== null && user.id === currentAdminId;
+  const isSoleActiveAdmin =
+    user.role === "ADMIN" && user.status === "ACTIVE" && activeAdminCount <= 1;
+  const suspendDisabledReason = isSelf
+    ? "自分自身のアカウントを停止することはできません。"
+    : isSoleActiveAdmin
+      ? "有効な管理者が1名のみのため、このアカウントを停止できません。"
+      : null;
 
   function showToast(message: string) {
     setToastMessage(message);
@@ -64,6 +84,7 @@ export function AdminUserDetailView({ user: initialUser }: AdminUserDetailViewPr
         user={user}
         onSuspend={() => setDialogMode("suspend")}
         onReinstate={() => setDialogMode("reinstate")}
+        suspendDisabledReason={suspendDisabledReason}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

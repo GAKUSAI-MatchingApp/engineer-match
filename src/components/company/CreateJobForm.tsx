@@ -688,6 +688,12 @@ export function CreateJobForm({ skills }: CreateJobFormProps) {
       const input = buildOpportunityInput(state);
       const { data, error, stage } = await createCompanyOpportunity(supabase, user.id, input);
 
+      if (stage === "company_name_required") {
+        setFormMessage(JOB_FORM_ERRORS.companyNameRequiredToPublish);
+        setFormStatus("error");
+        return;
+      }
+
       if (stage === "opportunity" || stage === "child" || !data) {
         console.error("[job-form] create failed:", error, "stage:", stage);
         setFormMessage(

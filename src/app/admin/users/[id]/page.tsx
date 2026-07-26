@@ -6,7 +6,7 @@ import { AdminUserDetailView } from "@/components/admin/users/AdminUserDetailVie
 import { ADMIN_NAV } from "@/constants/admin";
 import { ADMIN_USER_NOT_FOUND } from "@/constants/admin-users";
 import { getAdminIdentity } from "@/lib/admin/identity";
-import { getAdminUserDetail } from "@/lib/admin/users";
+import { countActiveAdmins, getAdminUserDetail } from "@/lib/admin/users";
 import { createClient } from "@/lib/supabase/server";
 
 interface AdminUserDetailPageProps {
@@ -29,9 +29,10 @@ export async function generateMetadata({
 export default async function AdminUserDetailPage({ params }: AdminUserDetailPageProps) {
   const { id } = await params;
   const supabase = await createClient();
-  const [identity, user] = await Promise.all([
+  const [identity, user, activeAdminCount] = await Promise.all([
     getAdminIdentity(supabase),
     getAdminUserDetail(supabase, id),
+    countActiveAdmins(supabase),
   ]);
 
   return (
@@ -43,7 +44,11 @@ export default async function AdminUserDetailPage({ params }: AdminUserDetailPag
       userInitials={identity.initials}
     >
       {user ? (
-        <AdminUserDetailView user={user} />
+        <AdminUserDetailView
+          user={user}
+          currentAdminId={identity.id}
+          activeAdminCount={activeAdminCount}
+        />
       ) : (
         <div className="flex flex-col items-center gap-4">
           <AdminEmptyState

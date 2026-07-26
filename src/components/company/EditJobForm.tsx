@@ -67,6 +67,12 @@ export function EditJobForm({ detail, skills }: EditJobFormProps) {
         input,
       );
 
+      if (stage === "company_name_required") {
+        setFormMessage(JOB_FORM_ERRORS.companyNameRequiredToPublish);
+        setFormStatus("error");
+        return;
+      }
+
       if (error) {
         console.error("[job-form] update failed:", error, "stage:", stage);
         setFormMessage(

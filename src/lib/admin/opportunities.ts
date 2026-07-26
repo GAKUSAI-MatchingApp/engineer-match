@@ -279,6 +279,7 @@ export async function updateOpportunityModeration(
   supabase: SupabaseClient,
   opportunityId: string,
   action: AdminOpportunityModerationAction,
+  reason?: string | null,
 ): Promise<UpdateOpportunityModerationResult> {
   const { data: before, error: beforeError } = await supabase
     .from("opportunities")
@@ -289,6 +290,19 @@ export async function updateOpportunityModeration(
   if (beforeError || !before) {
     console.error("[admin] failed to load opportunity before moderation:", beforeError);
     return { error: "求人・案件情報の取得に失敗しました。" };
+  }
+
+  // RD-2026-001 BR-91: a takedown must always carry a non-empty, <=500 char
+  // reason -- re-validated here (not just in the dialog) so a caller that
+  // skips the UI still cannot record a takedown with no reason.
+  const trimmedReason = reason?.trim() ?? "";
+  if (action === "takedown") {
+    if (trimmedReason.length === 0) {
+      return { error: "非公開にする理由を入力してください。" };
+    }
+    if (trimmedReason.length > 500) {
+      return { error: "非公開にする理由は500文字以内で入力してください。" };
+    }
   }
 
   let payload: { status?: AdminOpportunityStatus; unpublished_by_admin?: boolean };
@@ -326,6 +340,7 @@ export async function updateOpportunityModeration(
     targetId: opportunityId,
     beforeData: before,
     afterData: { ...before, ...payload },
+    reason: action === "takedown" ? trimmedReason : null,
   });
 
   return { error: null };

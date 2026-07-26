@@ -157,8 +157,12 @@ export function LoginCard() {
       }
 
       if (account.status !== ACTIVE_STATUS) {
+        // SUSPENDED/WITHDRAWN accounts must be indistinguishable from a
+        // plain wrong-password attempt at the login screen, or the error
+        // message itself leaks account existence/state to whoever is
+        // trying the credentials (RD-2026-001 A-04/AC-07).
         await supabase.auth.signOut();
-        setFormMessage(LOGIN_ERRORS.inactiveAccount);
+        setFormMessage(LOGIN_ERRORS.invalidCredentials);
         return;
       }
 

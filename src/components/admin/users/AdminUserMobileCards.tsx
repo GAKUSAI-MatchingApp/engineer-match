@@ -13,14 +13,32 @@ import { cn } from "@/lib/utils";
 
 interface AdminUserMobileCardsProps {
   users: AdminUserListItem[];
+  currentAdminId: string | null;
+  activeAdminCount: number;
   onSuspend: (id: string) => void;
   onReinstate: (id: string) => void;
 }
 
-export function AdminUserMobileCards({ users, onSuspend, onReinstate }: AdminUserMobileCardsProps) {
+export function AdminUserMobileCards({
+  users,
+  currentAdminId,
+  activeAdminCount,
+  onSuspend,
+  onReinstate,
+}: AdminUserMobileCardsProps) {
   return (
     <AdminMobileCardList>
-      {users.map((user) => (
+      {users.map((user) => {
+        const isSelf = currentAdminId !== null && user.id === currentAdminId;
+        const isSoleActiveAdmin =
+          user.role === "ADMIN" && user.status === "ACTIVE" && activeAdminCount <= 1;
+        const suspendDisabledReason = isSelf
+          ? "自分自身のアカウントを停止することはできません。"
+          : isSoleActiveAdmin
+            ? "有効な管理者が1名のみのため、このアカウントを停止できません。"
+            : null;
+
+        return (
         <div key={user.id} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -80,14 +98,17 @@ export function AdminUserMobileCards({ users, onSuspend, onReinstate }: AdminUse
                 <button
                   type="button"
                   onClick={() => onSuspend(user.id)}
-                  className="rounded text-xs font-semibold text-amber-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  disabled={Boolean(suspendDisabledReason)}
+                  title={suspendDisabledReason ?? undefined}
+                  className="rounded text-xs font-semibold text-amber-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:text-muted-foreground"
                 >
                   {ADMIN_USER_ACTION_LABELS.suspend}
                 </button>
               ))}
           </div>
         </div>
-      ))}
+        );
+      })}
     </AdminMobileCardList>
   );
 }

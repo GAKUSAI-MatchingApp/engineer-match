@@ -113,6 +113,15 @@ export const ADMIN_OPPORTUNITY_MODERATION_DIALOG_LABELS = {
   closeConfirmLabel: "募集を終了する",
 } as const;
 
+export const ADMIN_OPPORTUNITY_TAKEDOWN_REASON = {
+  label: "非公開にする理由",
+  placeholder: "非公開にする理由を入力してください（500文字以内）",
+  helperText: "この理由は監査ログに記録されます。",
+  requiredError: "非公開にする理由を入力してください。",
+  tooLongError: "非公開にする理由は500文字以内で入力してください。",
+  maxLength: 500,
+} as const;
+
 export const ADMIN_OPPORTUNITY_TOAST_MESSAGES = {
   takedown: "求人・案件を非公開にしました。",
   republish: "求人・案件の公開を再開しました。",

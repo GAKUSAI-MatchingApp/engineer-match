@@ -85,7 +85,7 @@ export function ApplicantStatusProvider({
     setMessage(null);
 
     const supabase = createClient();
-    const { error } = await updateApplicationStatus(supabase, applicationId, next);
+    const { error } = await updateApplicationStatus(supabase, applicationId, status, next);
 
     setIsSubmitting(false);
 

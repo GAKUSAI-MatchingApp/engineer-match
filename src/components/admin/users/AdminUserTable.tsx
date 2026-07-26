@@ -14,14 +14,32 @@ import { cn } from "@/lib/utils";
 
 interface AdminUserTableProps {
   users: AdminUserListItem[];
+  currentAdminId: string | null;
+  activeAdminCount: number;
   onSuspend: (id: string) => void;
   onReinstate: (id: string) => void;
 }
 
-export function AdminUserTable({ users, onSuspend, onReinstate }: AdminUserTableProps) {
+export function AdminUserTable({
+  users,
+  currentAdminId,
+  activeAdminCount,
+  onSuspend,
+  onReinstate,
+}: AdminUserTableProps) {
   return (
     <AdminDataTable columns={[...ADMIN_USER_TABLE_COLUMNS]} caption={ADMIN_USER_TABLE_COLUMNS.join("、")}>
-      {users.map((user) => (
+      {users.map((user) => {
+        const isSelf = currentAdminId !== null && user.id === currentAdminId;
+        const isSoleActiveAdmin =
+          user.role === "ADMIN" && user.status === "ACTIVE" && activeAdminCount <= 1;
+        const suspendDisabledReason = isSelf
+          ? "自分自身のアカウントを停止することはできません。"
+          : isSoleActiveAdmin
+            ? "有効な管理者が1名のみのため、このアカウントを停止できません。"
+            : null;
+
+        return (
         <tr key={user.id} className="align-top">
           <td className="px-4 py-3">
             <div className="flex items-center gap-3">
@@ -78,7 +96,9 @@ export function AdminUserTable({ users, onSuspend, onReinstate }: AdminUserTable
                   <button
                     type="button"
                     onClick={() => onSuspend(user.id)}
-                    className="rounded text-xs font-semibold text-amber-600 hover:text-amber-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                    disabled={Boolean(suspendDisabledReason)}
+                    title={suspendDisabledReason ?? undefined}
+                    className="rounded text-xs font-semibold text-amber-600 hover:text-amber-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:text-muted-foreground"
                   >
                     {ADMIN_USER_ACTION_LABELS.suspend}
                   </button>
@@ -86,7 +106,8 @@ export function AdminUserTable({ users, onSuspend, onReinstate }: AdminUserTable
             </div>
           </td>
         </tr>
-      ))}
+        );
+      })}
     </AdminDataTable>
   );
 }

@@ -8,12 +8,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * the expected path.
  */
 export interface AdminIdentity {
+  id: string | null;
   name: string;
   email: string;
   initials: string;
 }
 
-const FALLBACK_IDENTITY: AdminIdentity = { name: "管理者", email: "", initials: "?" };
+const FALLBACK_IDENTITY: AdminIdentity = { id: null, name: "管理者", email: "", initials: "?" };
 
 export async function getAdminIdentity(supabase: SupabaseClient): Promise<AdminIdentity> {
   const {
@@ -30,9 +31,9 @@ export async function getAdminIdentity(supabase: SupabaseClient): Promise<AdminI
 
   if (error || !data) {
     console.error("[admin] failed to load admin identity:", error);
-    return { ...FALLBACK_IDENTITY, email: authUser.email ?? "" };
+    return { ...FALLBACK_IDENTITY, id: authUser.id, email: authUser.email ?? "" };
   }
 
   const name = (data.name as string) || FALLBACK_IDENTITY.name;
-  return { name, email: data.email as string, initials: name.charAt(0) };
+  return { id: authUser.id, name, email: data.email as string, initials: name.charAt(0) };
 }

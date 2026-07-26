@@ -68,13 +68,18 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
     setErrorMessage(null);
   }
 
-  async function handleConfirmDialog() {
+  async function handleConfirmDialog(reason: string) {
     if (!dialog) return;
     setIsSubmitting(true);
     setErrorMessage(null);
 
     const supabase = createClient();
-    const { error } = await updateOpportunityModeration(supabase, dialog.opportunityId, dialog.action);
+    const { error } = await updateOpportunityModeration(
+      supabase,
+      dialog.opportunityId,
+      dialog.action,
+      reason,
+    );
 
     setIsSubmitting(false);
 
@@ -169,6 +174,7 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
       )}
 
       <AdminOpportunityStatusDialog
+        key={dialog?.action ?? "closed"}
         mode={dialog?.action ?? null}
         isSubmitting={isSubmitting}
         errorMessage={errorMessage}

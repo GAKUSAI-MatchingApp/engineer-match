@@ -302,6 +302,21 @@ export async function getAdminUserDetail(
   };
 }
 
+/** Number of ADMIN-role users currently ACTIVE — used to gate the "last admin" protection in the UI (RD-2026-001 BR-104). */
+export async function countActiveAdmins(supabase: SupabaseClient): Promise<number> {
+  const { count, error } = await supabase
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "ADMIN")
+    .eq("status", "ACTIVE");
+
+  if (error) {
+    console.error("[admin] failed to count active admins:", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
 export interface UpdateUserStatusResult {
   error: string | null;
 }
@@ -324,7 +339,7 @@ export async function updateUserStatus(
 ): Promise<UpdateUserStatusResult> {
   const { data: before, error: beforeError } = await supabase
     .from("users")
-    .select("status")
+    .select("status, role")
     .eq("id", userId)
     .maybeSingle();
 
@@ -337,6 +352,38 @@ export async function updateUserStatus(
   }
   if (before.status === nextStatus) {
     return { error: null };
+  }
+
+  // RD-2026-001 BR-103/BR-104: an admin may not suspend themself, and the
+  // last remaining ACTIVE admin may not be suspended by anyone. This is the
+  // application-layer check for a clear, specific error message; the DB also
+  // enforces both rules via trg_users_admin_status_protection (055) so a
+  // direct API call bypassing this function is still blocked.
+  if (nextStatus === "SUSPENDED" && before.role === "ADMIN") {
+    const {
+      data: { user: actingUser },
+    } = await supabase.auth.getUser();
+
+    if (actingUser?.id === userId) {
+      return { error: "自分自身のアカウントを停止することはできません。" };
+    }
+
+    if (before.status === "ACTIVE") {
+      const { count, error: countError } = await supabase
+        .from("users")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "ADMIN")
+        .eq("status", "ACTIVE")
+        .neq("id", userId);
+
+      if (countError) {
+        console.error("[admin] failed to count active admins:", countError);
+        return { error: "更新に失敗しました。しばらくしてから再度お試しください。" };
+      }
+      if ((count ?? 0) === 0) {
+        return { error: "有効な管理者が1名のみのため、このアカウントを停止できません。" };
+      }
+    }
   }
 
   const { data: updated, error } = await supabase

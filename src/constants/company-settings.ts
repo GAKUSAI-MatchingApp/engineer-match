@@ -98,6 +98,7 @@ export const COMPANY_NOTIFICATION_TOGGLES: CompanyToggleItem[] = [
 export const COMPANY_SECURITY_SETTINGS = {
   title: "セキュリティ設定",
   description: "アカウントのセキュリティに関する設定です。",
+  currentPasswordLabel: "現在のパスワード",
   newPasswordLabel: "新しいパスワード",
   confirmPasswordLabel: "新しいパスワード（確認）",
   submitLabel: "パスワードを変更",
@@ -105,6 +106,7 @@ export const COMPANY_SECURITY_SETTINGS = {
   successMessage: "パスワードを変更しました。",
   errorTooShort: "パスワードは8文字以上で入力してください。",
   errorMismatch: "パスワードが一致しません。",
+  errorCurrentPasswordInvalid: "現在のパスワードが正しくありません。",
   errorGeneric: "パスワードの変更に失敗しました。しばらくしてから再度お試しください。",
   twoFactor: {
     label: "2段階認証",
