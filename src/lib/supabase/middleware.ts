@@ -7,17 +7,24 @@ import { ACTIVE_STATUS, getDashboardPathForRole, getUserAccount } from "@/lib/au
  * Role required to access a given pathname, keyed by top-level route prefix.
  * Only /engineer, /company, /admin are gated today — other routes (/, /login,
  * /signup, /messages, /notifications, etc.) are intentionally left alone.
+ *
+ * publicAtRoot: the bare prefix path itself (e.g. exactly "/company", not
+ * "/company/anything") is a real public page and must stay reachable by
+ * everyone — only src/app/company/page.tsx uses this today (it's the public
+ * "運営会社" about page, not part of the Company-role dashboard). Every
+ * sub-path under the prefix is still protected as normal.
  */
-const PROTECTED_PREFIXES: ReadonlyArray<{ prefix: string; role: string }> = [
+const PROTECTED_PREFIXES: ReadonlyArray<{ prefix: string; role: string; publicAtRoot?: boolean }> = [
   { prefix: "/engineer", role: "ENGINEER" },
-  { prefix: "/company", role: "COMPANY" },
+  { prefix: "/company", role: "COMPANY", publicAtRoot: true },
   { prefix: "/admin", role: "ADMIN" },
 ];
 
 function getRequiredRole(pathname: string): string | null {
-  const match = PROTECTED_PREFIXES.find(
-    ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  const match = PROTECTED_PREFIXES.find(({ prefix, publicAtRoot }) => {
+    if (pathname === prefix) return !publicAtRoot;
+    return pathname.startsWith(`${prefix}/`);
+  });
   return match?.role ?? null;
 }
 

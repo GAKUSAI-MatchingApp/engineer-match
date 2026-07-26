@@ -11,8 +11,27 @@ import { PopularSkills } from "@/components/sections/PopularSkills";
 import { ServiceCategories } from "@/components/sections/ServiceCategories";
 import { Statistics } from "@/components/sections/Statistics";
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
+import { createClient } from "@/lib/supabase/server";
+import { listPublishedOpportunities } from "@/lib/engineer/opportunities";
 
-export default function Home() {
+/**
+ * Featured jobs are real published opportunities (listPublishedOpportunities,
+ * same query the real /engineer/jobs list uses) -- never fabricated data.
+ *
+ * For a logged-out visitor this legitimately returns zero rows today:
+ * opportunities_select_active (024_opportunity_policies.sql) grants SELECT
+ * to `authenticated` only, not `anon`. FeaturedOpportunities renders an
+ * honest empty state (sign-up CTA) in that case rather than hiding the
+ * section or showing placeholder data. Public anonymous browsing is a
+ * separately-tracked, deferred decision, not something this fix changes.
+ */
+export default async function Home() {
+  const supabase = await createClient();
+  const { items: featuredOpportunities } = await listPublishedOpportunities(supabase, {
+    sort: "newest",
+    pageSize: 6,
+  });
+
   return (
     <>
       <Header />
@@ -20,7 +39,7 @@ export default function Home() {
       <Statistics />
       <ServiceCategories />
       <PopularSkills />
-      <FeaturedOpportunities />
+      <FeaturedOpportunities opportunities={featuredOpportunities} />
       <WhyChooseUs />
       <ItssSection />
       <HowItWorks />

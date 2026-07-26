@@ -129,62 +129,21 @@ export const FEATURED_OPPORTUNITIES = {
 
 export const OPPORTUNITY_CTA_LABEL = "詳細を見る";
 
-export const OPPORTUNITIES = [
-  {
-    company: "株式会社テックイノベーション",
-    title: "バックエンドエンジニア（Java / Spring Boot）",
-    contractType: "就職",
-    skills: ["Java", "Spring Boot", "AWS"],
-    compensation: "年収 500万円〜800万円",
-    location: "東京都渋谷区",
-    postedAt: "2026年7月10日",
-  },
-  {
-    company: "合同会社クラウドフォース",
-    title: "フロントエンドエンジニア（React / TypeScript）",
-    contractType: "案件",
-    skills: ["React", "TypeScript", "Next.js"],
-    compensation: "月額 60万円〜90万円",
-    location: "フルリモート",
-    postedAt: "2026年7月8日",
-  },
-  {
-    company: "株式会社ネクストシステムズ",
-    title: "インフラエンジニア（AWS / Kubernetes）",
-    contractType: "時間清算",
-    skills: ["AWS", "Docker", "Kubernetes"],
-    compensation: "時間単価 4,500円〜6,000円",
-    location: "大阪府大阪市",
-    postedAt: "2026年7月5日",
-  },
-  {
-    company: "株式会社デジタルブリッジ",
-    title: "フルスタックエンジニア（Node.js / Vue.js）",
-    contractType: "就職",
-    skills: ["Node.js", "Vue.js", "MySQL"],
-    compensation: "年収 450万円〜700万円",
-    location: "東京都港区",
-    postedAt: "2026年7月12日",
-  },
-  {
-    company: "株式会社アナリティクスラボ",
-    title: "データエンジニア（Python / GCP）",
-    contractType: "案件",
-    skills: ["Python", "GCP", "PostgreSQL"],
-    compensation: "月額 70万円〜100万円",
-    location: "フルリモート",
-    postedAt: "2026年7月3日",
-  },
-  {
-    company: "株式会社フィールドソリューションズ",
-    title: "社内SE（PostgreSQL / Linux）",
-    contractType: "時間清算",
-    skills: ["PostgreSQL", "Linux", "Git"],
-    compensation: "時間単価 4,000円〜5,500円",
-    location: "神奈川県横浜市",
-    postedAt: "2026年7月1日",
-  },
-] as const;
+/**
+ * Shown when listPublishedOpportunities() returns zero rows -- the normal
+ * case for an anonymous visitor today, since opportunities_select_active
+ * (024_opportunity_policies.sql) grants SELECT to `authenticated` only, not
+ * `anon`. This is not an error state: it's RLS correctly hiding real listing
+ * data from logged-out visitors until public browsing (a separately-tracked,
+ * deferred decision) is implemented. Framed as a signup CTA rather than a
+ * bare "no results" message, since for most visitors the true cause is "not
+ * logged in" rather than "nothing is posted."
+ */
+export const FEATURED_OPPORTUNITIES_EMPTY = {
+  title: "会員登録すると、掲載中の求人・案件をご覧いただけます。",
+  description: "エンジニア登録は無料で、今すぐ求人・案件を検索できます。",
+  ctaLabel: "無料会員登録",
+} as const;
 
 export const WHY_CHOOSE_US = {
   label: "ADVANTAGE",

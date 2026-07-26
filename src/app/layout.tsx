@@ -18,10 +18,30 @@ const notoSansJP = Noto_Sans_JP({
   weight: ["400", "500", "700", "900"],
 });
 
+const SITE_URL = "https://engineer-match-5yvr.vercel.app";
+const SITE_TITLE = "ENGINEER MATCH | エンジニア × IT企業 マッチングプラットフォーム";
+const SITE_DESCRIPTION =
+  "ENGINEER MATCHは、エンジニアとIT企業を結ぶマッチングプラットフォームです。スキルや希望条件に合った最適な出会いを実現します。";
+
 export const metadata: Metadata = {
-  title: "ENGINEER MATCH | エンジニア × IT企業 マッチングプラットフォーム",
-  description:
-    "ENGINEER MATCHは、エンジニアとIT企業を結ぶマッチングプラットフォームです。スキルや希望条件に合った最適な出会いを実現します。",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    url: SITE_URL,
+    siteName: "ENGINEER MATCH",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/image/hero-engineer.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/image/hero-engineer.png"],
+  },
 };
 
 export default function RootLayout({
