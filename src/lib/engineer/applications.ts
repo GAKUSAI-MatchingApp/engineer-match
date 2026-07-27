@@ -73,6 +73,32 @@ export async function listMyApplications(
   });
 }
 
+/**
+ * Count of the caller's own applications currently "in flight" with a
+ * company (applied/screening/interview), for the withdrawal warning (BR-117
+ * / RD-2026-001 4.11). 'accepted' and 'completed' are deliberately excluded
+ * -- Phase 3 only requires warning about applications a company is actively
+ * screening, not ones already past that stage -- and this never blocks
+ * withdrawal regardless of count, it is informational only.
+ */
+export async function countOngoingApplications(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("applicant_id", userId)
+    .in("status", ["applied", "screening", "interview"]);
+
+  if (error) {
+    console.error("[engineer-applications] failed to count ongoing applications:", error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
 /** Whether the current user has already applied (any status) to this opportunity. */
 export async function getMyApplicationFor(
   supabase: SupabaseClient,

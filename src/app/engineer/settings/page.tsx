@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { EngineerPrivacySettings } from "@/components/engineer/settings/EngineerPrivacySettings";
 import { EngineerSecuritySettings } from "@/components/engineer/settings/EngineerSecuritySettings";
+import { EngineerDangerZone } from "@/components/engineer/settings/EngineerDangerZone";
 import { ENGINEER_NAV } from "@/constants/dashboard";
 import { ENGINEER_SETTINGS_PAGE } from "@/constants/engineer-settings";
 import { SIGN_IN_REQUIRED_LABELS } from "@/constants/applications";
@@ -47,6 +48,7 @@ export default async function EngineerSettingsPage() {
         <>
           <EngineerPrivacySettings initialIsPublic={profile?.is_public ?? false} />
           <EngineerSecuritySettings />
+          <EngineerDangerZone />
         </>
       ) : (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-surface px-6 py-16 text-center shadow-sm">

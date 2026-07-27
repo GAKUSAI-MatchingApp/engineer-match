@@ -50,3 +50,19 @@ export function getDashboardPathForRole(role: string): string | null {
       return null;
   }
 }
+
+/**
+ * Calls the withdraw_own_account() SECURITY DEFINER RPC (see
+ * 062_self_service_account_withdrawal.sql draft). Performs the caller's own
+ * ACTIVE -> WITHDRAWN transition server-side -- there is no id/status/
+ * deleted_at parameter, since the function only ever acts on auth.uid().
+ * Every eligibility rule (role, current status, COMPANY published-
+ * opportunity guard) is re-validated inside the function; this is just the
+ * thin client-side call, not a place to duplicate that logic.
+ */
+export async function withdrawOwnAccount(
+  supabase: SupabaseClient,
+): Promise<{ error: { message: string } | null }> {
+  const { error } = await supabase.rpc("withdraw_own_account");
+  return { error };
+}

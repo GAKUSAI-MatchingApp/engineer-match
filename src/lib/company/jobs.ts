@@ -135,6 +135,33 @@ export async function listCompanyOpportunities(
   return (data ?? []) as OpportunityListItem[];
 }
 
+/**
+ * Count of the caller's own published opportunities, for the withdrawal
+ * guard (BR-116 / RD-2026-001 4.11). This is a UX pre-check only -- the
+ * withdraw_own_account() RPC (062_self_service_account_withdrawal.sql
+ * draft) re-checks the exact same condition server-side before allowing
+ * ACTIVE -> WITHDRAWN, so a stale or bypassed client-side read here can
+ * never actually let a published-opportunity company withdraw.
+ */
+export async function countPublishedOpportunities(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("opportunities")
+    .select("id", { count: "exact", head: true })
+    .eq("posted_by", userId)
+    .eq("status", "published")
+    .is("deleted_at", null);
+
+  if (error) {
+    console.error("[company-jobs] failed to count published opportunities:", error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
 /** Active, non-deprecated skills for the required-skills picker. */
 export async function listSkills(supabase: SupabaseClient): Promise<Skill[]> {
   const { data, error } = await supabase

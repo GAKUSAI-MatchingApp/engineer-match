@@ -2,21 +2,20 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Loader2, TriangleAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { COMPANY_DANGER_ZONE } from "@/constants/company-settings";
+import { ENGINEER_DANGER_ZONE } from "@/constants/engineer-settings";
 import { createClient } from "@/lib/supabase/client";
-import { countPublishedOpportunities } from "@/lib/company/jobs";
+import { countOngoingApplications } from "@/lib/engineer/applications";
 import { withdrawOwnAccount } from "@/lib/auth/account";
 
-type DialogPhase = "loading" | "blocked" | "form" | "submitting";
+type DialogPhase = "loading" | "form" | "submitting";
 
-const { dialog: DIALOG } = COMPANY_DANGER_ZONE;
+const { dialog: DIALOG } = ENGINEER_DANGER_ZONE;
 
-export function CompanyDangerZone() {
+export function EngineerDangerZone() {
   const router = useRouter();
   const titleId = useId();
   const reasonId = useId();
@@ -25,6 +24,7 @@ export function CompanyDangerZone() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [phase, setPhase] = useState<DialogPhase>("loading");
+  const [ongoingCount, setOngoingCount] = useState(0);
   const [reason, setReason] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -56,13 +56,12 @@ export function CompanyDangerZone() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      setPhase("form");
-      return;
+    if (user) {
+      const count = await countOngoingApplications(supabase, user.id);
+      setOngoingCount(count);
     }
 
-    const publishedCount = await countPublishedOpportunities(supabase, user.id);
-    setPhase(publishedCount > 0 ? "blocked" : "form");
+    setPhase("form");
   }
 
   function closeDialog() {
@@ -100,12 +99,7 @@ export function CompanyDangerZone() {
 
     const { error: withdrawError } = await withdrawOwnAccount(supabase);
     if (withdrawError) {
-      console.error("[company-settings] withdrawal failed:", withdrawError);
-      // The published-opportunity guard is re-checked server-side inside
-      // withdraw_own_account() -- if a listing was published in the gap
-      // between this dialog's initial check and submission, the RPC itself
-      // rejects the transition and lands here rather than silently
-      // succeeding.
+      console.error("[engineer-settings] withdrawal failed:", withdrawError);
       setError(DIALOG.errorGeneric);
       setPhase("form");
       return;
@@ -118,16 +112,16 @@ export function CompanyDangerZone() {
 
   return (
     <section className="rounded-2xl border border-red-200 bg-red-50/40 p-6 shadow-sm sm:p-8">
-      <h2 className="text-lg font-semibold text-red-700">{COMPANY_DANGER_ZONE.title}</h2>
-      <p className="mt-1 text-sm text-red-700/80">{COMPANY_DANGER_ZONE.description}</p>
+      <h2 className="text-lg font-semibold text-red-700">{ENGINEER_DANGER_ZONE.title}</h2>
+      <p className="mt-1 text-sm text-red-700/80">{ENGINEER_DANGER_ZONE.description}</p>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">
-            {COMPANY_DANGER_ZONE.withdraw.label}
+            {ENGINEER_DANGER_ZONE.withdraw.label}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {COMPANY_DANGER_ZONE.withdraw.description}
+            {ENGINEER_DANGER_ZONE.withdraw.description}
           </p>
         </div>
         <button
@@ -135,7 +129,7 @@ export function CompanyDangerZone() {
           onClick={() => void openDialog()}
           className="inline-flex h-9 shrink-0 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          {COMPANY_DANGER_ZONE.withdraw.buttonLabel}
+          {ENGINEER_DANGER_ZONE.withdraw.buttonLabel}
         </button>
       </div>
 
@@ -158,42 +152,22 @@ export function CompanyDangerZone() {
                 <TriangleAlert className="h-5 w-5 text-red-600" aria-hidden="true" />
               </div>
               <h2 id={titleId} className="text-base font-semibold text-foreground">
-                {phase === "blocked" ? DIALOG.blockedTitle : DIALOG.title}
+                {DIALOG.title}
               </h2>
             </div>
 
-            {phase === "loading" && (
+            {phase === "loading" ? (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                <span>{DIALOG.checkingLabel}</span>
               </div>
-            )}
-
-            {phase === "blocked" && (
+            ) : (
               <div className="flex flex-col gap-4">
-                <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  {DIALOG.blockedMessage}
-                </p>
-                <div className="flex justify-end gap-3">
-                  <Link
-                    href={DIALOG.blockedLinkHref}
-                    className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                  >
-                    {DIALOG.blockedLinkLabel}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={closeDialog}
-                    className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                  >
-                    {DIALOG.cancelLabel}
-                  </button>
-                </div>
-              </div>
-            )}
+                {ongoingCount > 0 && (
+                  <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {DIALOG.ongoingApplicationsWarning(ongoingCount)}
+                  </p>
+                )}
 
-            {(phase === "form" || phase === "submitting") && (
-              <div className="flex flex-col gap-4">
                 <p className="text-xs text-muted-foreground">{DIALOG.dataRetentionNote}</p>
 
                 <div className="flex flex-col gap-2">

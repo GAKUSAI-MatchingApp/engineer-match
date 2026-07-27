@@ -1,14 +1,14 @@
 /**
- * Company Settings module content (Japanese). Password change and account
- * info are real (Supabase Auth / public.company_profiles). The remaining
- * controls (notification preferences, 2FA, login history, session
- * management, account deactivation/deletion) have no backing table or
- * infrastructure in this schema yet -- kept visible per client instruction
- * (do not remove existing UI), but honestly marked as not yet available
- * rather than faking a save. Company profile visibility is not a toggle:
- * public.company_profiles is always public by design (business rule BR-18,
- * see company_profiles_select_all in 023_profile_policies.sql) -- there is
- * no is_public column, intentionally.
+ * Company Settings module content (Japanese). Password change, account
+ * info, and account withdrawal are real (Supabase Auth /
+ * public.company_profiles / public.withdraw_own_account RPC, Phase 3). The
+ * remaining controls (notification preferences, 2FA, login history, session
+ * management) have no backing table or infrastructure in this schema yet --
+ * kept visible per client instruction (do not remove existing UI), but
+ * honestly marked as not yet available rather than faking a save. Company
+ * profile visibility is not a toggle: public.company_profiles is always
+ * public by design (business rule BR-18, see company_profiles_select_all in
+ * 023_profile_policies.sql) -- there is no is_public column, intentionally.
  */
 
 export const COMPANY_SETTINGS_PAGE = {
@@ -155,28 +155,38 @@ export const COMPANY_VISIBILITY_TOGGLES: CompanyToggleItem[] = [
 ];
 
 // ============================================================
-// 5. Danger Zone
+// 5. Danger Zone -- 退会 (withdraw_own_account RPC,
+// 062_self_service_account_withdrawal.sql draft, RD-2026-001 BR-115~118)
 // ============================================================
 
 export const COMPANY_DANGER_ZONE = {
   title: "Danger Zone",
-  description: "これらの操作は取り消せません。慎重に行ってください。",
-  cancelLabel: "キャンセル",
-  deactivate: {
-    label: "アカウントを無効化",
-    description: "アカウントを一時的に無効化します。求人・案件は非公開になります。",
-    buttonLabel: "無効化する",
-    dialogTitle: "本当にアカウントを無効化しますか？",
-    dialogDescription:
-      "無効化すると、求人・案件が非公開になり、ログインできなくなります。",
-    confirmLabel: "無効化する",
+  description: "この操作は取り消せません。慎重に行ってください。",
+  withdraw: {
+    label: "退会",
+    description: "アカウントを退会します。退会後はログインできなくなります。",
+    buttonLabel: "退会する",
   },
-  delete: {
-    label: "アカウント削除",
-    description: "アカウントとすべてのデータを完全に削除します。",
-    buttonLabel: "削除する",
-    dialogTitle: "本当にアカウントを削除しますか？",
-    dialogDescription: "この操作は取り消せません。すべてのデータが完全に削除されます。",
-    confirmLabel: "完全に削除する",
+  dialog: {
+    title: "アカウントを退会しますか？",
+    checkingLabel: "確認中…",
+    blockedTitle: "退会できません",
+    blockedMessage:
+      "公開中の求人・案件があるため退会できません。すべての求人・案件を募集終了または非公開にしてから再度お試しください。",
+    blockedLinkLabel: "求人・案件管理を開く",
+    blockedLinkHref: "/company/jobs",
+    dataRetentionNote:
+      "退会後も、求人・案件・応募・メッセージ・レビューなどの履歴データは削除されません。",
+    reasonLabel: "退会理由（任意）",
+    reasonPlaceholder: "理由をお聞かせください（任意）",
+    reasonMaxLength: 500,
+    reasonNote: "※ 退会理由の保存には現在対応していません（今後のアップデートで対応予定です）。",
+    passwordLabel: "現在のパスワード",
+    passwordPlaceholder: "確認のため現在のパスワードを入力してください",
+    cancelLabel: "キャンセル",
+    confirmLabel: "退会する",
+    submittingLabel: "処理中…",
+    errorPasswordInvalid: "現在のパスワードが正しくありません。",
+    errorGeneric: "退会処理に失敗しました。しばらくしてから再度お試しください。",
   },
 } as const;
