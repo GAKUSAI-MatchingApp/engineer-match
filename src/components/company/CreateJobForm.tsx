@@ -732,7 +732,7 @@ export function CreateJobForm({ skills }: CreateJobFormProps) {
       }
 
       const input = buildOpportunityInput(state);
-      const { data, error, stage } = await createCompanyOpportunity(supabase, user.id, input);
+      const { data, error, stage } = await createCompanyOpportunity(supabase, input);
 
       if (stage === "invalid_input") {
         setFormMessage(JOB_FORM_ERRORS.invalidInput);
@@ -746,20 +746,11 @@ export function CreateJobForm({ skills }: CreateJobFormProps) {
         return;
       }
 
-      if (stage === "opportunity" || stage === "child" || !data) {
+      if (stage === "opportunity" || !data) {
         console.error("[job-form] create failed:", error, "stage:", stage);
-        setFormMessage(
-          stage === "child" ? JOB_FORM_ERRORS.partialSaveFailed : JOB_FORM_ERRORS.saveFailed,
-        );
+        setFormMessage(JOB_FORM_ERRORS.saveFailed);
         setFormStatus("error");
         return;
-      }
-
-      if (stage === "skills") {
-        // Opportunity + contract-type row saved fine; only the required-skill
-        // links failed. Not worth blocking navigation over — log it and let
-        // the user add skills via edit afterwards.
-        console.error("[job-form] required skills save failed:", error);
       }
 
       router.push(`/company/jobs/${data.id}`);

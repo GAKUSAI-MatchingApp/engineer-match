@@ -284,14 +284,7 @@ export function getTodayDateStringJST(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo" }).format(new Date());
 }
 
-/**
- * RD-2026-001 4.4.6 checks re-validated server-side (never trust the
- * frontend form alone, CreateJobForm.tsx's validateJobForm is the same rule
- * set but is bypassable by any direct API caller): required skills 1-10
- * (BR applies to every status, not just published -- mirrors how title/
- * description are already required regardless of draft/published here),
- * description <= 3000 chars, and for project listings, deadline >= today.
- */
+/** Fast client-side duplicate of the authoritative save RPC validation. */
 function validateOpportunityInput(input: OpportunityInput): boolean {
   if (input.requiredSkillIds.length < 1 || input.requiredSkillIds.length > 10) return false;
   if (input.description.length > 3000) return false;
@@ -301,184 +294,88 @@ function validateOpportunityInput(input: OpportunityInput): boolean {
   return true;
 }
 
-async function upsertChildRow(
+type OpportunitySaveStage =
+  | "invalid_input"
+  | "company_name_required"
+  | "opportunity"
+  | null;
+
+function getSubtypePayload(input: OpportunityInput): EmploymentInput | ProjectInput | HourlyInput | null {
+  if (input.contract_type === "employment") return input.employment;
+  if (input.contract_type === "project") return input.project;
+  return input.hourly;
+}
+
+function classifyOpportunitySaveError(error: { code?: string; message?: string }): OpportunitySaveStage {
+  const message = error.message?.toLowerCase() ?? "";
+  if (message.includes("company_name_required") || message.includes("company name")) {
+    return "company_name_required";
+  }
+  if (
+    error.code === "22023" ||
+    error.code === "22P02" ||
+    error.code === "23502" ||
+    error.code === "23503" ||
+    error.code === "23514"
+  ) {
+    return "invalid_input";
+  }
+  return "opportunity";
+}
+
+async function saveCompanyOpportunity(
   supabase: SupabaseClient,
-  opportunityId: string,
+  opportunityId: string | null,
   input: OpportunityInput,
 ) {
-  if (input.contract_type === "employment" && input.employment) {
-    return supabase
-      .from("opportunity_employment")
-      .upsert(
-        { opportunity_id: opportunityId, ...input.employment },
-        { onConflict: "opportunity_id" },
-      );
+  if (!validateOpportunityInput(input) || !getSubtypePayload(input)) {
+    return { data: null, error: null, stage: "invalid_input" as OpportunitySaveStage };
   }
-  if (input.contract_type === "project" && input.project) {
-    return supabase
-      .from("opportunity_project")
-      .upsert(
-        { opportunity_id: opportunityId, ...input.project },
-        { onConflict: "opportunity_id" },
-      );
+
+  const { data, error } = await supabase.rpc("save_company_opportunity", {
+    p_opportunity_id: opportunityId,
+    p_title: input.title,
+    p_description: input.description,
+    p_contract_type: input.contract_type,
+    p_status: input.status,
+    p_subtype: getSubtypePayload(input),
+    p_required_skill_ids: input.requiredSkillIds,
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error,
+      stage: classifyOpportunitySaveError(error) as OpportunitySaveStage,
+    };
   }
-  if (input.contract_type === "hourly" && input.hourly) {
-    return supabase
-      .from("opportunity_hourly")
-      .upsert(
-        { opportunity_id: opportunityId, ...input.hourly },
-        { onConflict: "opportunity_id" },
-      );
-  }
-  throw new Error(`missing sub-table input for contract_type=${input.contract_type}`);
+
+  return {
+    data: { id: data as string },
+    error: null,
+    stage: null as OpportunitySaveStage,
+  };
 }
 
-async function reconcileRequiredSkills(
-  supabase: SupabaseClient,
-  opportunityId: string,
-  requiredSkillIds: string[],
-) {
-  const { data: existingRows, error: readError } = await supabase
-    .from("opportunity_required_skills")
-    .select("skill_id")
-    .eq("opportunity_id", opportunityId);
-
-  if (readError) return readError;
-
-  const existingIds = new Set((existingRows ?? []).map((row) => row.skill_id as string));
-  const nextIds = new Set(requiredSkillIds);
-  const toDelete = [...existingIds].filter((skillId) => !nextIds.has(skillId));
-  const toInsert = [...nextIds].filter((skillId) => !existingIds.has(skillId));
-
-  if (toDelete.length > 0) {
-    const { error } = await supabase
-      .from("opportunity_required_skills")
-      .delete()
-      .eq("opportunity_id", opportunityId)
-      .in("skill_id", toDelete);
-    if (error) return error;
-  }
-
-  if (toInsert.length > 0) {
-    const { error } = await supabase.from("opportunity_required_skills").insert(
-      toInsert.map((skillId) => ({ opportunity_id: opportunityId, skill_id: skillId })),
-    );
-    if (error) return error;
-  }
-
-  return null;
-}
-
-/**
- * Creates a new opportunity: parent row, then its contract-type sub-table
- * row, then required-skill links. supabase-js has no cross-table
- * transaction — if the sub-table insert fails after the parent succeeded,
- * this attempts a best-effort DELETE of the parent as cleanup. Note that
- * opportunities has NO owner-DELETE RLS policy (024_opportunity_policies.sql
- * — only ADMIN can delete), so as a COMPANY-role caller that delete is
- * always a harmless no-op (0 rows affected, not an error) rather than real
- * cleanup. The orphaned draft-status parent row is recoverable:
- * updateCompanyOpportunity() upserts the sub-table row rather than assuming
- * it exists, so re-saving via the edit screen completes it without creating
- * a duplicate posting.
- */
+/** Creates the parent, subtype and required skills in one database transaction. */
 export async function createCompanyOpportunity(
   supabase: SupabaseClient,
-  userId: string,
   input: OpportunityInput,
 ) {
-  if (!validateOpportunityInput(input)) {
-    return { data: null, error: null, stage: "invalid_input" as const };
-  }
-
-  if (input.status === "published" && !(await hasRegisteredCompanyName(supabase, userId))) {
-    return { data: null, error: null, stage: "company_name_required" as const };
-  }
-
-  const { data: opportunity, error: opportunityError } = await supabase
-    .from("opportunities")
-    .insert({
-      side: "ENGINEER",
-      contract_type: input.contract_type,
-      title: input.title,
-      description: input.description,
-      status: input.status,
-      posted_by: userId,
-    })
-    .select("id")
-    .single();
-
-  if (opportunityError || !opportunity) {
-    return { data: null, error: opportunityError, stage: "opportunity" as const };
-  }
-
-  const { error: childError } = await upsertChildRow(supabase, opportunity.id, input);
-  if (childError) {
-    await supabase.from("opportunities").delete().eq("id", opportunity.id);
-    return { data: null, error: childError, stage: "child" as const };
-  }
-
-  if (input.requiredSkillIds.length > 0) {
-    const { error: skillError } = await supabase.from("opportunity_required_skills").insert(
-      input.requiredSkillIds.map((skillId) => ({
-        opportunity_id: opportunity.id,
-        skill_id: skillId,
-      })),
-    );
-    if (skillError) {
-      return { data: { id: opportunity.id as string }, error: skillError, stage: "skills" as const };
-    }
-  }
-
-  return { data: { id: opportunity.id as string }, error: null, stage: null };
+  return saveCompanyOpportunity(supabase, null, input);
 }
 
 /**
- * Updates an existing opportunity. contract_type is intentionally not
- * updatable here — the UI locks it during edit (see CreateJobForm.tsx) since
- * switching contract types would require migrating data between two
- * different sub-tables with incompatible columns, which this schema has no
- * safe path for.
+ * Atomically updates the owned parent, locked subtype and required skills.
+ * The RPC derives ownership from auth.uid(); no owner id crosses this API.
  */
 export async function updateCompanyOpportunity(
   supabase: SupabaseClient,
-  userId: string,
   id: string,
   input: OpportunityInput,
 ) {
-  if (!validateOpportunityInput(input)) {
-    return { error: null, stage: "invalid_input" as const };
-  }
-
-  if (input.status === "published" && !(await hasRegisteredCompanyName(supabase, userId))) {
-    return { error: null, stage: "company_name_required" as const };
-  }
-
-  const { error: opportunityError } = await supabase
-    .from("opportunities")
-    .update({
-      title: input.title,
-      description: input.description,
-      status: input.status,
-    })
-    .eq("id", id)
-    .eq("posted_by", userId);
-
-  if (opportunityError) {
-    return { error: opportunityError, stage: "opportunity" as const };
-  }
-
-  const { error: childError } = await upsertChildRow(supabase, id, input);
-  if (childError) {
-    return { error: childError, stage: "child" as const };
-  }
-
-  const skillError = await reconcileRequiredSkills(supabase, id, input.requiredSkillIds);
-  if (skillError) {
-    return { error: skillError, stage: "skills" as const };
-  }
-
-  return { error: null, stage: null };
+  const result = await saveCompanyOpportunity(supabase, id, input);
+  return { error: result.error, stage: result.stage };
 }
 
 /**

@@ -61,9 +61,9 @@ function buildQueryHref(params: {
   return queryString ? `/engineer/jobs?${queryString}` : "/engineer/jobs";
 }
 
-/** BR-39: only meaningful for contract_type='employment' — hidden/disabled otherwise. */
+/** Work style is meaningful for employment/hourly (or the combined view). */
 function isWorkStyleFilterAvailable(contractType: CompanyContractType | ""): boolean {
-  return contractType === "" || contractType === "employment";
+  return contractType === "" || contractType === "employment" || contractType === "hourly";
 }
 
 export function JobList({

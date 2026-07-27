@@ -5,8 +5,8 @@ import { ACTIVE_STATUS, getDashboardPathForRole, getUserAccount } from "@/lib/au
 
 /**
  * Role required to access a given pathname, keyed by top-level route prefix.
- * Only /engineer, /company, /admin are gated today — other routes (/, /login,
- * /signup, /messages, /notifications, etc.) are intentionally left alone.
+ * Role dashboards and the Engineer routes that live outside /engineer are
+ * gated here. Company messaging/notifications remain covered by /company.
  *
  * publicAtRoot: the bare prefix path itself (e.g. exactly "/company", not
  * "/company/anything") is a real public page and must stay reachable by
@@ -16,6 +16,8 @@ import { ACTIVE_STATUS, getDashboardPathForRole, getUserAccount } from "@/lib/au
  */
 const PROTECTED_PREFIXES: ReadonlyArray<{ prefix: string; role: string; publicAtRoot?: boolean }> = [
   { prefix: "/engineer", role: "ENGINEER" },
+  { prefix: "/messages", role: "ENGINEER" },
+  { prefix: "/notifications", role: "ENGINEER" },
   { prefix: "/company", role: "COMPANY", publicAtRoot: true },
   { prefix: "/admin", role: "ADMIN" },
 ];
@@ -38,8 +40,8 @@ function getRequiredRole(pathname: string): string | null {
  * token against Supabase Auth on every call instead of trusting whatever is
  * in the (possibly stale or tampered) cookie.
  *
- * Also enforces role/status-based route protection for /engineer, /company,
- * and /admin: the role and ACTIVE status are always re-read from
+ * Also enforces role/status-based route protection for /engineer, /messages,
+ * /notifications, /company, and /admin: role and ACTIVE status are re-read from
  * public.users here (never trusted from client state), matching the same
  * getUserAccount() helper already used by the login/signup pages.
  */

@@ -62,7 +62,6 @@ export function EditJobForm({ detail, skills }: EditJobFormProps) {
       const input = buildOpportunityInput(state);
       const { error, stage } = await updateCompanyOpportunity(
         supabase,
-        user.id,
         detail.opportunity.id,
         input,
       );
@@ -81,13 +80,7 @@ export function EditJobForm({ detail, skills }: EditJobFormProps) {
 
       if (error) {
         console.error("[job-form] update failed:", error, "stage:", stage);
-        setFormMessage(
-          stage === "child"
-            ? JOB_FORM_ERRORS.partialSaveFailed
-            : stage === "skills"
-              ? JOB_FORM_ERRORS.skillsSaveFailed
-              : JOB_FORM_ERRORS.saveFailed,
-        );
+        setFormMessage(JOB_FORM_ERRORS.saveFailed);
         setFormStatus("error");
         return;
       }

@@ -10,8 +10,8 @@ import { updateSession } from "@/lib/supabase/middleware";
  * Session refresh AND route protection both happen here: updateSession()
  * (src/lib/supabase/middleware.ts) revalidates the Supabase session, then
  * checks the requester's public.users role/status against
- * PROTECTED_PREFIXES (/admin, /engineer, /company) and redirects away from
- * mismatched or unauthenticated requests.
+ * PROTECTED_PREFIXES (/admin, /engineer, /messages, /notifications, /company)
+ * and redirects away from mismatched or unauthenticated requests.
  */
 export async function proxy(request: NextRequest) {
   return updateSession(request);

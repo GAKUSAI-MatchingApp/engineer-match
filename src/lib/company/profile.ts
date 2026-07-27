@@ -25,6 +25,10 @@ export interface CompanyProfile {
   industry: string | null;
   /** public.industry_categories FK, per 064_industry_categories.sql draft. NULL for every row until a company explicitly picks one via the new selector. */
   industry_category_id: string | null;
+  industry_category: {
+    name: string;
+    is_active: boolean;
+  } | null;
   established_year: number | null;
   created_at: string;
   updated_at: string;
@@ -56,8 +60,29 @@ export async function listActiveIndustryCategories(
 
 export type CompanyProfileInput = Omit<
   CompanyProfile,
-  "id" | "created_at" | "updated_at"
+  "id" | "industry" | "industry_category" | "created_at" | "updated_at"
 >;
+
+interface CompanyIndustrySource {
+  industry: string | null;
+  industry_category_id: string | null;
+  industry_category:
+    | { name?: string | null; is_active?: boolean | null }
+    | Array<{ name?: string | null; is_active?: boolean | null }>
+    | null;
+}
+
+/**
+ * A selected FK is canonical. Legacy text is only a compatibility fallback
+ * for rows that have never selected a master value.
+ */
+export function resolveCompanyIndustryName(source: CompanyIndustrySource): string | null {
+  if (!source.industry_category_id) return source.industry?.trim() || null;
+  const relation = Array.isArray(source.industry_category)
+    ? source.industry_category[0]
+    : source.industry_category;
+  return relation?.name?.trim() || null;
+}
 
 /**
  * A freshly-signed-up COMPANY account has no company_profiles row yet — no
@@ -71,7 +96,7 @@ export async function getCompanyProfile(
 ): Promise<CompanyProfile | null> {
   const { data, error } = await supabase
     .from("company_profiles")
-    .select("*")
+    .select("*, industry_category:industry_categories(name, is_active)")
     .eq("id", userId)
     .maybeSingle();
 
@@ -80,7 +105,13 @@ export async function getCompanyProfile(
     return null;
   }
 
-  return data as CompanyProfile | null;
+  if (!data) return null;
+
+  const profile = data as unknown as CompanyProfile;
+  return {
+    ...profile,
+    industry: resolveCompanyIndustryName(profile),
+  };
 }
 
 /**

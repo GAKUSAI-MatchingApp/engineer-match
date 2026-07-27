@@ -245,28 +245,37 @@ async function resolveSkillAndFilterIds(
     .map(([oppId]) => oppId);
 }
 
-/**
- * Resolves the work-style filter (BR-39) to the set of opportunity_employment
- * rows matching the selected value. Returned ids are only ever used to scope
- * contract_type='employment' rows (via an OR against contract_type<>employment
- * in the caller) — never applied as a blanket id filter, so project/hourly/
- * training listings are never affected by this.
- */
+/** Resolves work style across every subtype that owns the canonical field. */
 async function resolveWorkStyleMatchIds(
   supabase: SupabaseClient,
   workStyle: WorkStyleValue,
 ): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("opportunity_employment")
-    .select("opportunity_id")
-    .eq("work_style", workStyle);
+  const [employmentResult, hourlyResult] = await Promise.all([
+    supabase
+      .from("opportunity_employment")
+      .select("opportunity_id")
+      .eq("work_style", workStyle),
+    supabase
+      .from("opportunity_hourly")
+      .select("opportunity_id")
+      .eq("work_style", workStyle),
+  ]);
 
-  if (error) {
-    console.error("[engineer-jobs] failed to resolve work style filter:", error);
+  if (employmentResult.error || hourlyResult.error) {
+    console.error(
+      "[engineer-jobs] failed to resolve work style filter:",
+      employmentResult.error ?? hourlyResult.error,
+    );
     return [];
   }
 
-  return (data ?? []).map((row) => row.opportunity_id as string);
+  return [
+    ...new Set(
+      [...(employmentResult.data ?? []), ...(hourlyResult.data ?? [])].map(
+        (row) => row.opportunity_id as string,
+      ),
+    ),
+  ];
 }
 
 /** Published, non-admin-unpublished, non-deleted opportunities — matches opportunities_select_active RLS. */
@@ -289,6 +298,9 @@ export async function listPublishedOpportunities(
   let workStyleMatchIds: string[] | null = null;
   if (options.workStyle) {
     workStyleMatchIds = await resolveWorkStyleMatchIds(supabase, options.workStyle);
+    if (workStyleMatchIds.length === 0) {
+      return { items: [], total: 0, page, pageSize, error: false };
+    }
   }
 
   let query = supabase
@@ -305,15 +317,7 @@ export async function listPublishedOpportunities(
   }
 
   if (workStyleMatchIds) {
-    // Non-employment rows are always kept; employment rows are kept only
-    // when they matched the work-style query above. `in.()` with zero
-    // elements is PostgREST syntax best avoided, so an empty match list
-    // collapses to just the first half of the OR (no employment row can
-    // ever qualify) instead.
-    query =
-      workStyleMatchIds.length > 0
-        ? query.or(`contract_type.neq.employment,id.in.(${workStyleMatchIds.join(",")})`)
-        : query.or("contract_type.neq.employment");
+    query = query.in("id", workStyleMatchIds);
   }
 
   const search = options.search?.trim();

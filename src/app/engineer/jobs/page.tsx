@@ -157,11 +157,13 @@ export default async function EngineerJobsPage({ searchParams }: EngineerJobsPag
     .split(",")
     .map((id) => id.trim())
     .filter(Boolean);
-  const workStyle: WorkStyleFilterValue = (
-    WORK_STYLE_VALUES as readonly string[]
-  ).includes(params.workStyle ?? "")
-    ? (params.workStyle as WorkStyleFilterValue)
-    : "";
+  const supportsWorkStyle =
+    contractType === "" || contractType === "employment" || contractType === "hourly";
+  const workStyle: WorkStyleFilterValue =
+    supportsWorkStyle &&
+    (WORK_STYLE_VALUES as readonly string[]).includes(params.workStyle ?? "")
+      ? (params.workStyle as WorkStyleFilterValue)
+      : "";
 
   return (
     <DashboardShell

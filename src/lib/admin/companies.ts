@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdminUserStatus } from "@/lib/admin/users";
+import { resolveCompanyIndustryName } from "@/lib/company/profile";
 
 /** public.company_profiles.company_size (004_profile_tables.sql: chk_company_profiles_size). */
 export const ADMIN_COMPANY_SIZE_LABEL: Record<string, string> = {
@@ -47,7 +48,9 @@ const LIST_CAP = 1000;
 export async function listAdminCompanies(supabase: SupabaseClient): Promise<AdminCompanyListItem[]> {
   const { data: companies, error } = await supabase
     .from("company_profiles")
-    .select("id, company_name, industry, company_size, contact_person, created_at")
+    .select(
+      "id, company_name, industry, industry_category_id, industry_category:industry_categories(name, is_active), company_size, contact_person, created_at",
+    )
     .order("created_at", { ascending: false })
     .limit(LIST_CAP);
 
@@ -75,7 +78,14 @@ export async function listAdminCompanies(supabase: SupabaseClient): Promise<Admi
     return {
       id: row.id as string,
       name: (row.company_name as string) || "（企業名未設定）",
-      industry: (row.industry as string | null) ?? null,
+      industry: resolveCompanyIndustryName({
+        industry: (row.industry as string | null) ?? null,
+        industry_category_id: (row.industry_category_id as string | null) ?? null,
+        industry_category: row.industry_category as
+          | { name?: string | null; is_active?: boolean | null }
+          | Array<{ name?: string | null; is_active?: boolean | null }>
+          | null,
+      }),
       companySize: (row.company_size as string | null) ?? null,
       contactName: (row.contact_person as string | null) ?? null,
       contactEmail: (user?.email as string | undefined) ?? "",
@@ -109,7 +119,7 @@ export async function getAdminCompanyDetail(
   const { data: row, error } = await supabase
     .from("company_profiles")
     .select(
-      "id, company_name, industry, company_size, contact_person, address, website_url, business_description, established_year, created_at",
+      "id, company_name, industry, industry_category_id, industry_category:industry_categories(name, is_active), company_size, contact_person, address, website_url, business_description, established_year, created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -143,7 +153,14 @@ export async function getAdminCompanyDetail(
   return {
     id: row.id as string,
     name: (row.company_name as string) || "（企業名未設定）",
-    industry: (row.industry as string | null) ?? null,
+    industry: resolveCompanyIndustryName({
+      industry: (row.industry as string | null) ?? null,
+      industry_category_id: (row.industry_category_id as string | null) ?? null,
+      industry_category: row.industry_category as
+        | { name?: string | null; is_active?: boolean | null }
+        | Array<{ name?: string | null; is_active?: boolean | null }>
+        | null,
+    }),
     companySize: (row.company_size as string | null) ?? null,
     contactName: (row.contact_person as string | null) ?? null,
     contactEmail: (user?.email as string | undefined) ?? "",

@@ -89,7 +89,8 @@ export const FILTER_LABELS = {
   skillEmptyMessage: "登録されているスキルがありません。",
   workStyleLabel: "勤務形態",
   workStyleAllLabel: "すべての勤務形態",
-  workStyleUnavailableNote: "契約形態が「就職」または「すべて」の場合に選択できます。",
+  workStyleUnavailableNote:
+    "契約形態が「就職」「時間単価」または「すべて」の場合に選択できます。",
 } as const;
 
 // ============================================================

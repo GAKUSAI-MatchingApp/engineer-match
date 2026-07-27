@@ -30,7 +30,7 @@ interface CompanyProfileHeaderProps {
 
 interface FormState {
   companyName: string;
-  /** public.company_profiles.industry_category_id -- replaces the old free-text `industry` form field per Phase 5 決定事項③. The legacy `industry` text itself is never edited here; it is passed straight through unmodified on save (see handleSubmit). */
+  /** public.company_profiles.industry_category_id -- replaces the old free-text `industry` form field per Phase 5 決定事項③. */
   industryCategoryId: string;
   companySize: string;
   prefecture: string;
@@ -143,9 +143,6 @@ export function CompanyProfileHeader({ profile, industryCategories }: CompanyPro
 
       const { error } = await saveCompanyProfile(supabase, user.id, {
         company_name: companyName,
-        // Legacy free-text column: intentionally passed through unmodified,
-        // never cleared/overwritten by this form (Phase 5 決定事項③).
-        industry: profile?.industry ?? null,
         industry_category_id: form.industryCategoryId || null,
         company_size: form.companySize || null,
         prefecture: form.prefecture.trim() || null,
