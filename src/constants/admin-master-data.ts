@@ -1,10 +1,13 @@
 /**
  * Admin Master Data management module labels (Japanese). Real data comes
- * from src/lib/admin/master-data.ts for the 5 tables with a real schema
+ * from src/lib/admin/master-data.ts for the 6 tables with a real schema
  * match: skill_categories, skill_subcategories, skills, qualifications,
- * skill_levels (003_master_tables.sql). The mock UI's other 5 tabs (業種/
- * 職種/勤務地/契約形態/求人・案件カテゴリ/通報カテゴリ) have no backing
- * table and have been dropped rather than faked.
+ * skill_levels (003_master_tables.sql), and industry_categories
+ * (064_industry_categories.sql draft, Phase 5 決定事項③ -- this restores
+ * the 業種 tab that was previously dropped as mock-only, now that it has a
+ * real backing table). The mock UI's remaining 4 tabs (職種/勤務地/契約形態/
+ * 求人・案件カテゴリ/通報カテゴリ) still have no backing table and stay
+ * dropped rather than faked.
  *
  * Delete is never exposed -- is_active is the only lifecycle control, so
  * referenced master rows can never be destructively removed. skill_levels
@@ -23,6 +26,7 @@ export const MASTER_DATA_TABS = [
   { key: "skillCategories", label: "スキルカテゴリ" },
   { key: "qualifications", label: "資格" },
   { key: "skillLevels", label: "ITSSレベル" },
+  { key: "industries", label: "業種" },
 ] as const;
 export type MasterDataTabKey = (typeof MASTER_DATA_TABS)[number]["key"];
 

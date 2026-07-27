@@ -109,40 +109,55 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
       return;
     }
 
-    let yearsOfExperience: number | null = null;
-    if (form.yearsOfExperience.trim()) {
-      const parsed = Number(form.yearsOfExperience);
-      if (!Number.isInteger(parsed) || parsed < 0 || parsed > 50) {
-        setMessage(BASIC_INFO_FORM_META.invalidYearsOfExperience);
-        setStatus("error");
-        return;
-      }
-      yearsOfExperience = parsed;
+    // RD 4.2.6: 居住地・経験年数・希望の働き方・希望単価 are required fields.
+    // Existing legacy profiles saved before this rule (including QA rows
+    // with 0 skills / empty fields) are read/displayed unchanged -- this
+    // only gates new saves, never rewrites a row the user didn't touch.
+    const prefecture = form.prefecture.trim();
+    if (!prefecture) {
+      setMessage(BASIC_INFO_FORM_META.prefectureRequired);
+      setStatus("error");
+      return;
     }
 
-    let desiredRateMin: number | null = null;
-    if (form.desiredRateMin.trim()) {
-      const parsed = Number(form.desiredRateMin);
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 999) {
-        setMessage(BASIC_INFO_FORM_META.invalidRate);
-        setStatus("error");
-        return;
-      }
-      desiredRateMin = parsed;
+    if (!form.yearsOfExperience.trim()) {
+      setMessage(BASIC_INFO_FORM_META.yearsOfExperienceRequired);
+      setStatus("error");
+      return;
+    }
+    const yearsOfExperience = Number(form.yearsOfExperience);
+    if (!Number.isInteger(yearsOfExperience) || yearsOfExperience < 0 || yearsOfExperience > 50) {
+      setMessage(BASIC_INFO_FORM_META.invalidYearsOfExperience);
+      setStatus("error");
+      return;
     }
 
-    let desiredRateMax: number | null = null;
-    if (form.desiredRateMax.trim()) {
-      const parsed = Number(form.desiredRateMax);
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 999) {
-        setMessage(BASIC_INFO_FORM_META.invalidRate);
-        setStatus("error");
-        return;
-      }
-      desiredRateMax = parsed;
+    if (!form.workStyle) {
+      setMessage(BASIC_INFO_FORM_META.workStyleRequired);
+      setStatus("error");
+      return;
     }
 
-    if (desiredRateMin !== null && desiredRateMax !== null && desiredRateMin > desiredRateMax) {
+    if (!form.desiredRateMin.trim() || !form.desiredRateMax.trim()) {
+      setMessage(BASIC_INFO_FORM_META.desiredRateRequired);
+      setStatus("error");
+      return;
+    }
+    const desiredRateMin = Number(form.desiredRateMin);
+    const desiredRateMax = Number(form.desiredRateMax);
+    if (
+      !Number.isInteger(desiredRateMin) ||
+      desiredRateMin < 1 ||
+      desiredRateMin > 999 ||
+      !Number.isInteger(desiredRateMax) ||
+      desiredRateMax < 1 ||
+      desiredRateMax > 999
+    ) {
+      setMessage(BASIC_INFO_FORM_META.invalidRate);
+      setStatus("error");
+      return;
+    }
+    if (desiredRateMin > desiredRateMax) {
       setMessage(BASIC_INFO_FORM_META.invalidRateOrder);
       setStatus("error");
       return;
@@ -226,7 +241,7 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
       const [{ error: nameError }, { error: profileError }] = await Promise.all([
         name !== initialName ? updateUserName(supabase, userId, name) : Promise.resolve({ error: null }),
         saveEngineerProfile(supabase, userId, {
-          prefecture: form.prefecture.trim() || null,
+          prefecture,
           years_of_experience: yearsOfExperience,
           self_pr: form.selfPr.trim() || null,
           work_style: (form.workStyle || null) as EngineerProfile["work_style"],
@@ -312,7 +327,10 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-prefecture">{BASIC_INFO_FORM_FIELDS.prefecture.label}</Label>
+          <Label htmlFor="basic-prefecture">
+            {BASIC_INFO_FORM_FIELDS.prefecture.label}
+            <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="basic-prefecture"
             type="text"
@@ -320,10 +338,14 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
             placeholder={BASIC_INFO_FORM_FIELDS.prefecture.placeholder}
             onChange={(event) => updateField("prefecture", event.target.value)}
             className="h-9"
+            required
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-years">{BASIC_INFO_FORM_FIELDS.yearsOfExperience.label}</Label>
+          <Label htmlFor="basic-years">
+            {BASIC_INFO_FORM_FIELDS.yearsOfExperience.label}
+            <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="basic-years"
             type="number"
@@ -334,6 +356,7 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
             value={form.yearsOfExperience}
             onChange={(event) => updateField("yearsOfExperience", event.target.value)}
             className="h-9"
+            required
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -353,12 +376,16 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-work-style">{BASIC_INFO_FORM_FIELDS.workStyle.label}</Label>
+          <Label htmlFor="basic-work-style">
+            {BASIC_INFO_FORM_FIELDS.workStyle.label}
+            <span className="text-destructive">*</span>
+          </Label>
           <select
             id="basic-work-style"
             value={form.workStyle}
             onChange={(event) => updateField("workStyle", event.target.value)}
             className={SELECT_CLASS}
+            required
           >
             <option value="">選択してください</option>
             {WORK_STYLE_OPTIONS.map((option) => (
@@ -401,7 +428,10 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-rate-min">{BASIC_INFO_FORM_FIELDS.desiredRateMin.label}</Label>
+          <Label htmlFor="basic-rate-min">
+            {BASIC_INFO_FORM_FIELDS.desiredRateMin.label}
+            <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="basic-rate-min"
             type="number"
@@ -412,10 +442,14 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
             value={form.desiredRateMin}
             onChange={(event) => updateField("desiredRateMin", event.target.value)}
             className="h-9"
+            required
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-rate-max">{BASIC_INFO_FORM_FIELDS.desiredRateMax.label}</Label>
+          <Label htmlFor="basic-rate-max">
+            {BASIC_INFO_FORM_FIELDS.desiredRateMax.label}
+            <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="basic-rate-max"
             type="number"
@@ -426,6 +460,7 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
             value={form.desiredRateMax}
             onChange={(event) => updateField("desiredRateMax", event.target.value)}
             className="h-9"
+            required
           />
         </div>
         <div className="flex flex-col gap-1.5">

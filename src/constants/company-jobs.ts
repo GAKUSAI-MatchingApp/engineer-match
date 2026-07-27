@@ -162,6 +162,7 @@ export const JOB_FORM_FIELDS = {
   contractTypeLockedNote: "契約形態は作成後に変更できません。",
   status: { label: "公開ステータス" },
   workStyle: { label: "勤務形態" },
+  workStylePlaceholder: "選択してください",
   salaryMin: { label: "年収下限（万円）" },
   salaryMax: { label: "年収上限（万円）" },
   deadline: { label: "応募締切" },
@@ -208,11 +209,15 @@ export const JOB_FORM_ERRORS = {
   titleRequired: "求人タイトルを入力してください。",
   titleTooLong: "求人タイトルは100文字以内で入力してください。",
   descriptionRequired: "仕事内容を入力してください。",
+  descriptionTooLong: "仕事内容は3000文字以内で入力してください。",
+  requiredSkillsMinimum: "必須スキルを1件以上選択してください。",
+  requiredSkillsMaximum: "必須スキルは10件まで選択できます。",
   workStyleRequired: "勤務形態を選択してください。",
   salaryRequired: "年収の下限・上限を入力してください。",
   salaryOutOfRange: "年収は1〜9999万円の範囲で入力してください。",
   salaryOrderInvalid: "年収の下限は上限以下にしてください。",
   deadlineRequired: "応募締切を入力してください。",
+  deadlineInPast: "応募締切は本日以降の日付にしてください。",
   budgetRequired: "予算を入力してください。",
   budgetInvalid: "予算は1万円以上で入力してください。",
   headcountInvalid: "募集人数は1名以上で入力してください。",
@@ -229,4 +234,6 @@ export const JOB_FORM_ERRORS = {
   skillsSaveFailed:
     "求人は保存されましたが、必須スキルの保存に失敗しました。もう一度保存し直してください。",
   companyNameRequiredToPublish: "求人を公開するには企業プロフィールに会社名を登録してください。",
+  invalidInput:
+    "入力内容を確認してください（必須スキル1〜10件、仕事内容3000文字以内、応募締切は本日以降）。",
 } as const;

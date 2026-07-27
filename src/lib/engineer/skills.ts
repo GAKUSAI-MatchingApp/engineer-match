@@ -88,11 +88,33 @@ export async function listUserSkills(
   }));
 }
 
+export const MAX_USER_SKILLS = 20;
+export const MIN_USER_SKILLS = 1;
+
+/** Distinguishable from a real Postgres error so the UI can show a specific message rather than a generic "add/remove failed". */
+export const SKILL_LIMIT_MAX_ERROR = "skill_limit_max";
+export const SKILL_LIMIT_MIN_ERROR = "skill_limit_min";
+
+async function countUserSkills(supabase: SupabaseClient, userId: string): Promise<number> {
+  const { count } = await supabase
+    .from("user_skills")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  return count ?? 0;
+}
+
 /**
  * Adds one technical skill at the given ITSS level. Duplicate (user_id,
  * skill_id) pairs are rejected by uq_user_skills (015_user_skills.sql) --
  * callers should also filter the catalog to already-owned skills client-side
  * for a friendlier UX, but the DB constraint is the real guarantee.
+ *
+ * RD 4.2.6: max 20 skills. There is no DB CHECK for a per-user row count
+ * (not expressible as a plain column constraint, and a trigger would risk
+ * touching this table's existing-row behavior more than this phase calls
+ * for) -- re-checking the count here, server-side, immediately before the
+ * insert is what actually keeps a bypassed/direct API call from exceeding
+ * the limit, not just the UI disabling the "add" control at 20.
  */
 export async function addUserSkill(
   supabase: SupabaseClient,
@@ -101,6 +123,11 @@ export async function addUserSkill(
   level: number,
   experienceYears: number | null,
 ) {
+  const currentCount = await countUserSkills(supabase, userId);
+  if (currentCount >= MAX_USER_SKILLS) {
+    return { data: null, error: { message: SKILL_LIMIT_MAX_ERROR } };
+  }
+
   return supabase
     .from("user_skills")
     .insert({ user_id: userId, skill_id: skillId, skill_level: level, experience_years: experienceYears })
@@ -122,6 +149,21 @@ export async function updateUserSkillLevel(
     .single();
 }
 
-export async function removeUserSkill(supabase: SupabaseClient, userSkillId: string) {
+/**
+ * RD 4.2.6: min 1 skill -- this is the incremental add/remove UI's only
+ * "0-skill save" boundary (there is no separate profile-finalize step), so
+ * the guard belongs here: removing a user's last remaining skill is refused
+ * server-side, not just by disabling the UI's delete button.
+ */
+export async function removeUserSkill(
+  supabase: SupabaseClient,
+  userSkillId: string,
+  userId: string,
+) {
+  const currentCount = await countUserSkills(supabase, userId);
+  if (currentCount <= MIN_USER_SKILLS) {
+    return { error: { message: SKILL_LIMIT_MIN_ERROR } };
+  }
+
   return supabase.from("user_skills").delete().eq("id", userSkillId);
 }

@@ -7,7 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
-import { saveCompanyProfile, type CompanyProfile } from "@/lib/company/profile";
+import {
+  saveCompanyProfile,
+  type CompanyProfile,
+  type IndustryCategoryOption,
+} from "@/lib/company/profile";
 import {
   COMPANY_PROFILE_ERRORS,
   COMPANY_PROFILE_FORM,
@@ -20,11 +24,14 @@ const SELECT_CLASS =
 
 interface CompanyProfileHeaderProps {
   profile: CompanyProfile | null;
+  /** Active public.industry_categories rows, per 064_industry_categories.sql draft (Phase 5 決定事項③). Empty until that migration is applied and seeded. */
+  industryCategories: IndustryCategoryOption[];
 }
 
 interface FormState {
   companyName: string;
-  industry: string;
+  /** public.company_profiles.industry_category_id -- replaces the old free-text `industry` form field per Phase 5 決定事項③. The legacy `industry` text itself is never edited here; it is passed straight through unmodified on save (see handleSubmit). */
+  industryCategoryId: string;
   companySize: string;
   prefecture: string;
   address: string;
@@ -38,7 +45,7 @@ interface FormState {
 function buildFormState(profile: CompanyProfile | null): FormState {
   return {
     companyName: profile?.company_name ?? "",
-    industry: profile?.industry ?? "",
+    industryCategoryId: profile?.industry_category_id ?? "",
     companySize: profile?.company_size ?? "",
     prefecture: profile?.prefecture ?? "",
     address: profile?.address ?? "",
@@ -50,7 +57,7 @@ function buildFormState(profile: CompanyProfile | null): FormState {
   };
 }
 
-export function CompanyProfileHeader({ profile }: CompanyProfileHeaderProps) {
+export function CompanyProfileHeader({ profile, industryCategories }: CompanyProfileHeaderProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState<FormState>(() => buildFormState(profile));
@@ -100,8 +107,14 @@ export function CompanyProfileHeader({ profile }: CompanyProfileHeaderProps) {
     let establishedYear: number | null = null;
     if (form.establishedYear.trim()) {
       const parsed = Number(form.establishedYear);
+      const currentYear = new Date().getFullYear();
       if (!Number.isInteger(parsed) || parsed < 1800 || parsed > 2100) {
         setFormMessage(COMPANY_PROFILE_ERRORS.invalidYear);
+        setFormStatus("error");
+        return;
+      }
+      if (parsed > currentYear) {
+        setFormMessage(COMPANY_PROFILE_ERRORS.invalidYearFuture);
         setFormStatus("error");
         return;
       }
@@ -130,7 +143,10 @@ export function CompanyProfileHeader({ profile }: CompanyProfileHeaderProps) {
 
       const { error } = await saveCompanyProfile(supabase, user.id, {
         company_name: companyName,
-        industry: form.industry.trim() || null,
+        // Legacy free-text column: intentionally passed through unmodified,
+        // never cleared/overwritten by this form (Phase 5 決定事項③).
+        industry: profile?.industry ?? null,
+        industry_category_id: form.industryCategoryId || null,
         company_size: form.companySize || null,
         prefecture: form.prefecture.trim() || null,
         address: form.address.trim() || null,
@@ -168,6 +184,12 @@ export function CompanyProfileHeader({ profile }: CompanyProfileHeaderProps) {
   const sizeLabel = COMPANY_SIZE_OPTIONS.find(
     (option) => option.value === profile?.company_size,
   )?.label;
+  // Prefer the resolved master category name; fall back to the legacy
+  // free-text value for companies that haven't picked a category yet.
+  const industryDisplay =
+    industryCategories.find((option) => option.id === profile?.industry_category_id)?.name ??
+    profile?.industry ??
+    null;
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
@@ -194,8 +216,8 @@ export function CompanyProfileHeader({ profile }: CompanyProfileHeaderProps) {
                 <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                   {profile?.company_name || COMPANY_PROFILE_FORM.emptyNameMessage}
                 </h2>
-                {profile?.industry && (
-                  <p className="mt-1 text-sm text-muted-foreground">{profile.industry}</p>
+                {industryDisplay && (
+                  <p className="mt-1 text-sm text-muted-foreground">{industryDisplay}</p>
                 )}
                 <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
                   {sizeLabel && (
@@ -279,12 +301,19 @@ export function CompanyProfileHeader({ profile }: CompanyProfileHeaderProps) {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="profile-industry">{COMPANY_PROFILE_FORM.industryLabel}</Label>
-              <Input
+              <select
                 id="profile-industry"
-                value={form.industry}
-                onChange={(event) => updateField("industry", event.target.value)}
-                placeholder={COMPANY_PROFILE_FORM.industryPlaceholder}
-              />
+                value={form.industryCategoryId}
+                onChange={(event) => updateField("industryCategoryId", event.target.value)}
+                className={SELECT_CLASS}
+              >
+                <option value="">{COMPANY_PROFILE_FORM.industryCategoryPlaceholder}</option>
+                {industryCategories.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -315,7 +344,7 @@ export function CompanyProfileHeader({ profile }: CompanyProfileHeaderProps) {
                 type="number"
                 inputMode="numeric"
                 min={1800}
-                max={2100}
+                max={new Date().getFullYear()}
                 value={form.establishedYear}
                 onChange={(event) => updateField("establishedYear", event.target.value)}
                 placeholder={COMPANY_PROFILE_FORM.establishedYearPlaceholder}

@@ -40,7 +40,14 @@ export interface OpportunityProject {
   is_online: boolean | null;
 }
 
-/** 008_opportunity_hourly.sql */
+/**
+ * 008_opportunity_hourly.sql, plus work_style added by
+ * 063_opportunity_hourly_work_style.sql (Phase 5 決定事項②). work_style is
+ * nullable: existing rows created before that migration have no safe,
+ * non-guessed mapping from is_online and are left NULL (legacy). is_online
+ * itself is unchanged and kept for backward compatibility -- never read as
+ * a proxy for work_style.
+ */
 export interface OpportunityHourly {
   opportunity_id: string;
   period_start: string;
@@ -49,6 +56,7 @@ export interface OpportunityHourly {
   time_end: string;
   hourly_rate: number;
   is_online: boolean;
+  work_style: "REMOTE" | "ONSITE" | "HYBRID" | null;
   headcount: number;
 }
 
@@ -101,6 +109,8 @@ export interface HourlyInput {
   time_end: string;
   hourly_rate: number;
   is_online: boolean;
+  /** Required for every new create/edit save going forward (RD 決定事項②); only ever NULL on rows that predate 063_opportunity_hourly_work_style.sql. */
+  work_style: "REMOTE" | "ONSITE" | "HYBRID";
   headcount: number;
 }
 
@@ -263,6 +273,34 @@ async function hasRegisteredCompanyName(
   return name.trim().length > 0;
 }
 
+/**
+ * Today's date as YYYY-MM-DD in Asia/Tokyo -- matches opportunity_project.
+ * deadline's DATE-column string format exactly, so it can be compared with a
+ * plain string comparison instead of parsing either side into a Date object
+ * (which would risk a UTC/local timezone shift making "today" look like
+ * yesterday or tomorrow, RD-2026-001 4.4.6 note on deadline validation).
+ */
+export function getTodayDateStringJST(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo" }).format(new Date());
+}
+
+/**
+ * RD-2026-001 4.4.6 checks re-validated server-side (never trust the
+ * frontend form alone, CreateJobForm.tsx's validateJobForm is the same rule
+ * set but is bypassable by any direct API caller): required skills 1-10
+ * (BR applies to every status, not just published -- mirrors how title/
+ * description are already required regardless of draft/published here),
+ * description <= 3000 chars, and for project listings, deadline >= today.
+ */
+function validateOpportunityInput(input: OpportunityInput): boolean {
+  if (input.requiredSkillIds.length < 1 || input.requiredSkillIds.length > 10) return false;
+  if (input.description.length > 3000) return false;
+  if (input.contract_type === "project" && input.project) {
+    if (input.project.deadline < getTodayDateStringJST()) return false;
+  }
+  return true;
+}
+
 async function upsertChildRow(
   supabase: SupabaseClient,
   opportunityId: string,
@@ -349,6 +387,10 @@ export async function createCompanyOpportunity(
   userId: string,
   input: OpportunityInput,
 ) {
+  if (!validateOpportunityInput(input)) {
+    return { data: null, error: null, stage: "invalid_input" as const };
+  }
+
   if (input.status === "published" && !(await hasRegisteredCompanyName(supabase, userId))) {
     return { data: null, error: null, stage: "company_name_required" as const };
   }
@@ -404,6 +446,10 @@ export async function updateCompanyOpportunity(
   id: string,
   input: OpportunityInput,
 ) {
+  if (!validateOpportunityInput(input)) {
+    return { error: null, stage: "invalid_input" as const };
+  }
+
   if (input.status === "published" && !(await hasRegisteredCompanyName(supabase, userId))) {
     return { error: null, stage: "company_name_required" as const };
   }

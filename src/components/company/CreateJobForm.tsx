@@ -12,7 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/lib/supabase/client";
 import {
   createCompanyOpportunity,
+  getTodayDateStringJST,
   type CompanyContractType,
+  type HourlyInput,
   type JobStatus,
   type OpportunityDetail,
   type OpportunityEmployment,
@@ -51,6 +53,16 @@ export interface JobFormState {
   timeEnd: string;
   hourlyRate: string;
   hourlyIsOnline: string;
+  /**
+   * Phase 5 決定事項②. Defaults to "REMOTE" only for a brand-new posting
+   * (nothing to preserve). For an existing legacy row with work_style still
+   * NULL (predates 063_opportunity_hourly_work_style.sql), this is left ""
+   * on purpose rather than defaulted -- required-field validation then
+   * forces the company to make an explicit choice before the save can go
+   * through, instead of a guessed value being silently written just because
+   * they happened to edit something else on the same job.
+   */
+  hourlyWorkStyle: string;
   requiredSkillIds: string[];
 }
 
@@ -74,6 +86,7 @@ export function buildInitialFormState(detail?: OpportunityDetail | null): JobFor
       timeEnd: "",
       hourlyRate: "",
       hourlyIsOnline: "true",
+      hourlyWorkStyle: "REMOTE",
       requiredSkillIds: [],
     };
   }
@@ -102,6 +115,7 @@ export function buildInitialFormState(detail?: OpportunityDetail | null): JobFor
     timeEnd: hourly?.time_end?.slice(0, 5) ?? "",
     hourlyRate: hourly ? String(hourly.hourly_rate) : "",
     hourlyIsOnline: hourly ? String(hourly.is_online) : "true",
+    hourlyWorkStyle: hourly?.work_style ?? "",
     requiredSkillIds,
   };
 }
@@ -111,6 +125,10 @@ export function validateJobForm(state: JobFormState): string | null {
   if (!title) return JOB_FORM_ERRORS.titleRequired;
   if (title.length > 100) return JOB_FORM_ERRORS.titleTooLong;
   if (!state.description.trim()) return JOB_FORM_ERRORS.descriptionRequired;
+  if (state.description.length > 3000) return JOB_FORM_ERRORS.descriptionTooLong;
+
+  if (state.requiredSkillIds.length < 1) return JOB_FORM_ERRORS.requiredSkillsMinimum;
+  if (state.requiredSkillIds.length > 10) return JOB_FORM_ERRORS.requiredSkillsMaximum;
 
   if (state.contractType === "employment") {
     if (!state.workStyle) return JOB_FORM_ERRORS.workStyleRequired;
@@ -135,6 +153,7 @@ export function validateJobForm(state: JobFormState): string | null {
 
   if (state.contractType === "project") {
     if (!state.deadline) return JOB_FORM_ERRORS.deadlineRequired;
+    if (state.deadline < getTodayDateStringJST()) return JOB_FORM_ERRORS.deadlineInPast;
     if (!state.budget.trim()) return JOB_FORM_ERRORS.budgetRequired;
     const budget = Number(state.budget);
     if (!Number.isInteger(budget) || budget < 1) return JOB_FORM_ERRORS.budgetInvalid;
@@ -146,6 +165,7 @@ export function validateJobForm(state: JobFormState): string | null {
   }
 
   // hourly
+  if (!state.hourlyWorkStyle) return JOB_FORM_ERRORS.workStyleRequired;
   if (!state.periodStart || !state.periodEnd) return JOB_FORM_ERRORS.periodRequired;
   if (state.periodStart > state.periodEnd) return JOB_FORM_ERRORS.periodInvalid;
   if (!state.timeStart || !state.timeEnd) return JOB_FORM_ERRORS.timeRequired;
@@ -192,6 +212,7 @@ export function buildOpportunityInput(state: JobFormState): OpportunityInput {
             time_end: state.timeEnd,
             hourly_rate: Number(state.hourlyRate),
             is_online: state.hourlyIsOnline === "true",
+            work_style: state.hourlyWorkStyle as HourlyInput["work_style"],
             headcount: Number(state.headcount),
           }
         : null,
@@ -216,12 +237,13 @@ function RequiredSkillsPicker({
   const filtered = skills.filter((skill) =>
     skill.name.toLowerCase().includes(query.trim().toLowerCase()),
   );
+  const atMax = selectedIds.length >= 10;
 
   function toggle(id: string) {
+    const isSelected = selectedIds.includes(id);
+    if (!isSelected && atMax) return;
     onChange(
-      selectedIds.includes(id)
-        ? selectedIds.filter((existing) => existing !== id)
-        : [...selectedIds, id],
+      isSelected ? selectedIds.filter((existing) => existing !== id) : [...selectedIds, id],
     );
   }
 
@@ -244,15 +266,17 @@ function RequiredSkillsPicker({
         <div className="flex flex-col gap-2.5">
           {filtered.map((skill) => {
             const checkboxId = `${idPrefix}-skill-${skill.id}`;
+            const isSelected = selectedIds.includes(skill.id);
             return (
               <label
                 key={skill.id}
                 htmlFor={checkboxId}
-                className="flex items-center gap-2 text-sm text-foreground"
+                className="flex items-center gap-2 text-sm text-foreground has-disabled:cursor-not-allowed has-disabled:opacity-50"
               >
                 <Checkbox
                   id={checkboxId}
-                  checked={selectedIds.includes(skill.id)}
+                  checked={isSelected}
+                  disabled={!isSelected && atMax}
                   onCheckedChange={() => toggle(skill.id)}
                 />
                 {skill.name}
@@ -261,12 +285,9 @@ function RequiredSkillsPicker({
           })}
         </div>
       </div>
-      {selectedIds.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {selectedIds.length}
-          {JOB_FORM_FIELDS.requiredSkills.selectedCountSuffix}
-        </p>
-      )}
+      <p className="text-xs text-muted-foreground">
+        {selectedIds.length}/10{JOB_FORM_FIELDS.requiredSkills.selectedCountSuffix}
+      </p>
     </div>
   );
 }
@@ -309,11 +330,15 @@ export function JobFormFields({
             <Textarea
               id={`${idPrefix}-description`}
               value={state.description}
-              onChange={(event) => onChange({ description: event.target.value })}
+              onChange={(event) => onChange({ description: event.target.value.slice(0, 3000) })}
               placeholder={JOB_FORM_FIELDS.description.placeholder}
+              maxLength={3000}
               rows={5}
               required
             />
+            <p className="text-right text-xs text-muted-foreground">
+              {state.description.length} / 3000
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -434,6 +459,7 @@ export function JobFormFields({
               <Input
                 id={`${idPrefix}-deadline`}
                 type="date"
+                min={getTodayDateStringJST()}
                 value={state.deadline}
                 onChange={(event) => onChange({ deadline: event.target.value })}
               />
@@ -565,6 +591,26 @@ export function JobFormFields({
                 <option value="false">{JOB_FORM_FIELDS.isOnlineNo}</option>
               </select>
             </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${idPrefix}-hourly-work-style`}>
+                {JOB_FORM_FIELDS.workStyle.label}
+              </Label>
+              <select
+                id={`${idPrefix}-hourly-work-style`}
+                value={state.hourlyWorkStyle}
+                onChange={(event) => onChange({ hourlyWorkStyle: event.target.value })}
+                className={SELECT_CLASS}
+              >
+                <option value="" disabled>
+                  {JOB_FORM_FIELDS.workStylePlaceholder}
+                </option>
+                {WORK_STYLE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </ProfileSection>
       )}
@@ -687,6 +733,12 @@ export function CreateJobForm({ skills }: CreateJobFormProps) {
 
       const input = buildOpportunityInput(state);
       const { data, error, stage } = await createCompanyOpportunity(supabase, user.id, input);
+
+      if (stage === "invalid_input") {
+        setFormMessage(JOB_FORM_ERRORS.invalidInput);
+        setFormStatus("error");
+        return;
+      }
 
       if (stage === "company_name_required") {
         setFormMessage(JOB_FORM_ERRORS.companyNameRequiredToPublish);

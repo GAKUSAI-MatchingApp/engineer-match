@@ -11,11 +11,19 @@ import {
   SEARCH_HEADER,
   SIGN_IN_REQUIRED_LABELS,
   type SortOption,
+  type WorkStyleFilterValue,
 } from "@/constants/jobs";
 import { createClient } from "@/lib/supabase/server";
-import { listPublishedOpportunities, type CompanyContractType } from "@/lib/engineer/opportunities";
+import {
+  listPublishedOpportunities,
+  type CompanyContractType,
+  type WorkStyleValue,
+} from "@/lib/engineer/opportunities";
 import { listMyFavoriteOpportunityIds } from "@/lib/engineer/favorites";
 import { getEngineerHeaderIdentity } from "@/lib/engineer/profile";
+import { listSkillCatalog } from "@/lib/engineer/skills";
+
+const WORK_STYLE_VALUES: readonly WorkStyleValue[] = ["REMOTE", "ONSITE", "HYBRID"];
 
 export const metadata: Metadata = {
   title: "求人・案件検索 | ENGINEER MATCH",
@@ -23,7 +31,14 @@ export const metadata: Metadata = {
 };
 
 interface EngineerJobsPageProps {
-  searchParams: Promise<{ search?: string; contractType?: string; sort?: string; page?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    contractType?: string;
+    sort?: string;
+    page?: string;
+    skills?: string;
+    workStyle?: string;
+  }>;
 }
 
 function SignInRequired() {
@@ -67,11 +82,15 @@ async function JobListSection({
   contractType,
   sort,
   page,
+  skillIds,
+  workStyle,
 }: {
   search: string;
   contractType: CompanyContractType | "";
   sort: SortOption;
   page: number;
+  skillIds: string[];
+  workStyle: WorkStyleFilterValue;
 }) {
   const supabase = await createClient();
   const {
@@ -82,14 +101,17 @@ async function JobListSection({
     return <SignInRequired />;
   }
 
-  const [result, favoriteIds] = await Promise.all([
+  const [result, favoriteIds, skillCatalog] = await Promise.all([
     listPublishedOpportunities(supabase, {
       search,
       contractType: contractType || null,
+      skillIds,
+      workStyle: workStyle || null,
       sort,
       page,
     }),
     listMyFavoriteOpportunityIds(supabase, authUser.id),
+    listSkillCatalog(supabase),
   ]);
 
   if (result.error) {
@@ -108,6 +130,9 @@ async function JobListSection({
       searchValue={search}
       contractTypeValue={contractType}
       sortValue={sort}
+      skillCatalog={skillCatalog}
+      skillIdsValue={skillIds}
+      workStyleValue={workStyle}
     />
   );
 }
@@ -128,6 +153,15 @@ export default async function EngineerJobsPage({ searchParams }: EngineerJobsPag
   ) as CompanyContractType | "";
   const sort: SortOption = params.sort === "oldest" ? "oldest" : "newest";
   const page = Math.max(1, Number(params.page) || 1);
+  const skillIds = (params.skills ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  const workStyle: WorkStyleFilterValue = (
+    WORK_STYLE_VALUES as readonly string[]
+  ).includes(params.workStyle ?? "")
+    ? (params.workStyle as WorkStyleFilterValue)
+    : "";
 
   return (
     <DashboardShell
@@ -139,8 +173,18 @@ export default async function EngineerJobsPage({ searchParams }: EngineerJobsPag
       userEmail={identity.email}
     >
       <SearchHeader />
-      <Suspense fallback={<LoadingState />} key={`${search}-${contractType}-${sort}-${page}`}>
-        <JobListSection search={search} contractType={contractType} sort={sort} page={page} />
+      <Suspense
+        fallback={<LoadingState />}
+        key={`${search}-${contractType}-${sort}-${page}-${skillIds.join(".")}-${workStyle}`}
+      >
+        <JobListSection
+          search={search}
+          contractType={contractType}
+          sort={sort}
+          page={page}
+          skillIds={skillIds}
+          workStyle={workStyle}
+        />
       </Suspense>
     </DashboardShell>
   );

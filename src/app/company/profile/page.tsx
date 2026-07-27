@@ -7,7 +7,11 @@ import { COMPANY_NAV } from "@/constants/dashboard";
 import { COMPANY_PROFILE_PAGE } from "@/constants/company";
 import type { CompanyStatisticsItem } from "@/components/company/CompanyStatistics";
 import { createClient } from "@/lib/supabase/server";
-import { getCompanyProfile, getCompanyHeaderIdentity } from "@/lib/company/profile";
+import {
+  getCompanyProfile,
+  getCompanyHeaderIdentity,
+  listActiveIndustryCategories,
+} from "@/lib/company/profile";
 import { getCompanyMetrics } from "@/lib/company/dashboard";
 
 export const metadata: Metadata = {
@@ -21,7 +25,7 @@ export default async function CompanyProfilePage() {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  const [profile, identity, metrics] = await Promise.all([
+  const [profile, identity, metrics, industryCategories] = await Promise.all([
     authUser ? getCompanyProfile(supabase, authUser.id) : Promise.resolve(null),
     getCompanyHeaderIdentity(supabase, authUser),
     authUser
@@ -35,6 +39,7 @@ export default async function CompanyProfilePage() {
           newApplicantsCount: 0,
           acceptedCount: 0,
         }),
+    listActiveIndustryCategories(supabase),
   ]);
 
   const statistics: CompanyStatisticsItem[] = [
@@ -62,7 +67,7 @@ export default async function CompanyProfilePage() {
         </p>
       </div>
 
-      <CompanyProfileHeader profile={profile} />
+      <CompanyProfileHeader profile={profile} industryCategories={industryCategories} />
 
       <CompanyStatistics items={statistics} />
 

@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   ITSS_SKILL_LEVELS,
+  MAX_USER_SKILLS,
+  MIN_USER_SKILLS,
+  SKILL_LIMIT_MAX_ERROR,
+  SKILL_LIMIT_MIN_ERROR,
   addUserSkill,
   removeUserSkill,
   updateUserSkillLevel,
@@ -34,15 +38,17 @@ export function TechnicalSkillsManager({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const availableToAdd = catalog.filter(
-    (item) => !skills.some((skill) => skill.skillId === item.id),
-  );
+  const atMaxSkills = skills.length >= MAX_USER_SKILLS;
+  const atMinSkills = skills.length <= MIN_USER_SKILLS;
+  const availableToAdd = atMaxSkills
+    ? []
+    : catalog.filter((item) => !skills.some((skill) => skill.skillId === item.id));
   const [newSkillId, setNewSkillId] = useState<string>(availableToAdd[0]?.id ?? "");
   const [newLevel, setNewLevel] = useState<number>(1);
   const [newExperienceYears, setNewExperienceYears] = useState<string>("");
 
   async function handleAdd() {
-    if (isSubmitting || !newSkillId) return;
+    if (isSubmitting || !newSkillId || atMaxSkills) return;
     setIsSubmitting(true);
     setError(null);
 
@@ -60,7 +66,11 @@ export function TechnicalSkillsManager({
 
     if (addError || !data) {
       console.error("[technical-skills] add failed:", addError);
-      setError(TECHNICAL_SKILL_EDITOR_LABELS.addError);
+      setError(
+        (addError as { message?: string } | null)?.message === SKILL_LIMIT_MAX_ERROR
+          ? TECHNICAL_SKILL_EDITOR_LABELS.limitMaxError
+          : TECHNICAL_SKILL_EDITOR_LABELS.addError,
+      );
       return;
     }
 
@@ -121,17 +131,25 @@ export function TechnicalSkillsManager({
 
   async function handleRemove(userSkillId: string) {
     if (isSubmitting) return;
+    if (atMinSkills) {
+      setError(TECHNICAL_SKILL_EDITOR_LABELS.limitMinError);
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
 
     const supabase = createClient();
-    const { error: removeError } = await removeUserSkill(supabase, userSkillId);
+    const { error: removeError } = await removeUserSkill(supabase, userSkillId, userId);
 
     setIsSubmitting(false);
 
     if (removeError) {
       console.error("[technical-skills] remove failed:", removeError);
-      setError(TECHNICAL_SKILL_EDITOR_LABELS.removeError);
+      setError(
+        (removeError as { message?: string }).message === SKILL_LIMIT_MIN_ERROR
+          ? TECHNICAL_SKILL_EDITOR_LABELS.limitMinError
+          : TECHNICAL_SKILL_EDITOR_LABELS.removeError,
+      );
       return;
     }
 
@@ -143,6 +161,11 @@ export function TechnicalSkillsManager({
       <legend className="text-sm font-semibold text-foreground">
         {TECHNICAL_SKILL_EDITOR_LABELS.skillLabel}
       </legend>
+
+      <p className="text-xs text-muted-foreground">
+        {skills.length}/{MAX_USER_SKILLS}
+        {TECHNICAL_SKILL_EDITOR_LABELS.countSuffix}
+      </p>
 
       {skills.length === 0 && (
         <p className="text-sm text-muted-foreground">{TECHNICAL_SKILL_EDITOR_LABELS.emptyMessage}</p>
@@ -199,7 +222,8 @@ export function TechnicalSkillsManager({
           <button
             type="button"
             onClick={() => handleRemove(skill.id)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || atMinSkills}
+            title={atMinSkills ? TECHNICAL_SKILL_EDITOR_LABELS.limitMinError : undefined}
             aria-label={`${TECHNICAL_SKILL_EDITOR_LABELS.removeLabel}：${skill.name}`}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -269,7 +293,9 @@ export function TechnicalSkillsManager({
       ) : (
         skills.length > 0 && (
           <p className="text-xs text-muted-foreground">
-            {TECHNICAL_SKILL_EDITOR_LABELS.emptyCatalogMessage}
+            {atMaxSkills
+              ? TECHNICAL_SKILL_EDITOR_LABELS.limitMaxError
+              : TECHNICAL_SKILL_EDITOR_LABELS.emptyCatalogMessage}
           </p>
         )
       )}

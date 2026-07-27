@@ -40,6 +40,14 @@ export const WORK_STYLE_LABEL: Record<string, string> = {
   HYBRID: "一部リモート",
 };
 
+/** opportunity_employment.work_style, per chk_opportunity_employment_work_style (006_opportunity_employment.sql). BR-39 search filter. */
+export const WORK_STYLE_OPTIONS = [
+  { value: "REMOTE", label: "フルリモート" },
+  { value: "ONSITE", label: "出社" },
+  { value: "HYBRID", label: "一部リモート" },
+] as const;
+export type WorkStyleFilterValue = (typeof WORK_STYLE_OPTIONS)[number]["value"] | "";
+
 export const WORK_STYLE_BADGE_STYLES: Record<string, string> = {
   REMOTE: "bg-teal-50 text-teal-700",
   ONSITE: "bg-muted text-muted-foreground",
@@ -70,11 +78,18 @@ export const SEARCH_HEADER = {
 export const FILTER_LABELS = {
   title: "絞り込み条件",
   searchLabel: "求人を検索",
-  searchPlaceholder: "求人タイトルで検索",
+  searchPlaceholder: "求人タイトル・仕事内容で検索",
   contractTypeLabel: "契約形態",
   contractTypeAllLabel: "すべての契約形態",
   sortLabel: "並び替え",
   resetLabel: "条件をリセット",
+  skillLabel: "必須スキル",
+  skillPlaceholder: "スキル名で検索",
+  skillSelectedCountSuffix: "件選択中",
+  skillEmptyMessage: "登録されているスキルがありません。",
+  workStyleLabel: "勤務形態",
+  workStyleAllLabel: "すべての勤務形態",
+  workStyleUnavailableNote: "契約形態が「就職」または「すべて」の場合に選択できます。",
 } as const;
 
 // ============================================================

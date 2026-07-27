@@ -239,6 +239,16 @@ export default async function CompanyJobDetailPage({ params }: CompanyJobDetailP
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">
+                    {JOB_FORM_FIELDS.workStyle.label}
+                  </dt>
+                  <dd className="mt-1 text-sm font-medium text-foreground">
+                    {hourly.work_style
+                      ? (WORK_STYLE_LABEL[hourly.work_style] ?? hourly.work_style)
+                      : "未設定（登録時期が古い求人・案件です。編集時に選択してください）"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">
                     {JOB_FORM_FIELDS.isOnlineProject.label}
                   </dt>
                   <dd className="mt-1 text-sm font-medium text-foreground">

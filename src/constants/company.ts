@@ -33,6 +33,8 @@ export const COMPANY_PROFILE_FORM = {
   companyNamePlaceholder: "株式会社サンプル",
   industryLabel: "業種",
   industryPlaceholder: "業務効率化SaaSの開発・提供",
+  /** Phase 5 決定事項③: master-select placeholder, replacing the old free-text industry Input in the edit form. */
+  industryCategoryPlaceholder: "選択してください",
   companySizeLabel: "従業員数",
   companySizePlaceholder: "選択してください",
   prefectureLabel: "都道府県",
@@ -59,6 +61,7 @@ export const COMPANY_PROFILE_FORM = {
 export const COMPANY_PROFILE_ERRORS = {
   nameRequired: "会社名を入力してください。",
   invalidYear: "設立年は1800〜2100の範囲で入力してください。",
+  invalidYearFuture: "設立年に本年より後の年は入力できません。",
   descriptionTooLong: "企業紹介は2000文字以内で入力してください。",
   notSignedIn: "ログイン情報を確認できませんでした。再度ログインしてください。",
   saveFailed:

@@ -21,6 +21,11 @@ export function JobDetailHero({ detail }: JobDetailHeroProps) {
     project,
     hourly,
   });
+  // Phase 5 決定事項②: hourly gained its own work_style
+  // (063_opportunity_hourly_work_style.sql draft); NULL on legacy rows, so
+  // the badge simply doesn't render for those, same as it already didn't
+  // for project (which has no work_style concept at all).
+  const workStyle = employment?.work_style ?? hourly?.work_style ?? null;
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
@@ -30,11 +35,11 @@ export function JobDetailHero({ detail }: JobDetailHeroProps) {
         >
           {CONTRACT_TYPE_LABEL[opportunity.contract_type]}
         </span>
-        {employment && (
+        {workStyle && (
           <span
-            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${WORK_STYLE_BADGE_STYLES[employment.work_style]}`}
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${WORK_STYLE_BADGE_STYLES[workStyle]}`}
           >
-            {WORK_STYLE_LABEL[employment.work_style]}
+            {WORK_STYLE_LABEL[workStyle]}
           </span>
         )}
       </div>

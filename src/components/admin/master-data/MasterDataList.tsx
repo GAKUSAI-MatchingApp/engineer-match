@@ -15,13 +15,16 @@ import {
   type MasterDataTabKey,
 } from "@/constants/admin-master-data";
 import {
+  createIndustryCategory,
   createQualification,
   createSkill,
   createSkillSubcategory,
+  setIndustryCategoryActive,
   setQualificationActive,
   setSkillActive,
   setSkillCategoryActive,
   setSkillSubcategoryActive,
+  updateIndustryCategory,
   updateQualification,
   updateSkill,
   updateSkillCategory,
@@ -36,8 +39,14 @@ interface MasterDataListProps {
   data: AdminMasterData;
 }
 
-const ADDABLE_TABS: MasterDataTabKey[] = ["skills", "skillSubcategories", "qualifications"];
-const TOGGLEABLE_TABS: MasterDataTabKey[] = ["skills", "skillSubcategories", "skillCategories", "qualifications"];
+const ADDABLE_TABS: MasterDataTabKey[] = ["skills", "skillSubcategories", "qualifications", "industries"];
+const TOGGLEABLE_TABS: MasterDataTabKey[] = [
+  "skills",
+  "skillSubcategories",
+  "skillCategories",
+  "qualifications",
+  "industries",
+];
 
 export function MasterDataList({ data: initialData }: MasterDataListProps) {
   const [data, setData] = useState(initialData);
@@ -84,6 +93,7 @@ export function MasterDataList({ data: initialData }: MasterDataListProps) {
     if (activeTab === "skills") result = await setSkillActive(supabase, item.id, nextActive);
     else if (activeTab === "skillSubcategories") result = await setSkillSubcategoryActive(supabase, item.id, nextActive);
     else if (activeTab === "skillCategories") result = await setSkillCategoryActive(supabase, item.id, nextActive);
+    else if (activeTab === "industries") result = await setIndustryCategoryActive(supabase, item.id, nextActive);
     else result = await setQualificationActive(supabase, item.id, nextActive);
 
     if (result.error) {
@@ -147,6 +157,14 @@ export function MasterDataList({ data: initialData }: MasterDataListProps) {
         ).error;
       } else {
         const result = await createQualification(supabase, values.name, values.organization, values.category);
+        error = result.error;
+        createdId = result.id;
+      }
+    } else if (activeTab === "industries") {
+      if (isEdit) {
+        error = (await updateIndustryCategory(supabase, formDialog!.item!.id, values.name)).error;
+      } else {
+        const result = await createIndustryCategory(supabase, values.name);
         error = result.error;
         createdId = result.id;
       }

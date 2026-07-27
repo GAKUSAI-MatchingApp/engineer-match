@@ -67,6 +67,12 @@ export function EditJobForm({ detail, skills }: EditJobFormProps) {
         input,
       );
 
+      if (stage === "invalid_input") {
+        setFormMessage(JOB_FORM_ERRORS.invalidInput);
+        setFormStatus("error");
+        return;
+      }
+
       if (stage === "company_name_required") {
         setFormMessage(JOB_FORM_ERRORS.companyNameRequiredToPublish);
         setFormStatus("error");

@@ -15,10 +15,43 @@ export interface CompanyProfile {
   website_url: string | null;
   contact_person: string | null;
   company_size: string | null;
+  /**
+   * Legacy free-text industry (004_profile_tables.sql). Phase 5 決定事項③
+   * moves the edit UI to master selection (industry_category_id below), but
+   * this column is deliberately kept and never cleared/overwritten by the
+   * new form -- existing values (including ones with no clean mapping to
+   * any master category) are preserved as-is.
+   */
   industry: string | null;
+  /** public.industry_categories FK, per 064_industry_categories.sql draft. NULL for every row until a company explicitly picks one via the new selector. */
+  industry_category_id: string | null;
   established_year: number | null;
   created_at: string;
   updated_at: string;
+}
+
+/** public.industry_categories, per 064_industry_categories.sql draft (Phase 5 決定事項③). */
+export interface IndustryCategoryOption {
+  id: string;
+  name: string;
+}
+
+/** Active industries only, for the Company Profile edit selector -- mirrors listSkillCatalog()'s is_active filtering (src/lib/engineer/skills.ts). */
+export async function listActiveIndustryCategories(
+  supabase: SupabaseClient,
+): Promise<IndustryCategoryOption[]> {
+  const { data, error } = await supabase
+    .from("industry_categories")
+    .select("id, name")
+    .eq("is_active", true)
+    .order("display_order");
+
+  if (error) {
+    console.error("[company-profile] failed to list industry categories:", error);
+    return [];
+  }
+
+  return (data ?? []) as IndustryCategoryOption[];
 }
 
 export type CompanyProfileInput = Omit<
@@ -57,11 +90,25 @@ export async function getCompanyProfile(
  * (company_profiles_insert_own / company_profiles_update_own in
  * 023_profile_policies.sql), so this never needs a service-role client.
  */
+/**
+ * RD 4.3.6: established_year may never be later than the current year, on
+ * top of the existing chk_company_profiles_established_year DB CHECK
+ * (1800-2100, 004_profile_tables.sql) which this doesn't replace or relax.
+ * Re-checked here so a caller bypassing CompanyProfileHeader's own form
+ * validation still can't save a future year.
+ */
 export async function saveCompanyProfile(
   supabase: SupabaseClient,
   userId: string,
   input: CompanyProfileInput,
 ) {
+  if (input.established_year !== null && input.established_year > new Date().getFullYear()) {
+    return {
+      data: null,
+      error: { message: "established_year cannot be later than the current year" },
+    };
+  }
+
   return supabase
     .from("company_profiles")
     .upsert({ id: userId, ...input }, { onConflict: "id" })

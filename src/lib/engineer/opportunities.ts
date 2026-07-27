@@ -40,7 +40,12 @@ export interface OpportunityProject {
   is_online: boolean;
 }
 
-/** 008_opportunity_hourly.sql */
+/**
+ * 008_opportunity_hourly.sql, plus work_style added by
+ * 063_opportunity_hourly_work_style.sql (Phase 5 決定事項②). NULL on rows
+ * that predate that migration -- never back-derived from is_online, which
+ * has no safe one-to-one mapping to REMOTE/ONSITE/HYBRID.
+ */
 export interface OpportunityHourly {
   opportunity_id: string;
   period_start: string;
@@ -49,6 +54,7 @@ export interface OpportunityHourly {
   time_end: string;
   hourly_rate: number;
   is_online: boolean;
+  work_style: "REMOTE" | "ONSITE" | "HYBRID" | null;
   headcount: number;
 }
 
@@ -105,7 +111,7 @@ export async function hydrateOpportunities(
         .in("opportunity_id", ids),
       supabase
         .from("opportunity_hourly")
-        .select("opportunity_id, hourly_rate")
+        .select("opportunity_id, hourly_rate, work_style")
         .in("opportunity_id", ids),
       supabase
         .from("opportunity_required_skills")
@@ -158,7 +164,15 @@ export async function hydrateOpportunities(
       created_at: row.created_at,
       updated_at: row.updated_at,
       companyName: companyNameById.get(row.posted_by) || "",
-      workStyle: employment ? (employment.work_style as string) : null,
+      // Phase 5 決定事項②: hourly gained its own work_style column
+      // (063_opportunity_hourly_work_style.sql); employment keeps priority
+      // since only one of the two can ever be set for a given opportunity
+      // (contract_type is exclusive), null-coalescing is purely defensive.
+      workStyle: employment
+        ? (employment.work_style as string)
+        : hourly?.work_style
+          ? (hourly.work_style as string)
+          : null,
       salaryMin: employment ? (employment.salary_min as number) : null,
       salaryMax: employment ? (employment.salary_max as number) : null,
       budget: project ? (project.budget as number) : null,
@@ -168,9 +182,15 @@ export async function hydrateOpportunities(
   });
 }
 
+export type WorkStyleValue = "REMOTE" | "ONSITE" | "HYBRID";
+
 export interface ListOpportunitiesOptions {
   search?: string;
   contractType?: CompanyContractType | null;
+  /** BR-37: opportunities must have ALL of these as required skills (AND, not OR). */
+  skillIds?: string[];
+  /** BR-39: only ever constrains contract_type='employment' rows — other contract types are never excluded by this. */
+  workStyle?: WorkStyleValue | null;
   sort?: "newest" | "oldest";
   page?: number;
   pageSize?: number;
@@ -184,13 +204,92 @@ export interface ListOpportunitiesResult {
   error: boolean;
 }
 
+/**
+ * Resolves the AND-semantics skill filter (BR-37) to a concrete list of
+ * qualifying opportunity ids, or null if no skill filter is active.
+ *
+ * A single `skill_id IN (...)` query on opportunity_required_skills only
+ * expresses OR ("has at least one of these skills") — AND ("has every one
+ * of these skills") requires grouping the matched rows by opportunity_id and
+ * keeping only the ones whose distinct matched-skill count equals the
+ * selected-skill count (equivalent to `GROUP BY opportunity_id HAVING
+ * COUNT(DISTINCT skill_id) = selectedCount`, done client-side since this
+ * project has no RPC/view for it). RLS (opportunity_required_skills_select_
+ * via_opportunity, 024_opportunity_policies.sql) is unchanged and still
+ * applies to this read.
+ */
+async function resolveSkillAndFilterIds(
+  supabase: SupabaseClient,
+  skillIds: string[],
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("opportunity_required_skills")
+    .select("opportunity_id, skill_id")
+    .in("skill_id", skillIds);
+
+  if (error) {
+    console.error("[engineer-jobs] failed to resolve skill filter:", error);
+    return [];
+  }
+
+  const matchedSkillsByOpp = new Map<string, Set<string>>();
+  for (const row of data ?? []) {
+    const oppId = row.opportunity_id as string;
+    const set = matchedSkillsByOpp.get(oppId) ?? new Set<string>();
+    set.add(row.skill_id as string);
+    matchedSkillsByOpp.set(oppId, set);
+  }
+
+  return [...matchedSkillsByOpp.entries()]
+    .filter(([, matched]) => matched.size === skillIds.length)
+    .map(([oppId]) => oppId);
+}
+
+/**
+ * Resolves the work-style filter (BR-39) to the set of opportunity_employment
+ * rows matching the selected value. Returned ids are only ever used to scope
+ * contract_type='employment' rows (via an OR against contract_type<>employment
+ * in the caller) — never applied as a blanket id filter, so project/hourly/
+ * training listings are never affected by this.
+ */
+async function resolveWorkStyleMatchIds(
+  supabase: SupabaseClient,
+  workStyle: WorkStyleValue,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("opportunity_employment")
+    .select("opportunity_id")
+    .eq("work_style", workStyle);
+
+  if (error) {
+    console.error("[engineer-jobs] failed to resolve work style filter:", error);
+    return [];
+  }
+
+  return (data ?? []).map((row) => row.opportunity_id as string);
+}
+
 /** Published, non-admin-unpublished, non-deleted opportunities — matches opportunities_select_active RLS. */
 export async function listPublishedOpportunities(
   supabase: SupabaseClient,
   options: ListOpportunitiesOptions = {},
 ): Promise<ListOpportunitiesResult> {
   const page = options.page && options.page > 0 ? options.page : 1;
-  const pageSize = options.pageSize ?? 12;
+  const pageSize = options.pageSize ?? 20;
+
+  const skillIds = (options.skillIds ?? []).filter(Boolean);
+  let skillFilterIds: string[] | null = null;
+  if (skillIds.length > 0) {
+    skillFilterIds = await resolveSkillAndFilterIds(supabase, skillIds);
+    if (skillFilterIds.length === 0) {
+      return { items: [], total: 0, page, pageSize, error: false };
+    }
+  }
+
+  let workStyleMatchIds: string[] | null = null;
+  if (options.workStyle) {
+    workStyleMatchIds = await resolveWorkStyleMatchIds(supabase, options.workStyle);
+  }
 
   let query = supabase
     .from("opportunities")
@@ -201,16 +300,40 @@ export async function listPublishedOpportunities(
     .eq("unpublished_by_admin", false)
     .is("deleted_at", null);
 
+  if (skillFilterIds) {
+    query = query.in("id", skillFilterIds);
+  }
+
+  if (workStyleMatchIds) {
+    // Non-employment rows are always kept; employment rows are kept only
+    // when they matched the work-style query above. `in.()` with zero
+    // elements is PostgREST syntax best avoided, so an empty match list
+    // collapses to just the first half of the OR (no employment row can
+    // ever qualify) instead.
+    query =
+      workStyleMatchIds.length > 0
+        ? query.or(`contract_type.neq.employment,id.in.(${workStyleMatchIds.join(",")})`)
+        : query.or("contract_type.neq.employment");
+  }
+
   const search = options.search?.trim();
   if (search) {
-    query = query.ilike("title", `%${search}%`);
+    // PostgREST's or=(...) filter mini-language treats backslash/comma/
+    // parentheses as syntax, not literal text -- escape them here so a
+    // keyword containing e.g. "," or ")" can't split or malform the filter
+    // expression. This is PostgREST-string escaping, unrelated to (and not a
+    // substitute for) parameterized SQL, which the query builder still
+    // handles for us.
+    const escaped = search.replace(/\\/g, "\\\\").replace(/[,()]/g, (char) => `\\${char}`);
+    query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
   }
   if (options.contractType) {
     query = query.eq("contract_type", options.contractType);
   }
 
   query = query
-    .order("created_at", { ascending: options.sort === "oldest" })
+    .order("updated_at", { ascending: options.sort === "oldest" })
+    .order("id", { ascending: options.sort === "oldest" })
     .range((page - 1) * pageSize, page * pageSize - 1);
 
   const { data, error, count } = await query;

@@ -28,6 +28,8 @@ export interface AdminMasterData {
   skills: AdminMasterDataItem[];
   qualifications: AdminMasterDataItem[];
   skillLevels: AdminMasterDataItem[];
+  /** public.industry_categories, per 064_industry_categories.sql draft (Phase 5 決定事項③). */
+  industries: AdminMasterDataItem[];
   categoryOptions: AdminMasterDataOption[];
   subcategoryOptions: (AdminMasterDataOption & { categoryId: string })[];
 }
@@ -56,9 +58,11 @@ export async function getAdminMasterData(supabase: SupabaseClient): Promise<Admi
     { data: skills },
     { data: qualifications },
     { data: skillLevels },
+    { data: industries },
     { data: userSkillLinks },
     { data: userQualificationLinks },
     { data: userSkillLevelLinks },
+    { data: companyIndustryLinks },
   ] = await Promise.all([
     supabase.from("skill_categories").select("id, code, name, display_order, is_active").order("display_order"),
     supabase.from("skill_subcategories").select("id, category_id, name, display_order, is_active").order("display_order"),
@@ -71,9 +75,11 @@ export async function getAdminMasterData(supabase: SupabaseClient): Promise<Admi
       .select("id, name, organization, category, display_order, is_active")
       .order("display_order"),
     supabase.from("skill_levels").select("level, name, description, is_active").order("level"),
+    supabase.from("industry_categories").select("id, name, display_order, is_active").order("display_order"),
     supabase.from("user_skills").select("skill_id"),
     supabase.from("user_qualifications").select("qualification_id"),
     supabase.from("user_skills").select("skill_level"),
+    supabase.from("company_profiles").select("industry_category_id"),
   ]);
 
   const subcategoryCountByCategory = new Map<string, number>();
@@ -106,6 +112,12 @@ export async function getAdminMasterData(supabase: SupabaseClient): Promise<Admi
     const level = row.skill_level as number | null;
     if (level === null) continue;
     skillLevelUsageCount.set(level, (skillLevelUsageCount.get(level) ?? 0) + 1);
+  }
+  const industryUsageCount = new Map<string, number>();
+  for (const row of companyIndustryLinks ?? []) {
+    const industryId = row.industry_category_id as string | null;
+    if (industryId === null) continue;
+    industryUsageCount.set(industryId, (industryUsageCount.get(industryId) ?? 0) + 1);
   }
 
   return {
@@ -170,6 +182,18 @@ export async function getAdminMasterData(supabase: SupabaseClient): Promise<Admi
       sortOrder: row.level as number,
       active: row.is_active as boolean,
       usageCount: skillLevelUsageCount.get(row.level as number) ?? 0,
+      parentId: null,
+      organization: null,
+      categoryText: null,
+    })),
+    industries: (industries ?? []).map((row) => ({
+      id: row.id as string,
+      displayName: row.name as string,
+      context: "",
+      description: null,
+      sortOrder: row.display_order as number,
+      active: row.is_active as boolean,
+      usageCount: industryUsageCount.get(row.id as string) ?? 0,
       parentId: null,
       organization: null,
       categoryText: null,
@@ -529,5 +553,80 @@ export async function updateSkillLevel(
     name,
     description,
   });
+  return { error: null };
+}
+
+// ============================================================
+// industry_categories -- per 064_industry_categories.sql draft (Phase 5
+// 決定事項③). Flat, no hierarchy/parent, so this is the simplest of the 6
+// master tables: only `name` is editable, matching skill_categories'
+// shape but with add/delete-via-is_active support like qualifications
+// (industries are not a fixed code enum). Delete is never exposed here
+// either -- is_active is the only lifecycle control, same rationale as
+// every other master table in this file.
+// ============================================================
+
+export async function createIndustryCategory(
+  supabase: SupabaseClient,
+  name: string,
+): Promise<MasterDataCreateResult> {
+  const { data, error } = await supabase
+    .from("industry_categories")
+    .insert({ name })
+    .select("id")
+    .single();
+  if (error) {
+    console.error("[admin] failed to create industry category:", error);
+    return { error: "追加に失敗しました。同名の業種がすでに存在する可能性があります。", id: null };
+  }
+  await auditMasterDataChange(supabase, "master_data_create", "industry_category", data.id as string, null, {
+    name,
+  });
+  return { error: null, id: data.id as string };
+}
+
+export async function updateIndustryCategory(
+  supabase: SupabaseClient,
+  id: string,
+  name: string,
+): Promise<MasterDataMutationResult> {
+  const { data: before } = await supabase.from("industry_categories").select("name").eq("id", id).maybeSingle();
+  const { data: updated, error } = await supabase
+    .from("industry_categories")
+    .update({ name })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error || !updated) {
+    console.error("[admin] failed to update industry category:", error);
+    return { error: "更新に失敗しました。" };
+  }
+  await auditMasterDataChange(supabase, "master_data_update", "industry_category", id, before, { name });
+  return { error: null };
+}
+
+export async function setIndustryCategoryActive(
+  supabase: SupabaseClient,
+  id: string,
+  active: boolean,
+): Promise<MasterDataMutationResult> {
+  const { data: updated, error } = await supabase
+    .from("industry_categories")
+    .update({ is_active: active })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error || !updated) {
+    console.error("[admin] failed to toggle industry category:", error);
+    return { error: "更新に失敗しました。" };
+  }
+  await auditMasterDataChange(
+    supabase,
+    active ? "master_data_enable" : "master_data_disable",
+    "industry_category",
+    id,
+    { is_active: !active },
+    { is_active: active },
+  );
   return { error: null };
 }

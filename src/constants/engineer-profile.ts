@@ -177,11 +177,14 @@ export const TECHNICAL_SKILL_EDITOR_LABELS = {
   experienceYearsLabel: "経験年数（年）",
   addLabel: "テクニカルスキルを追加",
   removeLabel: "このスキルを削除",
+  countSuffix: "件登録中",
   emptyCatalogMessage: "追加可能なスキルがありません。",
   emptyMessage: "テクニカルスキルが未登録です。",
   addError: "スキルの追加に失敗しました。しばらくしてから再度お試しください。",
   updateError: "スキルの更新に失敗しました。しばらくしてから再度お試しください。",
   removeError: "スキルの削除に失敗しました。しばらくしてから再度お試しください。",
+  limitMaxError: "テクニカルスキルは20件まで登録できます。",
+  limitMinError: "テクニカルスキルは1件以上登録する必要があるため、削除できません。",
 } as const;
 
 // ============================================================
@@ -465,4 +468,8 @@ export const BASIC_INFO_FORM_META = {
   invalidHourlyRateOrder: "希望時間単価は下限が上限以下になるように入力してください。",
   invalidSelfPr: "自己紹介は2000文字以内で入力してください。",
   nameRequired: "氏名を入力してください。",
+  prefectureRequired: "居住地を入力してください。",
+  yearsOfExperienceRequired: "経験年数を入力してください。",
+  workStyleRequired: "希望の働き方を選択してください。",
+  desiredRateRequired: "希望単価の下限・上限を入力してください。",
 } as const;

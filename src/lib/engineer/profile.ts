@@ -83,6 +83,21 @@ export async function getEngineerProfile(
 }
 
 /**
+ * RD 4.2.6: 居住地・経験年数・希望の働き方・希望単価 are required. Re-checked
+ * here (not just in BasicProfileForm.tsx) so a caller bypassing the form
+ * still can't save an incomplete profile. This only gates what a *new* save
+ * writes -- it never touches an existing row that predates this rule, since
+ * this function is only ever invoked from an explicit save action.
+ */
+function validateEngineerProfileInput(input: EngineerProfileInput): boolean {
+  if (!input.prefecture || !input.prefecture.trim()) return false;
+  if (input.years_of_experience === null || input.years_of_experience === undefined) return false;
+  if (!input.work_style) return false;
+  if (input.desired_rate_min === null || input.desired_rate_max === null) return false;
+  return true;
+}
+
+/**
  * Upserts the caller's own engineer_profiles row. Works for both first-time
  * create (no existing row) and subsequent updates -- RLS enforces
  * id = auth.uid() and role = 'ENGINEER' on both the insert and update paths
@@ -94,6 +109,10 @@ export async function saveEngineerProfile(
   userId: string,
   input: EngineerProfileInput,
 ) {
+  if (!validateEngineerProfileInput(input)) {
+    return { data: null, error: { message: "missing required profile field" } };
+  }
+
   return supabase
     .from("engineer_profiles")
     .upsert({ id: userId, ...input }, { onConflict: "id" })
