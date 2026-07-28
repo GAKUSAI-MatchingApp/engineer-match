@@ -29,28 +29,7 @@ export const LOGIN_FORM = {
   registerHref: "/signup",
 } as const;
 
-export const LOGIN_ROLE_LABEL = "ログインするアカウント種別";
-
-export const LOGIN_ROLE_OPTIONS = {
-  engineer: {
-    value: "engineer",
-    title: "エンジニア",
-    description: "求人・案件を探す",
-  },
-  company: {
-    value: "company",
-    title: "企業",
-    description: "求人・案件を掲載する",
-  },
-  admin: {
-    value: "admin",
-    title: "管理者",
-    description: "プラットフォーム全体を管理します。",
-  },
-} as const;
-
 export const LOGIN_ERRORS = {
-  roleRequired: "ログインするアカウント種別を選択してください。",
   invalidCredentials: "メールアドレスまたはパスワードが正しくありません。",
   emailNotConfirmed:
     "メールアドレスの確認が完了していません。届いた確認メールのリンクをクリックしてください。",
@@ -61,16 +40,6 @@ export const LOGIN_ERRORS = {
   unsupportedRole:
     "このアカウント種別はサポートされていません。管理者までお問い合わせください。",
   unexpected: "通信エラーが発生しました。しばらくしてから再度お試しください。",
-} as const;
-
-/**
- * Dev-only convenience: autofills the login form with a seeded test
- * account. Gated to non-production builds in LoginCard -- never rendered
- * in production, since these are real credentials against real auth.
- */
-export const LOGIN_DEMO_HELPER = {
-  title: "デモアカウント（開発用）",
-  fillButtonLabel: "デモ情報を入力",
 } as const;
 
 export const AUTH_DEMO_ACTION_NOTICE = "※ この機能は現在ご利用いただけません。";

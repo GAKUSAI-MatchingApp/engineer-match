@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { Loader2 } from "lucide-react";
 import { AuthHero } from "@/components/auth/AuthHero";
-import { RoleSelector } from "@/components/auth/RoleSelector";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,15 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AUTH_DEMO_ACTION_NOTICE,
-  LOGIN_DEMO_HELPER,
   LOGIN_ERRORS,
   LOGIN_FORM,
-  LOGIN_ROLE_LABEL,
-  LOGIN_ROLE_OPTIONS,
   LOGIN_VISUAL,
 } from "@/constants/auth";
 import { fadeUpItem } from "@/lib/motion";
-import { DEMO_ACCOUNTS, type DemoRole } from "@/lib/demo-auth";
 import { createClient } from "@/lib/supabase/client";
 import { ACTIVE_STATUS, getDashboardPathForRole, getUserAccount } from "@/lib/auth/account";
 
@@ -58,18 +53,12 @@ function GitHubIcon(props: ComponentProps<"svg">) {
 }
 
 const ERROR_MESSAGE_ID = "login-error-message";
-const SHOW_DEV_DEMO_HELPER = process.env.NODE_ENV !== "production";
 
 export function LoginCard() {
   const prefersReducedMotion = useReducedMotion();
   const variants = fadeUpItem(prefersReducedMotion, { duration: 0.5 });
   const router = useRouter();
 
-  // `role` now only drives the demo-fill convenience button below — it is
-  // never sent to Supabase and never used to decide the post-login redirect.
-  // The redirect role always comes from public.users (requirement: never
-  // trust a role supplied by the frontend).
-  const [role, setRole] = useState<DemoRole | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formMessage, setFormMessage] = useState<string | null>(null);
@@ -89,24 +78,6 @@ export function LoginCard() {
   }, [formMessage]);
 
   const isCredentialsError = formMessage === LOGIN_ERRORS.invalidCredentials;
-  const isRoleFillReminder = formMessage === LOGIN_ERRORS.roleRequired;
-
-  function handleRoleChange(nextRole: DemoRole) {
-    setRole(nextRole);
-    setFormMessage(null);
-  }
-
-  function handleDemoFill() {
-    if (!role) {
-      setFormMessage(LOGIN_ERRORS.roleRequired);
-      return;
-    }
-    const account = DEMO_ACCOUNTS[role];
-    setEmail(account.email);
-    setPassword(account.password);
-    setFormMessage(null);
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -214,56 +185,6 @@ export function LoginCard() {
           </p>
 
           <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
-            <div className="flex flex-col gap-2.5">
-              <span className="text-sm leading-none font-medium text-white/90">
-                {LOGIN_ROLE_LABEL}
-              </span>
-              <RoleSelector
-                value={role}
-                onChange={handleRoleChange}
-                invalid={isRoleFillReminder}
-                errorId={ERROR_MESSAGE_ID}
-              />
-            </div>
-
-            {SHOW_DEV_DEMO_HELPER && (
-              <div className="rounded-xl border border-white/15 bg-white/5 p-4 text-xs text-white/70">
-                <p className="font-semibold text-white/90">
-                  {LOGIN_DEMO_HELPER.title}
-                </p>
-                <div className="mt-2.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div className="min-w-0">
-                    <p className="font-medium text-white/80">
-                      {LOGIN_ROLE_OPTIONS.engineer.title}
-                    </p>
-                    <p className="mt-0.5 truncate">{DEMO_ACCOUNTS.engineer.email}</p>
-                    <p>Password: {DEMO_ACCOUNTS.engineer.password}</p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-white/80">
-                      {LOGIN_ROLE_OPTIONS.company.title}
-                    </p>
-                    <p className="mt-0.5 truncate">{DEMO_ACCOUNTS.company.email}</p>
-                    <p>Password: {DEMO_ACCOUNTS.company.password}</p>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-white/80">
-                      {LOGIN_ROLE_OPTIONS.admin.title}
-                    </p>
-                    <p className="mt-0.5 truncate">{DEMO_ACCOUNTS.admin.email}</p>
-                    <p>Password: {DEMO_ACCOUNTS.admin.password}</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleDemoFill}
-                  className="mt-3 inline-flex h-9 items-center justify-center rounded-lg border border-white/30 bg-white/10 px-3.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 focus-visible:outline-none"
-                >
-                  {LOGIN_DEMO_HELPER.fillButtonLabel}
-                </button>
-              </div>
-            )}
-
             <div className="flex flex-col gap-2">
               <Label htmlFor="email" className="text-white/90">
                 {LOGIN_FORM.email.label}
