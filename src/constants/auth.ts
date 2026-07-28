@@ -4,7 +4,7 @@
  */
 
 export const LOGIN_VISUAL = {
-  imageSrc: "/image/ChatGPT Image Jul 13, 2026, 04_44_59 PM office.png",
+  imageSrc: "/image/login-hero.png",
   imageAlt: "光が差し込むモダンなオフィスの様子",
   title: "スキルで、\n未来をつなぐ。",
   description:
