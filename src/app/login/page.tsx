@@ -21,7 +21,15 @@ export default async function LoginPage() {
   if (user) {
     const account = await getUserAccount(supabase, user.id);
 
-    if (account?.status === ACTIVE_STATUS) {
+    if (!account) {
+      // Authenticated but no public.users row: a brand-new OAuth signup
+      // pending role selection (migration 071, draft — not yet applied).
+      // Send them straight to the picker instead of showing the login form
+      // to an already-authenticated user.
+      redirect("/auth/select-role");
+    }
+
+    if (account.status === ACTIVE_STATUS) {
       const dashboardPath = getDashboardPathForRole(account.role);
       if (dashboardPath) {
         redirect(dashboardPath);
@@ -29,8 +37,8 @@ export default async function LoginPage() {
       // No dashboard for this role yet (e.g. INSTRUCTOR) — fall through and
       // render the login page rather than redirecting nowhere.
     }
-    // Inactive/suspended/withdrawn or unreadable account: don't redirect to
-    // a dashboard. Falls through to render the login form normally.
+    // Inactive/suspended/withdrawn account: don't redirect to a dashboard.
+    // Falls through to render the login form normally.
   }
 
   return <LoginCard />;

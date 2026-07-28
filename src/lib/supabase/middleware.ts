@@ -93,12 +93,21 @@ export async function updateSession(request: NextRequest) {
 
   const account = await getUserAccount(supabase, user.id);
 
-  // No public.users row, or not ACTIVE (SUSPENDED/WITHDRAWN): never allowed
-  // into a protected dashboard. Sent to /login rather than signed out here —
-  // the login page itself already renders correctly for this exact state
-  // (authenticated but inactive/unrecognized account falls through to the
-  // login form instead of redirecting, see src/app/login/page.tsx).
-  if (!account || account.status !== ACTIVE_STATUS) {
+  // Authenticated (auth.users row exists) but no public.users row yet: a
+  // brand-new OAuth signup pending role selection (migration 071, draft —
+  // not yet applied). They may reach ONLY /auth/select-role — never an
+  // Engineer/Company/Admin route — until finalize_oauth_role() creates their
+  // public.users row.
+  if (!account) {
+    return redirectTo("/auth/select-role");
+  }
+
+  // Not ACTIVE (SUSPENDED/WITHDRAWN): never allowed into a protected
+  // dashboard. Sent to /login rather than signed out here — the login page
+  // itself already renders correctly for this exact state (authenticated
+  // but inactive account falls through to the login form instead of
+  // redirecting, see src/app/login/page.tsx).
+  if (account.status !== ACTIVE_STATUS) {
     return redirectTo("/login");
   }
 

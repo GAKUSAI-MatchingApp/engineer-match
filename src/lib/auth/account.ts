@@ -66,3 +66,30 @@ export async function withdrawOwnAccount(
   const { error } = await supabase.rpc("withdraw_own_account");
   return { error };
 }
+
+/** Roles a brand-new OAuth user may self-assign via finalizeOAuthRole(). Never ADMIN/INSTRUCTOR. */
+export type OAuthOnboardingRole = "ENGINEER" | "COMPANY";
+
+/**
+ * Calls the finalize_oauth_role(p_role) SECURITY DEFINER RPC (migration 071,
+ * draft — not yet applied). Creates the caller's own public.users row —
+ * scoped to auth.uid() server-side, never a client-supplied id — exactly
+ * once, as ENGINEER or COMPANY only. Refuses (no update, no second row) if a
+ * public.users row already exists for this id, so this can never change an
+ * existing role or be replayed.
+ */
+export async function finalizeOAuthRole(
+  supabase: SupabaseClient,
+  role: OAuthOnboardingRole,
+): Promise<{ data: UserAccount | null; error: { code?: string; message: string } | null }> {
+  const { data, error } = await supabase.rpc("finalize_oauth_role", { p_role: role });
+
+  if (error) {
+    return {
+      data: null,
+      error: { code: (error as { code?: string }).code, message: error.message },
+    };
+  }
+
+  return { data: data as UserAccount, error: null };
+}

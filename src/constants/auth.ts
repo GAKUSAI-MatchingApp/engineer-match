@@ -40,9 +40,61 @@ export const LOGIN_ERRORS = {
   unsupportedRole:
     "このアカウント種別はサポートされていません。管理者までお問い合わせください。",
   unexpected: "通信エラーが発生しました。しばらくしてから再度お試しください。",
+  oauthFailed:
+    "ログインに失敗しました。しばらくしてから再度お試しください。",
 } as const;
 
-export const AUTH_DEMO_ACTION_NOTICE = "※ この機能は現在ご利用いただけません。";
+export const FORGOT_PASSWORD_VISUAL = LOGIN_VISUAL;
+
+export const FORGOT_PASSWORD_FORM = {
+  title: "パスワードをお忘れですか？",
+  description:
+    "登録済みのメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。",
+  email: { label: "メールアドレス", placeholder: "example@company.co.jp" },
+  submitLabel: "再設定用リンクを送信",
+  loadingLabel: "送信中…",
+  backToLoginLabel: "ログイン画面に戻る",
+} as const;
+
+export const FORGOT_PASSWORD_SENT = {
+  title: "メールを送信しました。",
+  note: "ご入力いただいたメールアドレス宛にパスワード再設定用のリンクをお送りしました。届いたメール内のリンクをクリックして、手続きを進めてください。",
+  loginCta: "ログイン画面へ",
+} as const;
+
+export const FORGOT_PASSWORD_ERRORS = {
+  invalidEmail:
+    "メールアドレスの形式が正しくありません。ご確認のうえ、再度入力してください。",
+  rateLimited:
+    "リクエストが集中しています。しばらく時間をおいてから再度お試しください。",
+  unexpected: "通信エラーが発生しました。しばらくしてから再度お試しください。",
+} as const;
+
+export const RESET_PASSWORD_VISUAL = LOGIN_VISUAL;
+
+export const RESET_PASSWORD_FORM = {
+  title: "新しいパスワードを設定",
+  description: "新しいパスワードを入力してください。",
+  password: { label: "新しいパスワード", placeholder: "••••••••" },
+  confirmPassword: { label: "新しいパスワード（確認）", placeholder: "••••••••" },
+  submitLabel: "パスワードを更新",
+  loadingLabel: "更新中…",
+} as const;
+
+export const RESET_PASSWORD_ERRORS = {
+  passwordMismatch: "パスワードが一致しません。もう一度ご確認ください。",
+  weakPassword:
+    "パスワードの強度が不十分です。8文字以上で、英字と数字を組み合わせて入力してください。",
+  invalidOrExpiredLink:
+    "このリンクは無効か、有効期限が切れています。お手数ですが、パスワード再設定を再度リクエストしてください。",
+  unexpected: "通信エラーが発生しました。しばらくしてから再度お試しください。",
+} as const;
+
+export const RESET_PASSWORD_SUCCESS = {
+  title: "パスワードを更新しました。",
+  note: "新しいパスワードで再度ログインしてください。",
+  loginCta: "ログイン画面へ",
+} as const;
 
 export const REGISTER_VISUAL = {
   imageSrc: "/image/ChatGPT Image Jul 13, 2026, 04_43_45 PM developer .png",
@@ -127,4 +179,29 @@ export const REGISTER_EMAIL_CONFIRMATION = {
   title: "確認メールを送信しました。",
   note: "受信したメール内のリンクをクリックして、登録を完了してください。",
   loginCta: "ログイン画面へ",
+} as const;
+
+export const SELECT_ROLE_VISUAL = LOGIN_VISUAL;
+
+export const SELECT_ROLE_FORM = {
+  title: "利用方法を選択してください",
+  description:
+    "ご利用の目的に合わせて、アカウントの種類をお選びください。この選択は後から変更できません。",
+  loadingLabel: "設定中…",
+  options: {
+    engineer: {
+      title: "エンジニアとして利用する",
+      description: "仕事・案件を探したい方",
+    },
+    company: {
+      title: "企業として利用する",
+      description: "エンジニアを採用・募集したい方",
+    },
+  },
+} as const;
+
+export const SELECT_ROLE_ERRORS = {
+  emailInUse:
+    "このメールアドレスはすでに別のアカウントで登録されています。ログイン画面からログインしてください。",
+  unexpected: "登録処理に失敗しました。しばらくしてから再度お試しください。",
 } as const;

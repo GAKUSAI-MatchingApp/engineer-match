@@ -11,12 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  AUTH_DEMO_ACTION_NOTICE,
-  LOGIN_ERRORS,
-  LOGIN_FORM,
-  LOGIN_VISUAL,
-} from "@/constants/auth";
+import { LOGIN_ERRORS, LOGIN_FORM, LOGIN_VISUAL } from "@/constants/auth";
 import { fadeUpItem } from "@/lib/motion";
 import { createClient } from "@/lib/supabase/client";
 import { ACTIVE_STATUS, getDashboardPathForRole, getUserAccount } from "@/lib/auth/account";
@@ -54,6 +49,16 @@ function GitHubIcon(props: ComponentProps<"svg">) {
 
 const ERROR_MESSAGE_ID = "login-error-message";
 
+type OAuthProvider = "google" | "github";
+
+/** Maps /auth/oauth/callback's ?oauthError= values to an existing LOGIN_ERRORS message. */
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  suspended: LOGIN_ERRORS.invalidCredentials,
+  instructor: LOGIN_ERRORS.instructorNotAvailable,
+  unsupported_role: LOGIN_ERRORS.unsupportedRole,
+  failed: LOGIN_ERRORS.oauthFailed,
+};
+
 export function LoginCard() {
   const prefersReducedMotion = useReducedMotion();
   const variants = fadeUpItem(prefersReducedMotion, { duration: 0.5 });
@@ -63,13 +68,8 @@ export function LoginCard() {
   const [password, setPassword] = useState("");
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
-
-  function showDemoToast() {
-    setToastMessage(AUTH_DEMO_ACTION_NOTICE);
-    window.setTimeout(() => setToastMessage(null), 3000);
-  }
 
   useEffect(() => {
     if (formMessage) {
@@ -77,12 +77,55 @@ export function LoginCard() {
     }
   }, [formMessage]);
 
+  // Surface errors redirected back from /auth/oauth/callback (e.g. a
+  // suspended account, or a brand-new OAuth signup that has no role to
+  // assign yet), then strip the param so a refresh doesn't re-show it.
+  useEffect(() => {
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const oauthError = params.get("oauthError");
+      if (!oauthError) return;
+
+      setFormMessage(OAUTH_ERROR_MESSAGES[oauthError] ?? LOGIN_ERRORS.oauthFailed);
+      window.history.replaceState({}, "", "/login");
+    })();
+  }, []);
+
+  async function handleOAuthSignIn(provider: OAuthProvider) {
+    if (isLoading || oauthLoading) return;
+
+    setFormMessage(null);
+    setOauthLoading(provider);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/oauth/callback`,
+        },
+      });
+
+      if (error) {
+        console.error(`[login] signInWithOAuth(${provider}) failed:`, error);
+        setFormMessage(LOGIN_ERRORS.oauthFailed);
+        setOauthLoading(null);
+      }
+      // On success the browser is about to navigate away to the provider's
+      // consent screen, so there is nothing further to do here.
+    } catch (err) {
+      console.error(`[login] unexpected OAuth error (${provider}):`, err);
+      setFormMessage(LOGIN_ERRORS.oauthFailed);
+      setOauthLoading(null);
+    }
+  }
+
   const isCredentialsError = formMessage === LOGIN_ERRORS.invalidCredentials;
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     // Prevent duplicate submission while a request is already in flight.
-    if (isLoading) return;
+    if (isLoading || oauthLoading) return;
 
     setFormMessage(null);
     setIsLoading(true);
@@ -232,13 +275,12 @@ export function LoginCard() {
                   {LOGIN_FORM.rememberMe}
                 </Label>
               </div>
-              <button
-                type="button"
-                onClick={showDemoToast}
+              <Link
+                href="/forgot-password"
                 className="rounded text-sm font-medium text-cyan-300 transition-colors duration-200 hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 {LOGIN_FORM.forgotPassword}
-              </button>
+              </Link>
             </div>
 
             <div
@@ -258,7 +300,7 @@ export function LoginCard() {
 
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || oauthLoading !== null}
               aria-busy={isLoading}
               className="h-12 w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#2563EB] text-sm font-semibold text-white shadow-lg shadow-indigo-950/20 hover:brightness-110 disabled:opacity-70"
             >
@@ -284,18 +326,30 @@ export function LoginCard() {
           <div className="flex flex-col gap-3">
             <Button
               type="button"
-              onClick={showDemoToast}
-              className="h-12 w-full rounded-xl border border-white/40 bg-white/90 text-sm font-semibold text-[#111827] hover:bg-white"
+              onClick={() => handleOAuthSignIn("google")}
+              disabled={isLoading || oauthLoading !== null}
+              aria-busy={oauthLoading === "google"}
+              className="h-12 w-full rounded-xl border border-white/40 bg-white/90 text-sm font-semibold text-[#111827] hover:bg-white disabled:opacity-70"
             >
-              <GoogleIcon className="h-4 w-4" />
+              {oauthLoading === "google" ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <GoogleIcon className="h-4 w-4" />
+              )}
               {LOGIN_FORM.google}
             </Button>
             <Button
               type="button"
-              onClick={showDemoToast}
-              className="h-12 w-full rounded-xl border border-white/40 bg-white/90 text-sm font-semibold text-[#111827] hover:bg-white"
+              onClick={() => handleOAuthSignIn("github")}
+              disabled={isLoading || oauthLoading !== null}
+              aria-busy={oauthLoading === "github"}
+              className="h-12 w-full rounded-xl border border-white/40 bg-white/90 text-sm font-semibold text-[#111827] hover:bg-white disabled:opacity-70"
             >
-              <GitHubIcon className="h-4 w-4" />
+              {oauthLoading === "github" ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <GitHubIcon className="h-4 w-4" />
+              )}
               {LOGIN_FORM.github}
             </Button>
           </div>
@@ -311,18 +365,6 @@ export function LoginCard() {
           </Link>
         </p>
       </motion.div>
-
-      {toastMessage && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4 sm:justify-end sm:pr-6"
-        >
-          <div className="flex items-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-medium text-white shadow-lg">
-            {toastMessage}
-          </div>
-        </div>
-      )}
     </AuthHero>
   );
 }
