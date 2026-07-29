@@ -7,6 +7,10 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import { Building2, CheckCircle2, Loader2, UserRound } from "lucide-react";
 import { AuthHero } from "@/components/auth/AuthHero";
 import { DemoAuthNotice } from "@/components/auth/DemoAuthNotice";
+import {
+  OAuthProviderButtons,
+  type OAuthProvider,
+} from "@/components/auth/OAuthProviderButtons";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -86,6 +90,7 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
   const [confirmationRole, setConfirmationRole] = useState<AccountType | null>(null);
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const completionHeadingRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -105,7 +110,7 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>, type: AccountType) {
     event.preventDefault();
-    if (isLoading) return;
+    if (isLoading || oauthLoading) return;
 
     setFormMessage(null);
 
@@ -225,6 +230,33 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
       setFormMessage(REGISTER_ERRORS.network);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleOAuthSignUp(provider: OAuthProvider) {
+    if (isLoading || oauthLoading) return;
+
+    setFormMessage(null);
+    setOauthLoading(provider);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/oauth/callback`,
+        },
+      });
+
+      if (error) {
+        console.error(`[signup] signInWithOAuth(${provider}) failed:`, error);
+        setFormMessage(REGISTER_ERRORS.oauthFailed);
+        setOauthLoading(null);
+      }
+    } catch (err) {
+      console.error(`[signup] unexpected OAuth error (${provider}):`, err);
+      setFormMessage(REGISTER_ERRORS.oauthFailed);
+      setOauthLoading(null);
     }
   }
 
@@ -431,7 +463,7 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
 
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || oauthLoading !== null}
                   aria-busy={isLoading}
                   className="h-12 w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#2563EB] text-sm font-semibold text-white shadow-lg shadow-indigo-950/20 hover:brightness-110 disabled:opacity-70"
                 >
@@ -444,6 +476,14 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
                     REGISTER_FORM.engineerFields.submitLabel
                   )}
                 </Button>
+                <OAuthProviderButtons
+                  dividerLabel={REGISTER_FORM.dividerLabel}
+                  googleLabel={REGISTER_FORM.google}
+                  githubLabel={REGISTER_FORM.github}
+                  loadingProvider={oauthLoading}
+                  disabled={isLoading}
+                  onProviderClick={handleOAuthSignUp}
+                />
               </motion.form>
             ) : (
               <motion.form
@@ -544,7 +584,7 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
 
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || oauthLoading !== null}
                   aria-busy={isLoading}
                   className="h-12 w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#2563EB] text-sm font-semibold text-white shadow-lg shadow-indigo-950/20 hover:brightness-110 disabled:opacity-70"
                 >
@@ -557,6 +597,14 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
                     REGISTER_FORM.companyFields.submitLabel
                   )}
                 </Button>
+                <OAuthProviderButtons
+                  dividerLabel={REGISTER_FORM.dividerLabel}
+                  googleLabel={REGISTER_FORM.google}
+                  githubLabel={REGISTER_FORM.github}
+                  loadingProvider={oauthLoading}
+                  disabled={isLoading}
+                  onProviderClick={handleOAuthSignUp}
+                />
               </motion.form>
             )}
           </div>

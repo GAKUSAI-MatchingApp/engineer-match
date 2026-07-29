@@ -114,6 +114,9 @@ export const REGISTER_FORM = {
   title: "アカウント登録",
   description: "まずはアカウント種別をお選びください。",
   loadingLabel: "登録中…",
+  dividerLabel: "または",
+  google: "Googleで登録",
+  github: "GitHubで登録",
   accountTypeLabel: "アカウント種別",
   accountTypes: {
     engineer: {
@@ -172,6 +175,8 @@ export const REGISTER_ERRORS = {
     "アカウント情報の取得に失敗しました。しばらくしてから再度お試しいただくか、サポートまでお問い合わせください。",
   network:
     "通信エラーが発生しました。ネットワーク接続をご確認のうえ、再度お試しください。",
+  oauthFailed:
+    "登録に失敗しました。しばらくしてから再度お試しください。",
   unexpected: "登録処理中にエラーが発生しました。しばらくしてから再度お試しください。",
 } as const;
 
