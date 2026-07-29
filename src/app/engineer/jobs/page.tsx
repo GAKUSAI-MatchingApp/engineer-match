@@ -35,7 +35,6 @@ interface EngineerJobsPageProps {
     search?: string;
     contractType?: string;
     sort?: string;
-    page?: string;
     skills?: string;
     workStyle?: string;
   }>;
@@ -81,14 +80,12 @@ async function JobListSection({
   search,
   contractType,
   sort,
-  page,
   skillIds,
   workStyle,
 }: {
   search: string;
   contractType: CompanyContractType | "";
   sort: SortOption;
-  page: number;
   skillIds: string[];
   workStyle: WorkStyleFilterValue;
 }) {
@@ -108,7 +105,6 @@ async function JobListSection({
       skillIds,
       workStyle: workStyle || null,
       sort,
-      page,
     }),
     listMyFavoriteOpportunityIds(supabase, authUser.id),
     listSkillCatalog(supabase),
@@ -122,8 +118,6 @@ async function JobListSection({
     <JobList
       jobs={result.items}
       total={result.total}
-      page={result.page}
-      pageSize={result.pageSize}
       initialFavoriteIds={[...favoriteIds]}
       isSignedIn
       userId={authUser.id}
@@ -152,7 +146,6 @@ export default async function EngineerJobsPage({ searchParams }: EngineerJobsPag
       : ""
   ) as CompanyContractType | "";
   const sort: SortOption = params.sort === "oldest" ? "oldest" : "newest";
-  const page = Math.max(1, Number(params.page) || 1);
   const skillIds = (params.skills ?? "")
     .split(",")
     .map((id) => id.trim())
@@ -177,13 +170,12 @@ export default async function EngineerJobsPage({ searchParams }: EngineerJobsPag
       <SearchHeader />
       <Suspense
         fallback={<LoadingState />}
-        key={`${search}-${contractType}-${sort}-${page}-${skillIds.join(".")}-${workStyle}`}
+        key={`${search}-${contractType}-${sort}-${skillIds.join(".")}-${workStyle}`}
       >
         <JobListSection
           search={search}
           contractType={contractType}
           sort={sort}
-          page={page}
           skillIds={skillIds}
           workStyle={workStyle}
         />

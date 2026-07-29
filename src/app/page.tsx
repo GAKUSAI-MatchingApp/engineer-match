@@ -29,7 +29,7 @@ export default async function Home() {
   const supabase = await createClient();
   const { items: featuredOpportunities } = await listPublishedOpportunities(supabase, {
     sort: "newest",
-    pageSize: 6,
+    limit: 6,
   });
 
   return (

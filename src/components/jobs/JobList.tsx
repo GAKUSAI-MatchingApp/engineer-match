@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { JobCard } from "@/components/jobs/JobCard";
 import { EmptyState } from "@/components/jobs/EmptyState";
-import { Pagination } from "@/components/jobs/Pagination";
 import {
   CONTRACT_TYPE_OPTIONS,
   FILTER_LABELS,
@@ -29,8 +28,6 @@ const SELECT_CLASSNAME =
 interface JobListProps {
   jobs: HydratedOpportunity[];
   total: number;
-  page: number;
-  pageSize: number;
   initialFavoriteIds: string[];
   isSignedIn: boolean;
   userId: string | null;
@@ -46,7 +43,6 @@ function buildQueryHref(params: {
   search: string;
   contractType: string;
   sort: string;
-  page: number;
   skillIds: string[];
   workStyle: string;
 }): string {
@@ -54,7 +50,6 @@ function buildQueryHref(params: {
   if (params.search) query.set("search", params.search);
   if (params.contractType) query.set("contractType", params.contractType);
   if (params.sort && params.sort !== "newest") query.set("sort", params.sort);
-  if (params.page > 1) query.set("page", String(params.page));
   if (params.skillIds.length > 0) query.set("skills", params.skillIds.join(","));
   if (params.workStyle) query.set("workStyle", params.workStyle);
   const queryString = query.toString();
@@ -69,8 +64,6 @@ function isWorkStyleFilterAvailable(contractType: CompanyContractType | ""): boo
 export function JobList({
   jobs,
   total,
-  page,
-  pageSize,
   initialFavoriteIds,
   isSignedIn,
   userId,
@@ -96,7 +89,6 @@ export function JobList({
     contractTypeValue !== "" ||
     skillIdsValue.length > 0 ||
     workStyleValue !== "";
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const workStyleAvailable = isWorkStyleFilterAvailable(contractType);
   const filteredSkillCatalog = skillCatalog.filter((skill) =>
     skill.name.toLowerCase().includes(skillQuery.trim().toLowerCase()),
@@ -113,7 +105,6 @@ export function JobList({
         search: searchQuery.trim(),
         contractType,
         sort: sortOption,
-        page: 1,
         skillIds: selectedSkillIds,
         workStyle: workStyleAvailable ? workStyle : "",
       }),
@@ -354,9 +345,9 @@ export function JobList({
           </div>
         )
       ) : (
-        <ul className="flex flex-col gap-4">
+        <ul className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {jobs.map((job) => (
-            <li key={job.id}>
+            <li key={job.id} className="min-w-0">
               <JobCard
                 job={job}
                 isBookmarked={favoriteIds.has(job.id)}
@@ -366,21 +357,6 @@ export function JobList({
           ))}
         </ul>
       )}
-
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        buildHref={(targetPage) =>
-          buildQueryHref({
-            search: searchValue,
-            contractType: contractTypeValue,
-            sort: sortValue,
-            page: targetPage,
-            skillIds: skillIdsValue,
-            workStyle: workStyleValue,
-          })
-        }
-      />
 
       {toastMessage && (
         <div

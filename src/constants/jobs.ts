@@ -102,7 +102,7 @@ export const JOB_LIST_META = {
   bookmarkLabel: "お気に入りに追加",
   bookmarkedLabel: "お気に入り済み",
   detailButtonLabel: "詳細を見る",
-  postedPrefix: "掲載日：",
+  updatedPrefix: "更新：",
 } as const;
 
 export const LOADING_STATE_LABELS = {
@@ -124,12 +124,6 @@ export const EMPTY_STATE_LABELS = {
 export const NO_JOBS_STATE_LABELS = {
   title: "現在公開されている求人・案件はありません。",
   description: "しばらくしてから再度ご確認ください。",
-} as const;
-
-export const PAGINATION_LABELS = {
-  previousLabel: "前へ",
-  nextLabel: "次へ",
-  pageLabelPrefix: "ページ",
 } as const;
 
 export const SIGN_IN_REQUIRED_LABELS = {

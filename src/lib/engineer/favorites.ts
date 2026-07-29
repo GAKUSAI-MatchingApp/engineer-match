@@ -19,17 +19,30 @@ export async function listMyFavoriteOpportunityIds(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<Set<string>> {
-  const { data, error } = await supabase
-    .from("favorites")
-    .select("opportunity_id")
-    .eq("user_id", userId);
+  const favoriteIds = new Set<string>();
+  const batchSize = 500;
+  let offset = 0;
 
-  if (error) {
-    console.error("[engineer-favorites] failed to list favorite ids:", error);
-    return new Set();
+  while (true) {
+    const { data, error } = await supabase
+      .from("favorites")
+      .select("opportunity_id")
+      .eq("user_id", userId)
+      .order("opportunity_id")
+      .range(offset, offset + batchSize - 1);
+
+    if (error) {
+      console.error("[engineer-favorites] failed to list favorite ids:", error);
+      return new Set();
+    }
+
+    const batch = data ?? [];
+    for (const row of batch) favoriteIds.add(row.opportunity_id as string);
+    if (batch.length < batchSize) break;
+    offset += batch.length;
   }
 
-  return new Set((data ?? []).map((row) => row.opportunity_id as string));
+  return favoriteIds;
 }
 
 /** Full favorited-job cards for the favorites page, newest-favorited first. */
@@ -54,7 +67,7 @@ export async function listMyFavoriteOpportunities(
   const opportunityIds = rows.map((row) => row.opportunity_id);
   const { data: opportunities } = await supabase
     .from("opportunities")
-    .select("id, title, contract_type, created_at, updated_at, posted_by")
+    .select("id, title, description, contract_type, created_at, updated_at, posted_by")
     .in("id", opportunityIds);
 
   const hydrated = await hydrateOpportunities(supabase, opportunities ?? []);

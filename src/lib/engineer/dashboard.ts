@@ -50,7 +50,7 @@ export async function getEngineerDashboardData(
     listUserSkills(supabase, userId),
     listUserQualifications(supabase, userId),
     listMyConversations(supabase, userId),
-    listPublishedOpportunities(supabase, { sort: "newest", pageSize: 6 }),
+    listPublishedOpportunities(supabase, { sort: "newest", limit: 6 }),
     listWorkExperiences(supabase, userId),
     listLanguages(supabase, userId),
   ]);

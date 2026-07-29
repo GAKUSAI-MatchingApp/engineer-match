@@ -62,10 +62,12 @@ export interface OpportunityHourly {
 export interface HydratedOpportunity {
   id: string;
   title: string;
+  description: string;
   contract_type: CompanyContractType;
   created_at: string;
   updated_at: string;
   companyName: string;
+  companyPrefecture: string | null;
   workStyle: string | null;
   salaryMin: number | null;
   salaryMax: number | null;
@@ -77,10 +79,45 @@ export interface HydratedOpportunity {
 interface HydrationSourceRow {
   id: string;
   title: string;
+  description?: string;
   contract_type: string;
   created_at: string;
   updated_at: string;
   posted_by: string;
+}
+
+const POSTGREST_FETCH_BATCH_SIZE = 500;
+const OPPORTUNITY_ID_FILTER_BATCH_SIZE = 100;
+const HYDRATION_BATCH_SIZE = 100;
+
+async function listRequiredSkillLinks(
+  supabase: SupabaseClient,
+  opportunityIds: string[],
+): Promise<{ opportunity_id: string; skill_id: string }[]> {
+  const links: { opportunity_id: string; skill_id: string }[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("opportunity_required_skills")
+      .select("opportunity_id, skill_id")
+      .in("opportunity_id", opportunityIds)
+      .order("opportunity_id")
+      .order("skill_id")
+      .range(offset, offset + POSTGREST_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[engineer-jobs] failed to hydrate required skills:", error);
+      return [];
+    }
+
+    const batch = (data ?? []) as { opportunity_id: string; skill_id: string }[];
+    links.push(...batch);
+    if (batch.length < POSTGREST_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
+  }
+
+  return links;
 }
 
 /**
@@ -100,7 +137,10 @@ export async function hydrateOpportunities(
 
   const [companiesRes, employmentRes, projectRes, hourlyRes, skillLinksRes] =
     await Promise.all([
-      supabase.from("company_profiles").select("id, company_name").in("id", postedByIds),
+      supabase
+        .from("company_profiles")
+        .select("id, company_name, prefecture")
+        .in("id", postedByIds),
       supabase
         .from("opportunity_employment")
         .select("opportunity_id, work_style, salary_min, salary_max")
@@ -113,14 +153,17 @@ export async function hydrateOpportunities(
         .from("opportunity_hourly")
         .select("opportunity_id, hourly_rate, work_style")
         .in("opportunity_id", ids),
-      supabase
-        .from("opportunity_required_skills")
-        .select("opportunity_id, skill_id")
-        .in("opportunity_id", ids),
+      listRequiredSkillLinks(supabase, ids),
     ]);
 
-  const companyNameById = new Map(
-    (companiesRes.data ?? []).map((row) => [row.id as string, row.company_name as string]),
+  const companyById = new Map(
+    (companiesRes.data ?? []).map((row) => [
+      row.id as string,
+      {
+        name: row.company_name as string,
+        prefecture: (row.prefecture as string | null) ?? null,
+      },
+    ]),
   );
   const employmentByOpp = new Map(
     (employmentRes.data ?? []).map((row) => [row.opportunity_id as string, row]),
@@ -132,7 +175,7 @@ export async function hydrateOpportunities(
     (hourlyRes.data ?? []).map((row) => [row.opportunity_id as string, row]),
   );
 
-  const skillLinks = skillLinksRes.data ?? [];
+  const skillLinks = skillLinksRes;
   const skillIds = [...new Set(skillLinks.map((row) => row.skill_id as string))];
   let skillNameById = new Map<string, string>();
   if (skillIds.length > 0) {
@@ -160,10 +203,12 @@ export async function hydrateOpportunities(
     return {
       id: row.id,
       title: row.title,
+      description: row.description ?? "",
       contract_type: row.contract_type as CompanyContractType,
       created_at: row.created_at,
       updated_at: row.updated_at,
-      companyName: companyNameById.get(row.posted_by) || "",
+      companyName: companyById.get(row.posted_by)?.name || "",
+      companyPrefecture: companyById.get(row.posted_by)?.prefecture ?? null,
       // Phase 5 決定事項②: hourly gained its own work_style column
       // (063_opportunity_hourly_work_style.sql); employment keeps priority
       // since only one of the two can ever be set for a given opportunity
@@ -189,18 +234,16 @@ export interface ListOpportunitiesOptions {
   contractType?: CompanyContractType | null;
   /** BR-37: opportunities must have ALL of these as required skills (AND, not OR). */
   skillIds?: string[];
-  /** BR-39: only ever constrains contract_type='employment' rows — other contract types are never excluded by this. */
+  /** BR-39: constrains the employment/hourly subtype tables that own work_style. */
   workStyle?: WorkStyleValue | null;
   sort?: "newest" | "oldest";
-  page?: number;
-  pageSize?: number;
+  /** Optional bounded preview size for callers such as the dashboard. Omit to fetch all matches. */
+  limit?: number;
 }
 
 export interface ListOpportunitiesResult {
   items: HydratedOpportunity[];
   total: number;
-  page: number;
-  pageSize: number;
   error: boolean;
 }
 
@@ -222,21 +265,34 @@ async function resolveSkillAndFilterIds(
   supabase: SupabaseClient,
   skillIds: string[],
 ): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("opportunity_required_skills")
-    .select("opportunity_id, skill_id")
-    .in("skill_id", skillIds);
+  const rows: { opportunity_id: string; skill_id: string }[] = [];
+  let offset = 0;
 
-  if (error) {
-    console.error("[engineer-jobs] failed to resolve skill filter:", error);
-    return [];
+  while (true) {
+    const { data, error } = await supabase
+      .from("opportunity_required_skills")
+      .select("opportunity_id, skill_id")
+      .in("skill_id", skillIds)
+      .order("opportunity_id")
+      .order("skill_id")
+      .range(offset, offset + POSTGREST_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[engineer-jobs] failed to resolve skill filter:", error);
+      return [];
+    }
+
+    const batch = (data ?? []) as { opportunity_id: string; skill_id: string }[];
+    rows.push(...batch);
+    if (batch.length < POSTGREST_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
   }
 
   const matchedSkillsByOpp = new Map<string, Set<string>>();
-  for (const row of data ?? []) {
-    const oppId = row.opportunity_id as string;
+  for (const row of rows) {
+    const oppId = row.opportunity_id;
     const set = matchedSkillsByOpp.get(oppId) ?? new Set<string>();
-    set.add(row.skill_id as string);
+    set.add(row.skill_id);
     matchedSkillsByOpp.set(oppId, set);
   }
 
@@ -250,32 +306,41 @@ async function resolveWorkStyleMatchIds(
   supabase: SupabaseClient,
   workStyle: WorkStyleValue,
 ): Promise<string[]> {
-  const [employmentResult, hourlyResult] = await Promise.all([
-    supabase
-      .from("opportunity_employment")
-      .select("opportunity_id")
-      .eq("work_style", workStyle),
-    supabase
-      .from("opportunity_hourly")
-      .select("opportunity_id")
-      .eq("work_style", workStyle),
-  ]);
+  async function fetchSubtypeIds(
+    table: "opportunity_employment" | "opportunity_hourly",
+  ): Promise<string[] | null> {
+    const ids: string[] = [];
+    let offset = 0;
 
-  if (employmentResult.error || hourlyResult.error) {
-    console.error(
-      "[engineer-jobs] failed to resolve work style filter:",
-      employmentResult.error ?? hourlyResult.error,
-    );
-    return [];
+    while (true) {
+      const { data, error } = await supabase
+        .from(table)
+        .select("opportunity_id")
+        .eq("work_style", workStyle)
+        .order("opportunity_id")
+        .range(offset, offset + POSTGREST_FETCH_BATCH_SIZE - 1);
+
+      if (error) {
+        console.error("[engineer-jobs] failed to resolve work style filter:", error);
+        return null;
+      }
+
+      const batch = (data ?? []).map((row) => row.opportunity_id as string);
+      ids.push(...batch);
+      if (batch.length < POSTGREST_FETCH_BATCH_SIZE) break;
+      offset += batch.length;
+    }
+
+    return ids;
   }
 
-  return [
-    ...new Set(
-      [...(employmentResult.data ?? []), ...(hourlyResult.data ?? [])].map(
-        (row) => row.opportunity_id as string,
-      ),
-    ),
-  ];
+  const [employmentIds, hourlyIds] = await Promise.all([
+    fetchSubtypeIds("opportunity_employment"),
+    fetchSubtypeIds("opportunity_hourly"),
+  ]);
+
+  if (!employmentIds || !hourlyIds) return [];
+  return [...new Set([...employmentIds, ...hourlyIds])];
 }
 
 /** Published, non-admin-unpublished, non-deleted opportunities — matches opportunities_select_active RLS. */
@@ -283,72 +348,127 @@ export async function listPublishedOpportunities(
   supabase: SupabaseClient,
   options: ListOpportunitiesOptions = {},
 ): Promise<ListOpportunitiesResult> {
-  const page = options.page && options.page > 0 ? options.page : 1;
-  const pageSize = options.pageSize ?? 20;
-
   const skillIds = (options.skillIds ?? []).filter(Boolean);
-  let skillFilterIds: string[] | null = null;
+  let candidateIds: string[] | null = null;
   if (skillIds.length > 0) {
-    skillFilterIds = await resolveSkillAndFilterIds(supabase, skillIds);
-    if (skillFilterIds.length === 0) {
-      return { items: [], total: 0, page, pageSize, error: false };
+    candidateIds = await resolveSkillAndFilterIds(supabase, skillIds);
+    if (candidateIds.length === 0) {
+      return { items: [], total: 0, error: false };
     }
   }
 
-  let workStyleMatchIds: string[] | null = null;
   if (options.workStyle) {
-    workStyleMatchIds = await resolveWorkStyleMatchIds(supabase, options.workStyle);
+    const workStyleMatchIds = await resolveWorkStyleMatchIds(supabase, options.workStyle);
     if (workStyleMatchIds.length === 0) {
-      return { items: [], total: 0, page, pageSize, error: false };
+      return { items: [], total: 0, error: false };
     }
-  }
-
-  let query = supabase
-    .from("opportunities")
-    .select("id, title, contract_type, created_at, updated_at, posted_by", {
-      count: "exact",
-    })
-    .eq("status", "published")
-    .eq("unpublished_by_admin", false)
-    .is("deleted_at", null);
-
-  if (skillFilterIds) {
-    query = query.in("id", skillFilterIds);
-  }
-
-  if (workStyleMatchIds) {
-    query = query.in("id", workStyleMatchIds);
+    const workStyleSet = new Set(workStyleMatchIds);
+    candidateIds = candidateIds
+      ? candidateIds.filter((id) => workStyleSet.has(id))
+      : workStyleMatchIds;
+    if (candidateIds.length === 0) return { items: [], total: 0, error: false };
   }
 
   const search = options.search?.trim();
-  if (search) {
-    // PostgREST's or=(...) filter mini-language treats backslash/comma/
-    // parentheses as syntax, not literal text -- escape them here so a
-    // keyword containing e.g. "," or ")" can't split or malform the filter
-    // expression. This is PostgREST-string escaping, unrelated to (and not a
-    // substitute for) parameterized SQL, which the query builder still
-    // handles for us.
-    const escaped = search.replace(/\\/g, "\\\\").replace(/[,()]/g, (char) => `\\${char}`);
-    query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+  const escapedSearch = search
+    ? search.replace(/\\/g, "\\\\").replace(/[,()]/g, (char) => `\\${char}`)
+    : null;
+  const ascending = options.sort === "oldest";
+
+  function createQuery(idBatch: string[] | null, includeCount: boolean) {
+    let query = supabase
+      .from("opportunities")
+      .select("id, title, description, contract_type, created_at, updated_at, posted_by", {
+        count: includeCount ? "exact" : undefined,
+      })
+      .eq("status", "published")
+      .eq("unpublished_by_admin", false)
+      .is("deleted_at", null);
+
+    if (idBatch) query = query.in("id", idBatch);
+    if (escapedSearch) {
+      // PostgREST's or=(...) mini-language treats these characters as syntax.
+      query = query.or(
+        `title.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%`,
+      );
+    }
+    if (options.contractType) {
+      query = query.eq("contract_type", options.contractType);
+    }
+
+    return query
+      .order("updated_at", { ascending })
+      .order("id", { ascending });
   }
-  if (options.contractType) {
-    query = query.eq("contract_type", options.contractType);
+
+  const rows: HydrationSourceRow[] = [];
+  let total = 0;
+
+  if (candidateIds) {
+    for (let index = 0; index < candidateIds.length; index += OPPORTUNITY_ID_FILTER_BATCH_SIZE) {
+      const idBatch = candidateIds.slice(index, index + OPPORTUNITY_ID_FILTER_BATCH_SIZE);
+      const { data, error } = await createQuery(idBatch, false);
+      if (error) {
+        console.error("[engineer-jobs] failed to list published opportunities:", error);
+        return { items: [], total: 0, error: true };
+      }
+      rows.push(...((data ?? []) as HydrationSourceRow[]));
+    }
+
+    rows.sort((left, right) => {
+      const dateOrder = left.updated_at.localeCompare(right.updated_at);
+      if (dateOrder !== 0) return ascending ? dateOrder : -dateOrder;
+      const idOrder = left.id.localeCompare(right.id);
+      return ascending ? idOrder : -idOrder;
+    });
+    total = rows.length;
+  } else {
+    const requestedLimit =
+      options.limit && options.limit > 0 ? Math.floor(options.limit) : Number.POSITIVE_INFINITY;
+    let offset = 0;
+    let isFirstBatch = true;
+    let knownTotal: number | null = null;
+
+    while (rows.length < requestedLimit) {
+      const batchSize = Math.min(
+        POSTGREST_FETCH_BATCH_SIZE,
+        Number.isFinite(requestedLimit) ? requestedLimit - rows.length : POSTGREST_FETCH_BATCH_SIZE,
+      );
+      const { data, error, count } = await createQuery(null, isFirstBatch).range(
+        offset,
+        offset + batchSize - 1,
+      );
+
+      if (error) {
+        console.error("[engineer-jobs] failed to list published opportunities:", error);
+        return { items: [], total: 0, error: true };
+      }
+
+      const batch = (data ?? []) as HydrationSourceRow[];
+      rows.push(...batch);
+      if (isFirstBatch) knownTotal = count;
+      if (batch.length < batchSize || (knownTotal !== null && rows.length >= knownTotal)) break;
+
+      offset += batch.length;
+      isFirstBatch = false;
+    }
+    total = knownTotal ?? rows.length;
   }
 
-  query = query
-    .order("updated_at", { ascending: options.sort === "oldest" })
-    .order("id", { ascending: options.sort === "oldest" })
-    .range((page - 1) * pageSize, page * pageSize - 1);
-
-  const { data, error, count } = await query;
-
-  if (error) {
-    console.error("[engineer-jobs] failed to list published opportunities:", error);
-    return { items: [], total: 0, page, pageSize, error: true };
+  const visibleRows =
+    options.limit && options.limit > 0 ? rows.slice(0, Math.floor(options.limit)) : rows;
+  const items: HydratedOpportunity[] = [];
+  for (let index = 0; index < visibleRows.length; index += HYDRATION_BATCH_SIZE) {
+    // Fixed-size hydration batches avoid N+1 reads and oversized PostgREST `in` URLs.
+    items.push(
+      ...(await hydrateOpportunities(
+        supabase,
+        visibleRows.slice(index, index + HYDRATION_BATCH_SIZE),
+      )),
+    );
   }
 
-  const items = await hydrateOpportunities(supabase, data ?? []);
-  return { items, total: count ?? 0, page, pageSize, error: false };
+  return { items, total, error: false };
 }
 
 export interface EngineerJobDetail {
