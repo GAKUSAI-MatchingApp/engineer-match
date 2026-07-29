@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
@@ -32,22 +33,31 @@ export function Header() {
       )}
     >
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex flex-col leading-tight">
-          <span
-            className={cn(
-              "text-lg font-bold tracking-tight transition-colors duration-200",
-              isOpaque ? "text-foreground" : "text-white",
-            )}
-          >
-            {BRAND.name}
-          </span>
-          <span
-            className={cn(
-              "text-xs transition-colors duration-200",
-              isOpaque ? "text-muted-foreground" : "text-white/80",
-            )}
-          >
-            エンジニア × IT企業
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image
+            src="/image/logo.png"
+            alt=""
+            width={42}
+            height={42}
+            className="h-[42px] w-[42px] shrink-0 object-contain"
+          />
+          <span className="flex flex-col leading-tight">
+            <span
+              className={cn(
+                "text-lg font-bold tracking-tight transition-colors duration-200",
+                isOpaque ? "text-foreground" : "text-white",
+              )}
+            >
+              {BRAND.name}
+            </span>
+            <span
+              className={cn(
+                "text-xs transition-colors duration-200",
+                isOpaque ? "text-muted-foreground" : "text-white/80",
+              )}
+            >
+              エンジニア × IT企業
+            </span>
           </span>
         </Link>
 

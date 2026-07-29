@@ -1,14 +1,24 @@
+import Image from "next/image";
 import { BRAND, FOOTER } from "@/constants/lp";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-muted">
+    <footer className="border-t border-border bg-slate-200">
       <div className="mx-auto max-w-7xl px-4 py-16 md:px-6">
         <div className="grid grid-cols-2 gap-x-8 gap-y-12 lg:grid-cols-6">
           <div className="col-span-2">
-            <p className="text-lg font-bold tracking-tight text-foreground">
-              {BRAND.name}
-            </p>
+            <div className="flex items-center gap-2.5">
+              <Image
+                src="/image/logo.png"
+                alt=""
+                width={42}
+                height={42}
+                className="h-[42px] w-[42px] shrink-0 object-contain"
+              />
+              <p className="text-lg font-bold tracking-tight text-foreground">
+                {BRAND.name}
+              </p>
+            </div>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
               {FOOTER.description}
             </p>

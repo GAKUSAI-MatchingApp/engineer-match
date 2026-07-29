@@ -9,11 +9,11 @@ export const BRAND = {
 } as const;
 
 export const NAV_LINKS = [
-  { label: "サービス", href: "#services" },
-  { label: "求人・案件", href: "#opportunities" },
-  { label: "企業の方へ", href: "#for-companies" },
-  { label: "ご利用の流れ", href: "#how-it-works" },
-  { label: "よくある質問", href: "#faq" },
+  { label: "サービス", href: "/#services" },
+  { label: "求人・案件", href: "/#opportunities" },
+  { label: "企業の方へ", href: "/#for-companies" },
+  { label: "ご利用の流れ", href: "/#how-it-works" },
+  { label: "よくある質問", href: "/#faq" },
 ] as const;
 
 export const HEADER_CTA = {
