@@ -8,6 +8,8 @@
 import {
   ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL,
   ADMIN_OPPORTUNITY_STATUS_LABEL,
+  type AdminOpportunityContractType,
+  type AdminOpportunitySide,
 } from "@/lib/admin/opportunities";
 
 // ============================================================
@@ -22,6 +24,27 @@ export const ADMIN_OPPORTUNITIES_PAGE = {
 export { ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL, ADMIN_OPPORTUNITY_STATUS_LABEL };
 export const ADMIN_OPPORTUNITY_CONTRACT_TYPE_OPTIONS = ["employment", "project", "hourly", "training"] as const;
 export const ADMIN_OPPORTUNITY_STATUS_OPTIONS = ["draft", "published", "closed"] as const;
+
+export const ADMIN_OPPORTUNITY_SIDE_LABEL: Record<AdminOpportunitySide, string> = {
+  ENGINEER: "エンジニア向け",
+  TRAINING: "研修",
+};
+
+export const ADMIN_OPPORTUNITY_CONTRACT_TYPE_BADGE_STYLES: Record<
+  AdminOpportunityContractType,
+  string
+> = {
+  employment: "bg-indigo-50 text-indigo-700",
+  project: "bg-violet-50 text-violet-700",
+  hourly: "bg-sky-50 text-sky-700",
+  training: "bg-teal-50 text-teal-700",
+};
+
+export const ADMIN_OPPORTUNITY_WORK_STYLE_LABEL: Record<string, string> = {
+  REMOTE: "リモート",
+  ONSITE: "常駐",
+  HYBRID: "ハイブリッド",
+};
 
 export const ADMIN_OPPORTUNITY_STATUS_TONE: Record<string, "positive" | "neutral" | "negative"> = {
   draft: "neutral",
@@ -53,9 +76,15 @@ export const ADMIN_OPPORTUNITY_FILTER_LABELS = {
   title: "絞り込み条件",
   contractType: "サービス区分",
   status: "公開状態",
+  reportState: "通報状況",
   postedWithin: "投稿日",
   resetLabel: "条件をリセット",
 } as const;
+
+export const ADMIN_OPPORTUNITY_REPORT_STATE_OPTIONS = [
+  { value: "reported", label: "通報あり" },
+  { value: "unreported", label: "通報なし" },
+] as const;
 
 export const ADMIN_OPPORTUNITY_DATE_RANGE_OPTIONS = [
   { label: "指定なし", days: null },
@@ -67,12 +96,14 @@ export const ADMIN_OPPORTUNITY_DATE_RANGE_OPTIONS = [
 export interface AdminOpportunityFilterState {
   contractTypes: string[];
   statuses: string[];
+  reportStates: string[];
   postedWithinDays: number | null;
 }
 
 export const DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE: AdminOpportunityFilterState = {
   contractTypes: [],
   statuses: [],
+  reportStates: [],
   postedWithinDays: null,
 };
 
@@ -81,17 +112,18 @@ export const DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE: AdminOpportunityFilterState
 // ============================================================
 
 export const ADMIN_OPPORTUNITY_TABLE_COLUMNS = [
-  "タイトル",
+  "求人・案件",
   "企業",
-  "区分",
-  "応募数",
-  "公開状態",
-  "投稿日",
+  "区分・条件",
+  "運用状況",
+  "更新情報",
   "操作",
 ] as const;
 
 export const ADMIN_OPPORTUNITY_ACTION_LABELS = {
   viewDetails: "詳細を見る",
+  viewCompany: "企業確認",
+  viewReports: "通報確認",
   takedown: "非公開にする",
   republish: "公開を再開する",
   close: "募集を終了する",
@@ -99,6 +131,8 @@ export const ADMIN_OPPORTUNITY_ACTION_LABELS = {
 
 export const ADMIN_OPPORTUNITY_RESULTS_META = {
   resultsSuffix: "件の求人・案件",
+  visiblePrefix: "表示中",
+  loadMore: "もっと見る",
 } as const;
 
 export const ADMIN_OPPORTUNITY_MODERATION_DIALOG_LABELS = {

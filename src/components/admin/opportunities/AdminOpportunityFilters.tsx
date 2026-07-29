@@ -10,6 +10,7 @@ import {
   ADMIN_OPPORTUNITY_CONTRACT_TYPE_OPTIONS,
   ADMIN_OPPORTUNITY_DATE_RANGE_OPTIONS,
   ADMIN_OPPORTUNITY_FILTER_LABELS,
+  ADMIN_OPPORTUNITY_REPORT_STATE_OPTIONS,
   ADMIN_OPPORTUNITY_STATUS_LABEL,
   ADMIN_OPPORTUNITY_STATUS_OPTIONS,
   DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE,
@@ -61,6 +62,24 @@ export function AdminOpportunityFilters({ filters, onChange }: AdminOpportunityF
             (c) => ADMIN_OPPORTUNITY_STATUS_LABEL[c] === label,
           ) as string;
           onChange({ statuses: toggleFilterValue(filters.statuses, code) });
+        }}
+      />
+      <AdminFilterChipGroup
+        legend={ADMIN_OPPORTUNITY_FILTER_LABELS.reportState}
+        idPrefix="opp-report-state"
+        options={ADMIN_OPPORTUNITY_REPORT_STATE_OPTIONS.map((option) => option.label)}
+        selected={filters.reportStates.map(
+          (value) =>
+            ADMIN_OPPORTUNITY_REPORT_STATE_OPTIONS.find((option) => option.value === value)
+              ?.label ?? value,
+        )}
+        onToggle={(label) => {
+          const value =
+            ADMIN_OPPORTUNITY_REPORT_STATE_OPTIONS.find((option) => option.label === label)
+              ?.value ?? "";
+          if (value) {
+            onChange({ reportStates: toggleFilterValue(filters.reportStates, value) });
+          }
         }}
       />
       <fieldset className="flex flex-col gap-2">

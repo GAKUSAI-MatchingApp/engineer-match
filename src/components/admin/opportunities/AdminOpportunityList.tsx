@@ -8,7 +8,6 @@ import { AdminOpportunityTable } from "@/components/admin/opportunities/AdminOpp
 import { AdminOpportunityMobileCards } from "@/components/admin/opportunities/AdminOpportunityMobileCards";
 import { AdminOpportunityStatusDialog } from "@/components/admin/opportunities/AdminOpportunityStatusDialog";
 import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
-import { AdminPagination } from "@/components/admin/shared/AdminPagination";
 import {
   ADMIN_OPPORTUNITY_MODERATION_ERROR_FALLBACK,
   ADMIN_OPPORTUNITY_RESULTS_META,
@@ -23,7 +22,8 @@ import {
 } from "@/lib/admin/opportunities";
 import { createClient } from "@/lib/supabase/client";
 
-const PAGE_SIZE = 8;
+const INITIAL_VISIBLE_COUNT = 12;
+const LOAD_MORE_STEP = 12;
 
 function daysSince(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
@@ -41,7 +41,7 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
   const [filters, setFilters] = useState<AdminOpportunityFilterState>(
     DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE,
   );
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -54,13 +54,13 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
 
   function handleFilterChange(patch: Partial<AdminOpportunityFilterState>) {
     setFilters((prev) => ({ ...prev, ...patch }));
-    setCurrentPage(1);
+    setVisibleCount(INITIAL_VISIBLE_COUNT);
   }
 
   function handleResetAll() {
     setSearchQuery("");
     setFilters(DEFAULT_ADMIN_OPPORTUNITY_FILTER_STATE);
-    setCurrentPage(1);
+    setVisibleCount(INITIAL_VISIBLE_COUNT);
   }
 
   function closeDialog() {
@@ -113,6 +113,11 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
       if (filters.statuses.length > 0 && !filters.statuses.includes(opp.status)) {
         return false;
       }
+      if (filters.reportStates.length === 1) {
+        const hasReports = opp.reportCount > 0;
+        if (filters.reportStates[0] === "reported" && !hasReports) return false;
+        if (filters.reportStates[0] === "unreported" && hasReports) return false;
+      }
       if (
         filters.postedWithinDays !== null &&
         daysSince(opp.createdAtISO) > filters.postedWithinDays
@@ -123,11 +128,9 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
     });
   }, [opportunities, searchQuery, filters]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredOpportunities.length / PAGE_SIZE));
-  const pagedOpportunities = filteredOpportunities.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  // Keep the Admin DOM compact while making every fetched result reachable.
+  // Move filtering and cursor loading server-side if this dataset grows substantially.
+  const visibleOpportunities = filteredOpportunities.slice(0, visibleCount);
 
   return (
     <div className="flex flex-col gap-6">
@@ -136,7 +139,7 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
         value={searchQuery}
         onChange={(value) => {
           setSearchQuery(value);
-          setCurrentPage(1);
+          setVisibleCount(INITIAL_VISIBLE_COUNT);
         }}
       />
       <AdminOpportunityFilters filters={filters} onChange={handleFilterChange} />
@@ -144,6 +147,11 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
       <p className="text-sm text-muted-foreground">
         {filteredOpportunities.length}
         {ADMIN_OPPORTUNITY_RESULTS_META.resultsSuffix}
+        {filteredOpportunities.length > 0 && (
+          <span className="ml-2">
+            （{ADMIN_OPPORTUNITY_RESULTS_META.visiblePrefix} {visibleOpportunities.length}件）
+          </span>
+        )}
       </p>
 
       {filteredOpportunities.length === 0 ? (
@@ -155,21 +163,24 @@ export function AdminOpportunityList({ initialOpportunities }: AdminOpportunityL
       ) : (
         <>
           <AdminOpportunityTable
-            opportunities={pagedOpportunities}
+            opportunities={visibleOpportunities}
             onAction={(id, action) => setDialog({ action, opportunityId: id })}
           />
           <AdminOpportunityMobileCards
-            opportunities={pagedOpportunities}
+            opportunities={visibleOpportunities}
             onAction={(id, action) => setDialog({ action, opportunityId: id })}
           />
-          <AdminPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            previousLabel="前へ"
-            nextLabel="次へ"
-            pageLabelPrefix="ページ"
-          />
+          {visibleOpportunities.length < filteredOpportunities.length && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((count) => count + LOAD_MORE_STEP)}
+                className="inline-flex h-11 min-w-40 items-center justify-center rounded-xl border border-border bg-surface px-5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                {ADMIN_OPPORTUNITY_RESULTS_META.loadMore}
+              </button>
+            </div>
+          )}
         </>
       )}
 

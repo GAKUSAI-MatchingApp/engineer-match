@@ -7,6 +7,8 @@ import { writeAdminAuditLog } from "@/lib/admin/audit";
 export type AdminOpportunityStatus = "draft" | "published" | "closed";
 /** public.opportunities.contract_type. */
 export type AdminOpportunityContractType = "employment" | "project" | "hourly" | "training";
+/** public.opportunities.side. */
+export type AdminOpportunitySide = "ENGINEER" | "TRAINING";
 
 export const ADMIN_OPPORTUNITY_STATUS_LABEL: Record<AdminOpportunityStatus, string> = {
   draft: "下書き",
@@ -31,90 +33,223 @@ export interface AdminOpportunityListItem {
   title: string;
   companyId: string;
   companyName: string;
+  side: AdminOpportunitySide;
   contractType: AdminOpportunityContractType;
   status: AdminOpportunityStatus;
   unpublishedByAdmin: boolean;
   conditionsLabel: string;
+  workStyle: string | null;
+  requiredSkillNames: string[];
   applicantCount: number;
+  reportCount: number;
+  latestReportId: string | null;
   createdAtLabel: string;
   createdAtISO: string;
+  updatedAtLabel: string;
+  updatedAtISO: string;
 }
 
-const LIST_CAP = 1000;
+interface AdminOpportunitySourceRow {
+  id: string;
+  title: string;
+  side: AdminOpportunitySide;
+  contract_type: AdminOpportunityContractType;
+  status: AdminOpportunityStatus;
+  unpublished_by_admin: boolean;
+  posted_by: string;
+  created_at: string;
+  updated_at: string;
+}
 
-export async function listAdminOpportunities(
+interface OpportunityReportSummaryRow {
+  id: string;
+  target_id: string;
+}
+
+const LIST_FETCH_BATCH_SIZE = 500;
+const LIST_HYDRATION_BATCH_SIZE = 100;
+
+async function listApplicationOpportunityIds(
   supabase: SupabaseClient,
-): Promise<AdminOpportunityListItem[]> {
-  const { data: rows, error } = await supabase
-    .from("opportunities")
-    .select("id, title, contract_type, status, unpublished_by_admin, posted_by, created_at, updated_at")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(LIST_CAP);
+  opportunityIds: string[],
+): Promise<string[]> {
+  const applicationOpportunityIds: string[] = [];
+  let offset = 0;
 
-  if (error) {
-    console.error("[admin] failed to list opportunities:", error);
-    return [];
+  while (true) {
+    const { data, error } = await supabase
+      .from("applications")
+      .select("id, opportunity_id")
+      .in("opportunity_id", opportunityIds)
+      .order("opportunity_id")
+      .order("id")
+      .range(offset, offset + LIST_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[admin] failed to count opportunity applications:", error);
+      return [];
+    }
+
+    const batch = (data ?? []) as { id: string; opportunity_id: string }[];
+    applicationOpportunityIds.push(...batch.map((row) => row.opportunity_id));
+    if (batch.length < LIST_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
   }
-  if (!rows || rows.length === 0) return [];
 
-  const [hydrated, applicationsRes] = await Promise.all([
+  return applicationOpportunityIds;
+}
+
+async function listOpportunityReportSummaries(
+  supabase: SupabaseClient,
+  opportunityIds: string[],
+): Promise<OpportunityReportSummaryRow[]> {
+  const reports: OpportunityReportSummaryRow[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("abuse_reports")
+      .select("id, target_id, created_at")
+      .eq("target_type", "opportunity")
+      .in("target_id", opportunityIds)
+      .order("target_id")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + LIST_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[admin] failed to count opportunity reports:", error);
+      return [];
+    }
+
+    const batch = (data ?? []) as (OpportunityReportSummaryRow & { created_at: string })[];
+    reports.push(...batch);
+    if (batch.length < LIST_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
+  }
+
+  return reports;
+}
+
+async function hydrateAdminOpportunityBatch(
+  supabase: SupabaseClient,
+  rows: AdminOpportunitySourceRow[],
+): Promise<AdminOpportunityListItem[]> {
+  const opportunityIds = rows.map((row) => row.id);
+  const [hydrated, applicationOpportunityIds, reports] = await Promise.all([
     hydrateOpportunities(
       supabase,
-      rows.map((r) => ({
-        id: r.id as string,
-        title: r.title as string,
-        contract_type: r.contract_type as string,
-        created_at: r.created_at as string,
-        updated_at: r.updated_at as string,
-        posted_by: r.posted_by as string,
+      rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        contract_type: row.contract_type,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        posted_by: row.posted_by,
       })),
     ),
-    supabase
-      .from("applications")
-      .select("opportunity_id")
-      .in(
-        "opportunity_id",
-        rows.map((r) => r.id as string),
-      ),
+    listApplicationOpportunityIds(supabase, opportunityIds),
+    listOpportunityReportSummaries(supabase, opportunityIds),
   ]);
 
-  const hydratedById = new Map(hydrated.map((h) => [h.id, h]));
-  const applicantCountByOpp = new Map<string, number>();
-  for (const a of applicationsRes.data ?? []) {
-    const oppId = a.opportunity_id as string;
-    applicantCountByOpp.set(oppId, (applicantCountByOpp.get(oppId) ?? 0) + 1);
+  const hydratedById = new Map(hydrated.map((row) => [row.id, row]));
+  const applicantCountByOpportunity = new Map<string, number>();
+  for (const opportunityId of applicationOpportunityIds) {
+    applicantCountByOpportunity.set(
+      opportunityId,
+      (applicantCountByOpportunity.get(opportunityId) ?? 0) + 1,
+    );
+  }
+
+  const reportCountByOpportunity = new Map<string, number>();
+  const latestReportIdByOpportunity = new Map<string, string>();
+  for (const report of reports) {
+    reportCountByOpportunity.set(
+      report.target_id,
+      (reportCountByOpportunity.get(report.target_id) ?? 0) + 1,
+    );
+    if (!latestReportIdByOpportunity.has(report.target_id)) {
+      latestReportIdByOpportunity.set(report.target_id, report.id);
+    }
   }
 
   return rows.map((row) => {
-    const hydratedRow = hydratedById.get(row.id as string);
-    const contractType = row.contract_type as AdminOpportunityContractType;
+    const hydratedRow = hydratedById.get(row.id);
     const conditionsLabel =
-      contractType === "training"
+      row.contract_type === "training"
         ? ""
         : hydratedRow
           ? formatSalaryLabel({
-              contract_type: contractType as CompanyContractType,
+              contract_type: row.contract_type as CompanyContractType,
               salaryMin: hydratedRow.salaryMin,
               salaryMax: hydratedRow.salaryMax,
               budget: hydratedRow.budget,
               hourlyRate: hydratedRow.hourlyRate,
             })
           : "";
+
     return {
-      id: row.id as string,
-      title: row.title as string,
-      companyId: row.posted_by as string,
+      id: row.id,
+      title: row.title,
+      companyId: row.posted_by,
       companyName: hydratedRow?.companyName ?? "",
-      contractType,
-      status: row.status as AdminOpportunityStatus,
-      unpublishedByAdmin: row.unpublished_by_admin as boolean,
+      side: row.side,
+      contractType: row.contract_type,
+      status: row.status,
+      unpublishedByAdmin: row.unpublished_by_admin,
       conditionsLabel,
-      applicantCount: applicantCountByOpp.get(row.id as string) ?? 0,
-      createdAtLabel: formatDateLabel(row.created_at as string),
-      createdAtISO: row.created_at as string,
+      workStyle: hydratedRow?.workStyle ?? null,
+      requiredSkillNames: hydratedRow?.requiredSkillNames ?? [],
+      applicantCount: applicantCountByOpportunity.get(row.id) ?? 0,
+      reportCount: reportCountByOpportunity.get(row.id) ?? 0,
+      latestReportId: latestReportIdByOpportunity.get(row.id) ?? null,
+      createdAtLabel: formatDateLabel(row.created_at),
+      createdAtISO: row.created_at,
+      updatedAtLabel: formatDateLabel(row.updated_at),
+      updatedAtISO: row.updated_at,
     };
   });
+}
+
+export async function listAdminOpportunities(
+  supabase: SupabaseClient,
+): Promise<AdminOpportunityListItem[]> {
+  const rows: AdminOpportunitySourceRow[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("opportunities")
+      .select(
+        "id, title, side, contract_type, status, unpublished_by_admin, posted_by, created_at, updated_at",
+      )
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + LIST_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[admin] failed to list opportunities:", error);
+      return [];
+    }
+
+    const batch = (data ?? []) as AdminOpportunitySourceRow[];
+    rows.push(...batch);
+    if (batch.length < LIST_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
+  }
+
+  const opportunities: AdminOpportunityListItem[] = [];
+  for (let index = 0; index < rows.length; index += LIST_HYDRATION_BATCH_SIZE) {
+    opportunities.push(
+      ...(await hydrateAdminOpportunityBatch(
+        supabase,
+        rows.slice(index, index + LIST_HYDRATION_BATCH_SIZE),
+      )),
+    );
+  }
+
+  return opportunities;
 }
 
 export interface AdminOpportunityReportEntry {
@@ -135,7 +270,6 @@ export interface AdminOpportunityHistoryEntry {
 
 export interface AdminOpportunityDetail extends AdminOpportunityListItem {
   description: string;
-  requiredSkillNames: string[];
   reportHistory: AdminOpportunityReportEntry[];
   publicationHistory: AdminOpportunityHistoryEntry[];
 }
@@ -154,7 +288,7 @@ export async function getAdminOpportunityDetail(
   const { data: row, error } = await supabase
     .from("opportunities")
     .select(
-      "id, title, description, contract_type, status, unpublished_by_admin, posted_by, created_at, updated_at",
+      "id, title, description, side, contract_type, status, unpublished_by_admin, posted_by, created_at, updated_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -236,13 +370,19 @@ export async function getAdminOpportunityDetail(
     description: row.description as string,
     companyId: row.posted_by as string,
     companyName: hydratedRow?.companyName ?? "",
+    side: row.side as AdminOpportunitySide,
     contractType,
     status: row.status as AdminOpportunityStatus,
     unpublishedByAdmin: row.unpublished_by_admin as boolean,
     conditionsLabel,
+    workStyle: hydratedRow?.workStyle ?? null,
     applicantCount: (applications ?? []).length,
+    reportCount: (reportRows ?? []).length,
+    latestReportId: (reportRows?.[0]?.id as string | undefined) ?? null,
     createdAtLabel: formatDateLabel(row.created_at as string),
     createdAtISO: row.created_at as string,
+    updatedAtLabel: formatDateLabel(row.updated_at as string),
+    updatedAtISO: row.updated_at as string,
     requiredSkillNames,
     reportHistory: (reportRows ?? []).map((r) => ({
       id: r.id as string,
