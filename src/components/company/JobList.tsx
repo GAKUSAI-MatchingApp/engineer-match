@@ -238,9 +238,9 @@ export function JobList({ jobs }: JobListProps) {
           </button>
         </div>
       ) : (
-        <ul className="flex flex-col gap-4">
+        <ul className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {visibleJobs.map((job) => (
-            <li key={job.id}>
+            <li key={job.id} className="min-w-0">
               <JobCard job={job} onCloseRecruitment={handleCloseRecruitment} />
             </li>
           ))}

@@ -61,6 +61,12 @@ export const WORK_STYLE_LABEL: Record<string, string> = {
   HYBRID: "一部リモート",
 };
 
+export const WORK_STYLE_BADGE_STYLES: Record<string, string> = {
+  REMOTE: "bg-teal-50 text-teal-700",
+  ONSITE: "bg-muted text-muted-foreground",
+  HYBRID: "bg-cyan-50 text-cyan-700",
+};
+
 // ============================================================
 // Job management — page / list meta
 // ============================================================
@@ -98,7 +104,10 @@ export type SortOption = (typeof SORT_OPTIONS)[number]["value"];
 export const JOB_CARD_LABELS = {
   detailLabel: "詳細",
   editLabel: "編集",
+  applicantsLabel: "応募者確認",
   closeLabel: "募集終了",
+  applicantCountPrefix: "応募",
+  applicantCountSuffix: "名",
   createdPrefix: "作成日：",
   updatedPrefix: "更新日：",
 } as const;

@@ -69,7 +69,23 @@ export interface Skill {
 export interface OpportunityListItem {
   id: string;
   title: string;
-  contract_type: Opportunity["contract_type"];
+  contract_type: CompanyContractType;
+  status: JobStatus;
+  created_at: string;
+  updated_at: string;
+  workStyle: OpportunityEmployment["work_style"] | OpportunityHourly["work_style"];
+  salaryMin: number | null;
+  salaryMax: number | null;
+  budget: number | null;
+  hourlyRate: number | null;
+  requiredSkillNames: string[];
+  applicantCount: number;
+}
+
+interface OpportunityListSourceRow {
+  id: string;
+  title: string;
+  contract_type: CompanyContractType;
   status: JobStatus;
   created_at: string;
   updated_at: string;
@@ -125,24 +141,197 @@ export interface OpportunityInput {
   requiredSkillIds: string[];
 }
 
+const LIST_FETCH_BATCH_SIZE = 500;
+const LIST_HYDRATION_BATCH_SIZE = 100;
+const ID_QUERY_BATCH_SIZE = 100;
+
+async function listOpportunitySkillLinks(
+  supabase: SupabaseClient,
+  opportunityIds: string[],
+): Promise<{ opportunity_id: string; skill_id: string }[]> {
+  const links: { opportunity_id: string; skill_id: string }[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("opportunity_required_skills")
+      .select("opportunity_id, skill_id")
+      .in("opportunity_id", opportunityIds)
+      .order("opportunity_id")
+      .order("skill_id")
+      .range(offset, offset + LIST_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[company-jobs] failed to list required skills:", error);
+      return [];
+    }
+
+    const batch = (data ?? []) as { opportunity_id: string; skill_id: string }[];
+    links.push(...batch);
+    if (batch.length < LIST_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
+  }
+
+  return links;
+}
+
+async function listOpportunityApplications(
+  supabase: SupabaseClient,
+  opportunityIds: string[],
+): Promise<{ id: string; opportunity_id: string }[]> {
+  const applications: { id: string; opportunity_id: string }[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("applications")
+      .select("id, opportunity_id")
+      .in("opportunity_id", opportunityIds)
+      .order("opportunity_id")
+      .order("id")
+      .range(offset, offset + LIST_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[company-jobs] failed to count applications:", error);
+      return [];
+    }
+
+    const batch = (data ?? []) as { id: string; opportunity_id: string }[];
+    applications.push(...batch);
+    if (batch.length < LIST_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
+  }
+
+  return applications;
+}
+
+async function hydrateOpportunityListBatch(
+  supabase: SupabaseClient,
+  rows: OpportunityListSourceRow[],
+): Promise<OpportunityListItem[]> {
+  const opportunityIds = rows.map((row) => row.id);
+  const [employmentResult, projectResult, hourlyResult, skillLinks, applications] =
+    await Promise.all([
+      supabase
+        .from("opportunity_employment")
+        .select("opportunity_id, work_style, salary_min, salary_max")
+        .in("opportunity_id", opportunityIds),
+      supabase
+        .from("opportunity_project")
+        .select("opportunity_id, budget")
+        .in("opportunity_id", opportunityIds),
+      supabase
+        .from("opportunity_hourly")
+        .select("opportunity_id, work_style, hourly_rate")
+        .in("opportunity_id", opportunityIds),
+      listOpportunitySkillLinks(supabase, opportunityIds),
+      listOpportunityApplications(supabase, opportunityIds),
+    ]);
+
+  const employmentByOpportunity = new Map(
+    (employmentResult.data ?? []).map((item) => [item.opportunity_id as string, item]),
+  );
+  const projectByOpportunity = new Map(
+    (projectResult.data ?? []).map((item) => [item.opportunity_id as string, item]),
+  );
+  const hourlyByOpportunity = new Map(
+    (hourlyResult.data ?? []).map((item) => [item.opportunity_id as string, item]),
+  );
+
+  const skillIds = [...new Set(skillLinks.map((link) => link.skill_id))];
+  const skillNameById = new Map<string, string>();
+  for (let index = 0; index < skillIds.length; index += ID_QUERY_BATCH_SIZE) {
+    const { data, error } = await supabase
+      .from("skills")
+      .select("id, name")
+      .in("id", skillIds.slice(index, index + ID_QUERY_BATCH_SIZE));
+
+    if (error) {
+      console.error("[company-jobs] failed to resolve required skill names:", error);
+      continue;
+    }
+    for (const skill of data ?? []) {
+      skillNameById.set(skill.id as string, skill.name as string);
+    }
+  }
+
+  const skillNamesByOpportunity = new Map<string, string[]>();
+  for (const link of skillLinks) {
+    const name = skillNameById.get(link.skill_id);
+    if (!name) continue;
+    const names = skillNamesByOpportunity.get(link.opportunity_id) ?? [];
+    names.push(name);
+    skillNamesByOpportunity.set(link.opportunity_id, names);
+  }
+
+  const applicantCountByOpportunity = new Map<string, number>();
+  for (const application of applications) {
+    applicantCountByOpportunity.set(
+      application.opportunity_id,
+      (applicantCountByOpportunity.get(application.opportunity_id) ?? 0) + 1,
+    );
+  }
+
+  return rows.map((row) => {
+    const employment = employmentByOpportunity.get(row.id);
+    const project = projectByOpportunity.get(row.id);
+    const hourly = hourlyByOpportunity.get(row.id);
+
+    return {
+      ...row,
+      workStyle: employment
+        ? (employment.work_style as OpportunityEmployment["work_style"])
+        : ((hourly?.work_style as OpportunityHourly["work_style"] | undefined) ?? null),
+      salaryMin: employment ? (employment.salary_min as number) : null,
+      salaryMax: employment ? (employment.salary_max as number) : null,
+      budget: project ? (project.budget as number) : null,
+      hourlyRate: hourly ? (hourly.hourly_rate as number) : null,
+      requiredSkillNames: skillNamesByOpportunity.get(row.id) ?? [],
+      applicantCount: applicantCountByOpportunity.get(row.id) ?? 0,
+    };
+  });
+}
+
 /** Own postings, any status — list/detail pages need to see drafts too, unlike public browse. */
 export async function listCompanyOpportunities(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<OpportunityListItem[]> {
-  const { data, error } = await supabase
-    .from("opportunities")
-    .select("id, title, contract_type, status, created_at, updated_at")
-    .eq("posted_by", userId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+  const rows: OpportunityListSourceRow[] = [];
+  let offset = 0;
 
-  if (error) {
-    console.error("[company-jobs] failed to list opportunities:", error);
-    return [];
+  while (true) {
+    const { data, error } = await supabase
+      .from("opportunities")
+      .select("id, title, contract_type, status, created_at, updated_at")
+      .eq("posted_by", userId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + LIST_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[company-jobs] failed to list opportunities:", error);
+      return [];
+    }
+
+    const batch = (data ?? []) as OpportunityListSourceRow[];
+    rows.push(...batch);
+    if (batch.length < LIST_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
   }
 
-  return (data ?? []) as OpportunityListItem[];
+  const items: OpportunityListItem[] = [];
+  for (let index = 0; index < rows.length; index += LIST_HYDRATION_BATCH_SIZE) {
+    items.push(
+      ...(await hydrateOpportunityListBatch(
+        supabase,
+        rows.slice(index, index + LIST_HYDRATION_BATCH_SIZE),
+      )),
+    );
+  }
+
+  return items;
 }
 
 /**
