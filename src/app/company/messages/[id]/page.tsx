@@ -106,12 +106,16 @@ export default async function CompanyConversationPage({
         {COMPANY_MESSAGES_PAGE.description}
       </p>
 
-      <div className="grid grid-cols-1 gap-6 lg:h-[calc(100svh-220px)] lg:min-h-[520px] lg:grid-cols-[380px_1fr] lg:grid-rows-[minmax(0,1fr)]">
-        <div className="hidden lg:block lg:h-full lg:min-h-0">
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:h-[calc(100dvh-220px)] lg:min-h-[520px] lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]">
+        <div className="hidden min-w-0 lg:block lg:h-full lg:min-h-0">
           <CompanyConversationList conversations={conversations} activeId={id} />
         </div>
-        <div className="h-[calc(100svh-160px)] min-h-[480px] lg:h-full lg:min-h-0">
-          <CompanyMessageThread conversation={conversation} currentUserId={authUser.id} />
+        <div className="h-[calc(100dvh-152px)] min-h-[480px] min-w-0 lg:h-full lg:min-h-0">
+          <CompanyMessageThread
+            key={conversation.chatRoomId}
+            conversation={conversation}
+            currentUserId={authUser.id}
+          />
         </div>
       </div>
     </DashboardShell>

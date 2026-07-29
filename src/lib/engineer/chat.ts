@@ -17,6 +17,52 @@ export interface ConversationListItem {
   unreadCount: number;
 }
 
+interface ConversationActivityRow {
+  chat_room_id: string;
+  sender_id: string;
+  body: string;
+  sent_at: string;
+  read_at: string | null;
+}
+
+const MESSAGE_FETCH_BATCH_SIZE = 500;
+const ROOM_ID_FILTER_BATCH_SIZE = 100;
+
+export async function listConversationActivityRows(
+  supabase: SupabaseClient,
+  roomIds: string[],
+): Promise<ConversationActivityRow[]> {
+  const rows: ConversationActivityRow[] = [];
+
+  for (let index = 0; index < roomIds.length; index += ROOM_ID_FILTER_BATCH_SIZE) {
+    const roomIdBatch = roomIds.slice(index, index + ROOM_ID_FILTER_BATCH_SIZE);
+    let offset = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("chat_room_id, sender_id, body, sent_at, read_at")
+        .in("chat_room_id", roomIdBatch)
+        .order("chat_room_id")
+        .order("sent_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(offset, offset + MESSAGE_FETCH_BATCH_SIZE - 1);
+
+      if (error) {
+        console.error("[chat] failed to list conversation activity:", error);
+        break;
+      }
+
+      const batch = (data ?? []) as ConversationActivityRow[];
+      rows.push(...batch);
+      if (batch.length < MESSAGE_FETCH_BATCH_SIZE) break;
+      offset += batch.length;
+    }
+  }
+
+  return rows;
+}
+
 /**
  * Every chat_room the engineer is a participant in (chat_rooms_select_participant
  * RLS, 026_chat_policies.sql) -- batched lookups, same shape as
@@ -41,14 +87,10 @@ export async function listMyConversations(
   const applicationIds = rooms.map((r) => r.application_id as string);
   const companyIds = [...new Set(rooms.map((r) => r.company_user_id as string))];
 
-  const [{ data: applications }, { data: companies }, { data: messages }] = await Promise.all([
+  const [{ data: applications }, { data: companies }, messages] = await Promise.all([
     supabase.from("applications").select("id, opportunity_id").in("id", applicationIds),
     supabase.from("company_profiles").select("id, company_name").in("id", companyIds),
-    supabase
-      .from("messages")
-      .select("chat_room_id, sender_id, body, sent_at, read_at")
-      .in("chat_room_id", roomIds)
-      .order("sent_at", { ascending: false }),
+    listConversationActivityRows(supabase, roomIds),
   ]);
 
   const opportunityIds = [
@@ -71,13 +113,7 @@ export async function listMyConversations(
 
   const lastMessageByRoom = new Map<string, { body: string; sent_at: string }>();
   const unreadCountByRoom = new Map<string, number>();
-  for (const row of (messages ?? []) as {
-    chat_room_id: string;
-    sender_id: string;
-    body: string;
-    sent_at: string;
-    read_at: string | null;
-  }[]) {
+  for (const row of messages) {
     if (!lastMessageByRoom.has(row.chat_room_id)) {
       lastMessageByRoom.set(row.chat_room_id, { body: row.body, sent_at: row.sent_at });
     }
@@ -114,9 +150,13 @@ export interface ConversationMessage {
 export interface ConversationDetail {
   chatRoomId: string;
   applicationId: string;
+  applicationStatus: string;
+  opportunityId: string;
   companyName: string;
   opportunityTitle: string;
+  contractType: string;
   messages: ConversationMessage[];
+  messageLoadError: boolean;
 }
 
 /**
@@ -133,7 +173,7 @@ export async function getOrCreateConversationForApplication(
 ): Promise<ConversationDetail | null> {
   const { data: application, error: applicationError } = await supabase
     .from("applications")
-    .select("id, opportunity_id, applicant_id")
+    .select("id, opportunity_id, applicant_id, status")
     .eq("id", applicationId)
     .eq("applicant_id", userId)
     .maybeSingle();
@@ -146,7 +186,7 @@ export async function getOrCreateConversationForApplication(
 
   const { data: opportunity } = await supabase
     .from("opportunities")
-    .select("id, title, posted_by")
+    .select("id, title, posted_by, contract_type")
     .eq("id", application.opportunity_id)
     .maybeSingle();
 
@@ -182,18 +222,43 @@ export async function getOrCreateConversationForApplication(
     room = createdRoom;
   }
 
-  const { data: messageRows } = await supabase
-    .from("messages")
-    .select("id, sender_id, body, sent_at, read_at")
-    .eq("chat_room_id", room.id)
-    .order("sent_at", { ascending: true });
+  const messageResult = await listConversationMessages(supabase, room.id as string);
 
   return {
     chatRoomId: room.id as string,
     applicationId,
+    applicationStatus: application.status as string,
+    opportunityId: opportunity.id as string,
     companyName: (company?.company_name as string) ?? "",
     opportunityTitle: (opportunity.title as string) ?? "",
-    messages: ((messageRows ?? []) as {
+    contractType: opportunity.contract_type as string,
+    messages: messageResult.messages,
+    messageLoadError: messageResult.error !== null,
+  };
+}
+
+export async function listConversationMessages(
+  supabase: SupabaseClient,
+  chatRoomId: string,
+): Promise<{ messages: ConversationMessage[]; error: string | null }> {
+  const messages: ConversationMessage[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, sender_id, body, sent_at, read_at")
+      .eq("chat_room_id", chatRoomId)
+      .order("sent_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(offset, offset + MESSAGE_FETCH_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error("[chat] failed to refresh conversation messages:", error);
+      return { messages: [], error: "メッセージの更新に失敗しました。" };
+    }
+
+    const batch = ((data ?? []) as {
       id: string;
       sender_id: string;
       body: string;
@@ -205,8 +270,13 @@ export async function getOrCreateConversationForApplication(
       body: row.body,
       sentAt: row.sent_at,
       readAt: row.read_at,
-    })),
-  };
+    }));
+    messages.push(...batch);
+    if (batch.length < MESSAGE_FETCH_BATCH_SIZE) break;
+    offset += batch.length;
+  }
+
+  return { messages, error: null };
 }
 
 export async function sendMessage(

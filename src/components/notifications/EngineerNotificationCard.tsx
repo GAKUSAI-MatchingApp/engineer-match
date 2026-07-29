@@ -21,7 +21,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
 /** Real-data link target for a notification, based on its related entity. */
 function linkFor(notification: NotificationItem): string {
   if (notification.relatedEntityType === "chat_room" && notification.relatedEntityId) {
-    return "/messages";
+    return notification.relatedApplicationId
+      ? `/messages/${notification.relatedApplicationId}`
+      : "/messages";
   }
   return "/engineer/applications";
 }

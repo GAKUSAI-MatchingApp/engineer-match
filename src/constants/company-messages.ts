@@ -3,10 +3,8 @@
  * src/lib/company/chat.ts (public.chat_rooms / public.messages,
  * 012_chat.sql, 036_chat_mvp_and_message_notifications.sql).
  *
- * Deliberately separate from src/constants/messages.ts / src/components/messages/*
- * (ConversationList, MessageThread, etc.): those are the older UI-only mock
- * versions, kept as-is. This file mirrors src/constants/engineer-messages.ts
- * for the company's viewer perspective.
+ * Role-specific copy remains here while Engineer and Company share the
+ * production chat presentation primitives in src/components/messages.
  */
 
 export const COMPANY_MESSAGES_PAGE = {
@@ -33,11 +31,20 @@ export const COMPANY_EMPTY_CONVERSATION_LABELS = {
 export const COMPANY_COMPOSER_LABELS = {
   placeholder: "メッセージを入力",
   sendLabel: "送信",
+  sendingLabel: "送信中",
   sendError: "メッセージの送信に失敗しました。しばらくしてから再度お試しください。",
+  keyboardHint: "Enterで送信・Shift+Enterで改行",
 } as const;
 
 export const COMPANY_MESSAGE_HEADER_LABELS = {
   backLabel: "会話一覧に戻る",
+} as const;
+
+export const COMPANY_MESSAGE_THREAD_LABELS = {
+  emptyTitle: "まだメッセージはありません。",
+  emptyDescription: "下の入力欄から応募者へ最初のメッセージを送信できます。",
+  refreshError: "新しいメッセージを取得できませんでした。",
+  ownSenderLabel: "自分",
 } as const;
 
 export const COMPANY_CONVERSATION_NOT_FOUND_LABELS = {

@@ -25,6 +25,7 @@ export interface NotificationItem {
   body: string;
   relatedEntityType: string | null;
   relatedEntityId: string | null;
+  relatedApplicationId: string | null;
   isRead: boolean;
   createdAt: string;
 }
@@ -45,7 +46,7 @@ export async function listMyNotifications(
     return [];
   }
 
-  return ((data ?? []) as {
+  const rows = (data ?? []) as {
     id: string;
     type: NotificationType;
     title: string;
@@ -54,13 +55,38 @@ export async function listMyNotifications(
     related_entity_id: string | null;
     is_read: boolean;
     created_at: string;
-  }[]).map((row) => ({
+  }[];
+
+  const chatRoomIds = [
+    ...new Set(
+      rows
+        .filter(
+          (row) => row.related_entity_type === "chat_room" && row.related_entity_id,
+        )
+        .map((row) => row.related_entity_id as string),
+    ),
+  ];
+  const { data: chatRooms } =
+    chatRoomIds.length > 0
+      ? await supabase
+          .from("chat_rooms")
+          .select("id, application_id")
+          .in("id", chatRoomIds)
+      : { data: [] as { id: string; application_id: string }[] };
+  const applicationIdByChatRoom = new Map(
+    (chatRooms ?? []).map((row) => [row.id as string, row.application_id as string]),
+  );
+
+  return rows.map((row) => ({
     id: row.id,
     type: row.type,
     title: row.title,
     body: row.body,
     relatedEntityType: row.related_entity_type,
     relatedEntityId: row.related_entity_id,
+    relatedApplicationId: row.related_entity_id
+      ? (applicationIdByChatRoom.get(row.related_entity_id) ?? null)
+      : null,
     isRead: row.is_read,
     createdAt: row.created_at,
   }));

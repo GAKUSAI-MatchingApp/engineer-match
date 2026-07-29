@@ -20,6 +20,12 @@ export function EngineerConversationList({
   activeId,
 }: EngineerConversationListProps) {
   const [query, setQuery] = useState("");
+  const unreadTotal = conversations.reduce(
+    (total, conversation) =>
+      total +
+      (conversation.applicationId === activeId ? 0 : conversation.unreadCount),
+    0,
+  );
 
   const filtered = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
@@ -33,8 +39,15 @@ export function EngineerConversationList({
   }, [conversations, query]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+    <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
       <div className="shrink-0 border-b border-border p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-foreground">会話一覧</h2>
+          <span className="text-xs text-muted-foreground">
+            {conversations.length}件
+            {unreadTotal > 0 && `・未読 ${unreadTotal}件`}
+          </span>
+        </div>
         <div className="relative">
           <Search
             className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -44,7 +57,7 @@ export function EngineerConversationList({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={ENGINEER_CONVERSATION_SEARCH_LABELS.placeholder}
-            className="pl-9"
+            className="h-11 rounded-xl pl-9"
           />
         </div>
       </div>
@@ -74,7 +87,7 @@ export function EngineerConversationList({
             </p>
           </div>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex min-w-0 flex-col gap-1">
             {filtered.map((conversation) => (
               <li key={conversation.chatRoomId}>
                 <EngineerConversationCard
@@ -86,6 +99,6 @@ export function EngineerConversationList({
           </ul>
         )}
       </div>
-    </div>
+    </section>
   );
 }

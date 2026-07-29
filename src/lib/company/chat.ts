@@ -1,4 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  listConversationActivityRows,
+  listConversationMessages,
+} from "@/lib/engineer/chat";
 
 /**
  * Company-side mirror of src/lib/engineer/chat.ts. Same public.chat_rooms /
@@ -39,14 +43,10 @@ export async function listCompanyConversations(
   const applicationIds = rooms.map((r) => r.application_id as string);
   const engineerIds = [...new Set(rooms.map((r) => r.engineer_id as string))];
 
-  const [{ data: applications }, { data: engineers }, { data: messages }] = await Promise.all([
+  const [{ data: applications }, { data: engineers }, messages] = await Promise.all([
     supabase.from("applications").select("id, opportunity_id").in("id", applicationIds),
     supabase.from("users").select("id, name").in("id", engineerIds),
-    supabase
-      .from("messages")
-      .select("chat_room_id, sender_id, body, sent_at, read_at")
-      .in("chat_room_id", roomIds)
-      .order("sent_at", { ascending: false }),
+    listConversationActivityRows(supabase, roomIds),
   ]);
 
   const opportunityIds = [
@@ -69,13 +69,7 @@ export async function listCompanyConversations(
 
   const lastMessageByRoom = new Map<string, { body: string; sent_at: string }>();
   const unreadCountByRoom = new Map<string, number>();
-  for (const row of (messages ?? []) as {
-    chat_room_id: string;
-    sender_id: string;
-    body: string;
-    sent_at: string;
-    read_at: string | null;
-  }[]) {
+  for (const row of messages) {
     if (!lastMessageByRoom.has(row.chat_room_id)) {
       lastMessageByRoom.set(row.chat_room_id, { body: row.body, sent_at: row.sent_at });
     }
@@ -112,9 +106,13 @@ export interface CompanyConversationMessage {
 export interface CompanyConversationDetail {
   chatRoomId: string;
   applicationId: string;
+  applicationStatus: string;
+  opportunityId: string;
   engineerName: string;
   opportunityTitle: string;
+  contractType: string;
   messages: CompanyConversationMessage[];
+  messageLoadError: boolean;
 }
 
 /**
@@ -132,7 +130,7 @@ export async function getOrCreateCompanyConversationForApplication(
 ): Promise<CompanyConversationDetail | null> {
   const { data: application, error: applicationError } = await supabase
     .from("applications")
-    .select("id, opportunity_id, applicant_id")
+    .select("id, opportunity_id, applicant_id, status")
     .eq("id", applicationId)
     .maybeSingle();
 
@@ -144,7 +142,7 @@ export async function getOrCreateCompanyConversationForApplication(
 
   const { data: opportunity } = await supabase
     .from("opportunities")
-    .select("id, title, posted_by")
+    .select("id, title, posted_by, contract_type")
     .eq("id", application.opportunity_id)
     .eq("posted_by", companyUserId)
     .maybeSingle();
@@ -181,31 +179,22 @@ export async function getOrCreateCompanyConversationForApplication(
     room = createdRoom;
   }
 
-  const { data: messageRows } = await supabase
-    .from("messages")
-    .select("id, sender_id, body, sent_at, read_at")
-    .eq("chat_room_id", room.id)
-    .order("sent_at", { ascending: true });
+  const messageResult = await listConversationMessages(supabase, room.id as string);
 
   return {
     chatRoomId: room.id as string,
     applicationId,
+    applicationStatus: application.status as string,
+    opportunityId: opportunity.id as string,
     engineerName: (engineer?.name as string) ?? "",
     opportunityTitle: (opportunity.title as string) ?? "",
-    messages: ((messageRows ?? []) as {
-      id: string;
-      sender_id: string;
-      body: string;
-      sent_at: string;
-      read_at: string | null;
-    }[]).map((row) => ({
-      id: row.id,
-      senderId: row.sender_id,
-      body: row.body,
-      sentAt: row.sent_at,
-      readAt: row.read_at,
-    })),
+    contractType: opportunity.contract_type as string,
+    messages: messageResult.messages,
+    messageLoadError: messageResult.error !== null,
   };
 }
 
-export { markConversationRead, sendMessage } from "@/lib/engineer/chat";
+export {
+  markConversationRead,
+  sendMessage,
+} from "@/lib/engineer/chat";

@@ -3,10 +3,8 @@
  * src/lib/engineer/chat.ts (public.chat_rooms / public.messages,
  * 012_chat.sql, 036_chat_mvp_and_message_notifications.sql).
  *
- * Deliberately separate from src/constants/messages.ts / src/components/messages/*:
- * those are still shared with the (out-of-scope this phase) Company messages
- * mock page (src/app/company/messages/**), so they are left untouched rather
- * than being converted in a way that would break Company's still-mock UI.
+ * Role-specific copy remains here while Engineer and Company share the
+ * production chat presentation primitives in src/components/messages.
  *
  * Dropped vs. the old mock: conversation "status" (スカウト/面接調整中/etc, no
  * such column), message "kind" (system/interview/scout, no such column),
@@ -38,11 +36,20 @@ export const ENGINEER_EMPTY_CONVERSATION_LABELS = {
 export const ENGINEER_COMPOSER_LABELS = {
   placeholder: "メッセージを入力",
   sendLabel: "送信",
+  sendingLabel: "送信中",
   sendError: "メッセージの送信に失敗しました。しばらくしてから再度お試しください。",
+  keyboardHint: "Enterで送信・Shift+Enterで改行",
 } as const;
 
 export const ENGINEER_MESSAGE_HEADER_LABELS = {
   backLabel: "会話一覧に戻る",
+} as const;
+
+export const ENGINEER_MESSAGE_THREAD_LABELS = {
+  emptyTitle: "まだメッセージはありません。",
+  emptyDescription: "下の入力欄から企業へ最初のメッセージを送信できます。",
+  refreshError: "新しいメッセージを取得できませんでした。",
+  ownSenderLabel: "自分",
 } as const;
 
 export const ENGINEER_CONVERSATION_NOT_FOUND_LABELS = {
