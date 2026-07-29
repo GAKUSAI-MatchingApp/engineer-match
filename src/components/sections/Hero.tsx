@@ -18,7 +18,7 @@ import { fadeUpItem, staggerContainer } from "@/lib/motion";
 const TRUST_POINTS = [
   { icon: CircleCheck, label: "登録無料" },
   { icon: MessagesSquare, label: "企業と直接やり取り" },
-  { icon: BriefcaseBusiness, label: "就職・案件・時間清算に対応" },
+  { icon: BriefcaseBusiness, label: "就職・案件・時間精算に対応" },
 ] as const;
 
 export function Hero() {

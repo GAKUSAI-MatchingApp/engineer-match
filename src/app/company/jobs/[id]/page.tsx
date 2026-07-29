@@ -203,7 +203,7 @@ export default async function CompanyJobDetailPage({ params }: CompanyJobDetailP
 
           {hourly && (
             <section className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
-              <h3 className="text-base font-semibold text-foreground">時間清算条件</h3>
+              <h3 className="text-base font-semibold text-foreground">時間精算条件</h3>
               <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs text-muted-foreground">

@@ -192,13 +192,13 @@ export function LoginCard() {
         variants={variants}
         className="w-full max-w-md lg:max-w-[440px]"
       >
-        <div className="rounded-[28px] border border-white/20 bg-slate-900/55 p-7 text-white shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl md:p-8">
+        <div className="rounded-[28px] border border-white/20 bg-slate-900/55 p-6 text-white shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl md:p-7">
           <h1 className="text-2xl font-bold tracking-tight text-white">{LOGIN_FORM.title}</h1>
           <p className="mt-1.5 text-sm text-white/70">
             {LOGIN_FORM.description}
           </p>
 
-          <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
+          <form className="mt-5 space-y-4" onSubmit={handleSubmit} noValidate>
             <div className="flex flex-col gap-2">
               <Label htmlFor="email" className="text-white/90">
                 {LOGIN_FORM.email.label}
@@ -286,7 +286,7 @@ export function LoginCard() {
             </Button>
           </form>
 
-          <div className="mt-5 space-y-5">
+          <div className="mt-4 space-y-4">
             <OAuthProviderButtons
               dividerLabel={LOGIN_FORM.dividerLabel}
               googleLabel={LOGIN_FORM.google}
@@ -298,7 +298,7 @@ export function LoginCard() {
           </div>
         </div>
 
-        <p className="mt-5 text-center text-sm text-white/70">
+        <p className="mt-4 text-center text-sm text-white/70">
           {LOGIN_FORM.noAccount}{" "}
           <Link
             href={LOGIN_FORM.registerHref}

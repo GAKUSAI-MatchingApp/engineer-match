@@ -69,7 +69,7 @@ export const WITHDRAWABLE_STATUSES = ["applied", "screening", "interview"] as co
 export const CONTRACT_TYPE_LABEL: Record<string, string> = {
   employment: "就職",
   project: "案件",
-  hourly: "時間清算",
+  hourly: "時間精算",
 };
 
 export const CONTRACT_TYPE_BADGE_STYLES: Record<string, string> = {

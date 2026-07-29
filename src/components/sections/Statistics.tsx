@@ -1,7 +1,22 @@
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { STATS, STATS_NOTE } from "@/constants/lp";
+import { STATS_LABELS } from "@/constants/lp";
+import type { LandingStats } from "@/lib/landing/stats";
 
-export function Statistics() {
+interface StatisticsProps {
+  stats: LandingStats | null;
+}
+
+export function Statistics({ stats }: StatisticsProps) {
+  // Live counts unavailable (e.g. service-role config missing) -- hide the
+  // section rather than show a fabricated or stale number.
+  if (!stats) return null;
+
+  const items = (Object.keys(STATS_LABELS) as (keyof LandingStats)[]).map((key) => ({
+    key,
+    label: STATS_LABELS[key],
+    value: stats[key],
+  }));
+
   return (
     <section
       id="statistics"
@@ -10,24 +25,20 @@ export function Statistics() {
     >
       <div className="mx-auto max-w-7xl px-4 md:px-6">
         <dl className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-          {STATS.map((stat) => (
+          {items.map((item) => (
             <div
-              key={stat.label}
+              key={item.key}
               className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-muted p-6 text-center sm:p-8"
             >
               <dt className="order-2 text-sm text-muted-foreground md:text-base">
-                {stat.label}
+                {item.label}
               </dt>
               <dd className="order-1 text-3xl font-bold text-primary md:text-4xl">
-                <AnimatedNumber value={stat.value} suffix={stat.suffix} />
+                <AnimatedNumber value={item.value} />
               </dd>
             </div>
           ))}
         </dl>
-
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          {STATS_NOTE}
-        </p>
       </div>
     </section>
   );

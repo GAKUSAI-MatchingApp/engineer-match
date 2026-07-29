@@ -12,11 +12,12 @@ import { ServiceCategories } from "@/components/sections/ServiceCategories";
 import { Statistics } from "@/components/sections/Statistics";
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
 import { createClient } from "@/lib/supabase/server";
-import { listPublishedOpportunities } from "@/lib/engineer/opportunities";
+import { listFeaturedOpportunities } from "@/lib/landing/featured-opportunities";
+import { getLandingStats } from "@/lib/landing/stats";
 
 /**
- * Featured jobs are real published opportunities (listPublishedOpportunities,
- * same query the real /engineer/jobs list uses) -- never fabricated data.
+ * Featured jobs are real published opportunities from ACTIVE companies
+ * (listFeaturedOpportunities) -- never fabricated data.
  *
  * For a logged-out visitor this legitimately returns zero rows today:
  * opportunities_select_active (024_opportunity_policies.sql) grants SELECT
@@ -27,16 +28,16 @@ import { listPublishedOpportunities } from "@/lib/engineer/opportunities";
  */
 export default async function Home() {
   const supabase = await createClient();
-  const { items: featuredOpportunities } = await listPublishedOpportunities(supabase, {
-    sort: "newest",
-    limit: 6,
-  });
+  const [featuredOpportunities, stats] = await Promise.all([
+    listFeaturedOpportunities(supabase, 6),
+    getLandingStats(),
+  ]);
 
   return (
     <>
       <Header />
       <Hero />
-      <Statistics />
+      <Statistics stats={stats} />
       <ServiceCategories />
       <PopularSkills />
       <FeaturedOpportunities opportunities={featuredOpportunities} />

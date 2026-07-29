@@ -19,7 +19,7 @@ export const ADMIN_OPPORTUNITY_STATUS_LABEL: Record<AdminOpportunityStatus, stri
 export const ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL: Record<AdminOpportunityContractType, string> = {
   employment: "就職",
   project: "案件",
-  hourly: "時間清算",
+  hourly: "時間精算",
   training: "研修",
 };
 

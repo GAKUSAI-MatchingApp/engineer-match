@@ -55,7 +55,7 @@ export function AuthHero({
       {/* Extra wash on mobile, where copy and card stack over more of the photo */}
       <div className="absolute inset-0 -z-10 bg-black/25 md:hidden" aria-hidden="true" />
 
-      <div className="relative z-10 mx-auto grid min-h-svh max-w-[1180px] items-center gap-6 px-5 py-16 md:px-8 lg:grid-cols-[minmax(420px,560px)_minmax(420px,500px)] lg:gap-8 lg:px-10 lg:py-0 xl:gap-10">
+      <div className="relative z-10 mx-auto grid min-h-svh max-w-[1180px] items-center gap-6 px-5 py-12 md:px-8 lg:grid-cols-[minmax(420px,560px)_minmax(420px,500px)] lg:gap-8 lg:px-10 lg:py-0 xl:gap-10">
         <div className="flex h-full max-w-[520px] flex-col justify-center animate-in fade-in slide-in-from-left-4 duration-700 motion-reduce:animate-none">
           <Link href="/" className="flex w-fit flex-col leading-tight">
             <span className="text-lg font-bold tracking-tight text-white">

@@ -25,19 +25,18 @@ export const HERO = {
   eyebrow: "スキルで、企業とつながる。",
   title: "あなたのスキルに、\n本当に合う仕事を。",
   description:
-    "就職・案件・時間清算まで。\nスキルや希望条件に合う求人・案件を探し、\n企業へ直接応募・連絡できる\nエンジニア向けマッチングプラットフォームです。",
+    "就職・案件・時間精算まで。\nスキルや希望条件に合う求人・案件を探し、\n企業へ直接応募・連絡できる\nエンジニア向けマッチングプラットフォームです。",
   primaryCta: "求人・案件を探す",
   secondaryCta: "無料会員登録",
 } as const;
 
-export const STATS = [
-  { value: 1200, suffix: "+", label: "登録エンジニア数" },
-  { value: 350, suffix: "+", label: "掲載求人・案件数" },
-  { value: 80, suffix: "+", label: "参画企業数" },
-  { value: 150, suffix: "+", label: "スキル登録数" },
-] as const;
-
-export const STATS_NOTE = "※ 数値はデモ表示です。";
+/** Labels for the live counts in src/lib/landing/stats.ts, in display order. */
+export const STATS_LABELS = {
+  activeEngineerCount: "登録エンジニア数",
+  publishedOpportunityCount: "掲載求人・案件数",
+  activeCompanyCount: "参画企業数",
+  activeSkillCount: "スキル登録数",
+} as const;
 
 export const SERVICES = {
   label: "SERVICE",
@@ -68,7 +67,7 @@ export const SERVICE_CATEGORIES = [
   },
   {
     icon: "clock",
-    name: "時間清算",
+    name: "時間精算",
     description: "時間単価制の準委任案件",
     features: [
       "時間単価で明確な報酬",
@@ -167,7 +166,7 @@ export const WHY_CHOOSE_US_ITEMS = [
   {
     icon: "briefcase",
     title: "3つの契約形態",
-    description: "就職・案件・時間清算まで、働き方に合わせて選べます。",
+    description: "就職・案件・時間精算まで、働き方に合わせて選べます。",
   },
   {
     icon: "shieldCheck",
@@ -297,7 +296,7 @@ export const FOR_COMPANIES_FEATURES = [
   {
     icon: "briefcase",
     title: "求人・案件掲載",
-    description: "就職・案件・時間清算の募集情報を登録・管理できます。",
+    description: "就職・案件・時間精算の募集情報を登録・管理できます。",
   },
   {
     icon: "searchCheck",
@@ -324,7 +323,7 @@ export const FAQ_ITEMS = [
   },
   {
     question: "どのような契約形態がありますか？",
-    answer: "就職・案件・時間清算の\n3つの契約形態に対応しています。",
+    answer: "就職・案件・時間精算の\n3つの契約形態に対応しています。",
   },
   {
     question: "企業と直接やり取りできますか？",
@@ -348,7 +347,7 @@ export const CTA = {
   label: "GET STARTED",
   title: "あなたに合う仕事、\nここから始まる。",
   description:
-    "就職・案件・時間清算まで。\n\nエンジニアと企業を\nもっとシンプルにつなぎます。",
+    "就職・案件・時間精算まで。\n\nエンジニアと企業を\nもっとシンプルにつなぎます。",
   primaryCta: "エンジニアとして登録",
   primaryHref: "/signup",
   secondaryCta: "企業として登録",
@@ -362,27 +361,33 @@ export const FOOTER = {
     {
       title: "サービス",
       links: [
-        { label: "サービス概要", href: "#services" },
-        { label: "スキルから探す", href: "#skills" },
-        { label: "求人・案件を探す", href: "#opportunities" },
-        { label: "ITSS（スキル標準）", href: "#itss" },
+        { label: "サービス概要", href: "/#services" },
+        { label: "スキルから探す", href: "/#skills" },
+        { label: "求人・案件を探す", href: "/#opportunities" },
+        { label: "ITSS（スキル標準）", href: "/#itss" },
       ],
     },
     {
       title: "企業向け",
       links: [
-        { label: "企業の方へ", href: "#for-companies" },
-        { label: "ご利用の流れ", href: "#how-it-works" },
-        { label: "料金プラン", href: "#" },
-        { label: "導入事例", href: "#" },
+        { label: "企業の方へ", href: "/#for-companies" },
+        { label: "ご利用の流れ", href: "/#how-it-works" },
+        // No standalone pricing page yet -- routed to the FAQ section, the
+        // closest existing content that actually answers a pricing question.
+        { label: "料金プラン", href: "/#faq" },
+        // No standalone case-studies page yet -- routed to "why choose us",
+        // the closest existing section (social proof / platform strengths).
+        { label: "導入事例", href: "/#why-us" },
       ],
     },
     {
       title: "サポート",
       links: [
-        { label: "よくある質問", href: "#faq" },
+        { label: "よくある質問", href: "/#faq" },
         { label: "お問い合わせ", href: "/contact" },
-        { label: "ヘルプセンター", href: "#" },
+        // No standalone help-center page yet -- routed to the real,
+        // functioning inquiry page rather than a marketing section.
+        { label: "ヘルプセンター", href: "/contact" },
       ],
     },
     {
@@ -391,6 +396,10 @@ export const FOOTER = {
         { label: "運営会社", href: "/company" },
         { label: "利用規約", href: "/terms" },
         { label: "プライバシーポリシー", href: "/privacy" },
+        // Legally-mandated commercial-transactions disclosure page does not
+        // exist. Deliberately left without a destination rather than routed
+        // to an unrelated section or filled with placeholder legal content --
+        // see Footer.tsx for how this is rendered.
         { label: "特定商取引法に基づく表記", href: "#" },
       ],
     },

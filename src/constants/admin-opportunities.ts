@@ -18,7 +18,7 @@ import {
 
 export const ADMIN_OPPORTUNITIES_PAGE = {
   title: "求人・案件管理",
-  description: "就職・案件・時間清算・研修の求人・案件を一括で管理できます。",
+  description: "就職・案件・時間精算・研修の求人・案件を一括で管理できます。",
 } as const;
 
 export { ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL, ADMIN_OPPORTUNITY_STATUS_LABEL };

@@ -22,7 +22,7 @@ export function FinalCta() {
           whileInView="visible"
           viewport={{ once: true, margin: "-10% 0px" }}
           variants={fade}
-          className="relative isolate overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#4338CA_0%,#4F46E5_45%,#6366F1_100%)] px-8 py-16 text-center sm:px-12 md:py-20 lg:py-24"
+          className="relative isolate overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#4338CA_0%,#4F46E5_45%,#6366F1_100%)] px-8 py-10 text-center sm:px-12 md:py-14"
         >
           <div
             aria-hidden="true"
@@ -39,15 +39,15 @@ export function FinalCta() {
             </span>
             <h2
               id="cta-heading"
-              className="mt-4 text-3xl leading-tight font-bold tracking-tight whitespace-pre-line text-white sm:text-4xl lg:text-5xl"
+              className="mt-3 text-3xl leading-tight font-bold tracking-tight whitespace-pre-line text-white sm:text-4xl lg:text-5xl"
             >
               {CTA.title}
             </h2>
-            <p className="mt-6 max-w-xl text-base leading-relaxed whitespace-pre-line text-white/85">
+            <p className="mt-4 max-w-xl text-base leading-relaxed whitespace-pre-line text-white/85">
               {CTA.description}
             </p>
 
-            <div className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <div className="mt-7 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link
                 href={CTA.primaryHref}
                 className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-sm font-semibold text-primary shadow-sm transition-colors duration-200 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary focus-visible:outline-none"

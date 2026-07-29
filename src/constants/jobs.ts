@@ -19,13 +19,13 @@
 export const CONTRACT_TYPE_OPTIONS = [
   { value: "employment", label: "就職" },
   { value: "project", label: "案件" },
-  { value: "hourly", label: "時間清算" },
+  { value: "hourly", label: "時間精算" },
 ] as const;
 
 export const CONTRACT_TYPE_LABEL: Record<string, string> = {
   employment: "就職",
   project: "案件",
-  hourly: "時間清算",
+  hourly: "時間精算",
 };
 
 export const CONTRACT_TYPE_BADGE_STYLES: Record<string, string> = {
