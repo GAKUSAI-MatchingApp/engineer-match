@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { APPLICANT_DETAIL_META } from "@/constants/company-applicants";
+import { formatDiagnosisLevelLabel, type DiagnosisLevel } from "@/constants/skill-levels";
 import type { AssessmentSummary } from "@/lib/company/applicants";
 
 interface ApplicantAssessmentSummaryProps {
@@ -35,8 +36,7 @@ export function ApplicantAssessmentSummary({
             <p className="truncate text-sm font-semibold text-foreground">{item.name}</p>
             {item.finalLevel !== null ? (
               <span className="shrink-0 text-sm font-semibold text-primary">
-                {APPLICANT_DETAIL_META.levelPrefix} {item.finalLevel}{" "}
-                {APPLICANT_DETAIL_META.levelSuffix}
+                {formatDiagnosisLevelLabel(item.finalLevel as DiagnosisLevel)}
               </span>
             ) : (
               <span className="shrink-0 text-sm text-muted-foreground">

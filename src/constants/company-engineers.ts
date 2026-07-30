@@ -78,7 +78,7 @@ export const FILTER_LABELS = {
 export const ACTIVE_FILTERS_LABELS = {
   clearAllLabel: "すべてクリア",
   removeLabelPrefix: "フィルターを削除：",
-  itssPrefix: "ITSSレベル",
+  itssPrefix: "ITSS",
 } as const;
 
 export const RESULTS_META = {

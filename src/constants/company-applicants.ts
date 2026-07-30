@@ -154,8 +154,6 @@ export const APPLICANT_DETAIL_META = {
   noSkillsMessage: "スキル情報は登録されていません。",
   noQualificationsMessage: "資格情報は登録されていません。",
   notAssessedLabel: "未診断",
-  levelPrefix: "レベル",
-  levelSuffix: "/ 5",
 } as const;
 
 // ============================================================

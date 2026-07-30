@@ -8,6 +8,7 @@ import {
   WORK_STYLE_FILTER_OPTIONS,
 } from "@/constants/company-engineers";
 import { AVAILABILITY_STATUS_OPTIONS, JOB_CATEGORY_OPTIONS } from "@/constants/engineer-profile";
+import { formatItssLevelLabel, type ItssLevel } from "@/constants/skill-levels";
 
 interface Chip {
   key: string;
@@ -67,7 +68,7 @@ export function EngineerActiveFilters({
   for (const value of filters.itssLevels) {
     chips.push({
       key: `itss-${value}`,
-      label: `${ACTIVE_FILTERS_LABELS.itssPrefix}${value}`,
+      label: `${ACTIVE_FILTERS_LABELS.itssPrefix} ${formatItssLevelLabel(value as ItssLevel)}`,
       onRemove: () =>
         onFilterChange({ itssLevels: filters.itssLevels.filter((item) => item !== value) }),
     });

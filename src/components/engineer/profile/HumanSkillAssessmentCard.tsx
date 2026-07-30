@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HUMAN_SKILL_CARD_LABELS } from "@/constants/skill-assessment";
+import { formatDiagnosisLevelLabel, type DiagnosisLevel } from "@/constants/skill-levels";
 
 interface HumanSkillAssessmentCardProps {
   name: string;
@@ -21,8 +22,7 @@ export function HumanSkillAssessmentCard({
         <p className="mt-1 text-sm">
           {isAssessed ? (
             <span className="font-semibold text-primary">
-              {HUMAN_SKILL_CARD_LABELS.levelPrefix} {finalLevel}{" "}
-              {HUMAN_SKILL_CARD_LABELS.levelSuffix}
+              {formatDiagnosisLevelLabel(finalLevel as DiagnosisLevel)}
             </span>
           ) : (
             <span className="text-muted-foreground">{HUMAN_SKILL_CARD_LABELS.notAssessed}</span>

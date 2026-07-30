@@ -46,30 +46,12 @@ export const ASSESSMENT_ERROR_LABELS = {
 
 export const ASSESSMENT_RESULT_LABELS = {
   title: "最終スコア",
-  levelPrefix: "レベル",
-  levelSuffix: "/ 5",
   yesCountPrefix: "Yes",
   yesCountSuffix: "/ 10",
 } as const;
 
-/** Match: yesCountLevel === cumulativeLevel. */
-export function formatAssessmentMatchMessage(level: number): string {
-  return `yes数換算・積み上げ式ともにレベル${level}で一致しています。`;
-}
-
-/** Mismatch: the two calculations disagree; final level is the lower of the two. */
-export function formatAssessmentMismatchMessage(
-  yesCountLevel: number,
-  cumulativeLevel: number,
-  finalLevel: number,
-): string {
-  return `yes数換算ではレベル${yesCountLevel}ですが、積み上げ式ではレベル${cumulativeLevel}です。\n下位レベルの未達項目を考慮し、レベル${finalLevel}を最終評価として採用しています。`;
-}
-
 export const HUMAN_SKILL_CARD_LABELS = {
   notAssessed: "未診断",
-  levelPrefix: "レベル",
-  levelSuffix: "/ 5",
   startLabel: "診断する",
   retakeLabel: "再診断する",
 } as const;

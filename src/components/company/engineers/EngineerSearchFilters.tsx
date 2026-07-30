@@ -10,6 +10,7 @@ import {
   type ExperienceBucket,
 } from "@/constants/company-engineers";
 import { AVAILABILITY_STATUS_OPTIONS, JOB_CATEGORY_OPTIONS } from "@/constants/engineer-profile";
+import { formatItssLevelLabel } from "@/constants/skill-levels";
 
 function toggleValue<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
@@ -144,7 +145,8 @@ export function EngineerFilterFields({
                 key={level}
                 type="button"
                 aria-pressed={isSelected}
-                aria-label={`${FILTER_LABELS.itssLevels} ${level}`}
+                aria-label={`ITSS ${formatItssLevelLabel(level)}`}
+                title={formatItssLevelLabel(level)}
                 onClick={() => onChange({ itssLevels: toggleValue(filters.itssLevels, level) })}
                 className={`inline-flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${
                   isSelected

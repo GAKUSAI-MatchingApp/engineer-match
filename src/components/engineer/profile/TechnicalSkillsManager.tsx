@@ -19,6 +19,7 @@ import {
 } from "@/lib/engineer/skills";
 import { createClient } from "@/lib/supabase/client";
 import { TECHNICAL_SKILL_EDITOR_LABELS } from "@/constants/engineer-profile";
+import { formatItssLevelOption } from "@/constants/skill-levels";
 
 const SELECT_CLASS =
   "h-9 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -180,7 +181,7 @@ export function TechnicalSkillsManager({
           <p className="min-w-32 flex-1 truncate text-sm font-semibold text-foreground">
             {skill.name}
           </p>
-          <div className="flex w-28 flex-col gap-1">
+          <div className="flex w-44 flex-col gap-1">
             <Label htmlFor={`skill-level-${skill.id}`} className="sr-only">
               {TECHNICAL_SKILL_EDITOR_LABELS.levelLabel}
             </Label>
@@ -193,7 +194,7 @@ export function TechnicalSkillsManager({
             >
               {ITSS_SKILL_LEVELS.map((level) => (
                 <option key={level} value={level}>
-                  {level}
+                  {formatItssLevelOption(level)}
                 </option>
               ))}
             </select>
@@ -249,7 +250,7 @@ export function TechnicalSkillsManager({
               ))}
             </select>
           </div>
-          <div className="flex w-28 flex-col gap-1.5">
+          <div className="flex w-44 flex-col gap-1.5">
             <Label htmlFor="new-skill-level">{TECHNICAL_SKILL_EDITOR_LABELS.levelLabel}</Label>
             <select
               id="new-skill-level"
@@ -259,7 +260,7 @@ export function TechnicalSkillsManager({
             >
               {ITSS_SKILL_LEVELS.map((level) => (
                 <option key={level} value={level}>
-                  {level}
+                  {formatItssLevelOption(level)}
                 </option>
               ))}
             </select>

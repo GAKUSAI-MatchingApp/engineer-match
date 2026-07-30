@@ -11,9 +11,12 @@ import {
   ASSESSMENT_PAGE_META,
   ASSESSMENT_PROGRESS_LABELS,
   ASSESSMENT_RESULT_LABELS,
-  formatAssessmentMatchMessage,
-  formatAssessmentMismatchMessage,
 } from "@/constants/skill-assessment";
+import {
+  formatDiagnosisLevelLabel,
+  formatDiagnosisResultMessage,
+  type DiagnosisLevel,
+} from "@/constants/skill-levels";
 import {
   computeAssessmentScore,
   submitAssessment,
@@ -91,7 +94,7 @@ export function AssessmentRunner({ assessment, questions, userId }: AssessmentRu
   }
 
   if (result) {
-    const isMatch = result.yesCountLevel === result.cumulativeLevel;
+    const finalLevel = result.finalLevel as DiagnosisLevel;
     return (
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
         <div className="flex items-center gap-3">
@@ -106,25 +109,14 @@ export function AssessmentRunner({ assessment, questions, userId }: AssessmentRu
           </div>
         </div>
 
-        <p className="mt-6 text-4xl font-bold text-primary">
-          {ASSESSMENT_RESULT_LABELS.levelPrefix} {result.finalLevel}
-          <span className="ml-2 text-lg font-semibold text-muted-foreground">
-            {ASSESSMENT_RESULT_LABELS.levelSuffix}
-          </span>
-        </p>
+        <p className="mt-6 text-4xl font-bold text-primary">{formatDiagnosisLevelLabel(finalLevel)}</p>
         <p className="mt-2 text-sm text-muted-foreground">
           {ASSESSMENT_RESULT_LABELS.yesCountPrefix} {result.yesCount}{" "}
           {ASSESSMENT_RESULT_LABELS.yesCountSuffix}
         </p>
 
         <p className="mt-5 rounded-xl bg-muted px-4 py-3 text-sm leading-relaxed whitespace-pre-line text-foreground">
-          {isMatch
-            ? formatAssessmentMatchMessage(result.yesCountLevel)
-            : formatAssessmentMismatchMessage(
-                result.yesCountLevel,
-                result.cumulativeLevel,
-                result.finalLevel,
-              )}
+          {formatDiagnosisResultMessage(finalLevel)}
         </p>
 
         <Link
@@ -168,7 +160,7 @@ export function AssessmentRunner({ assessment, questions, userId }: AssessmentRu
             className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6"
           >
             <h3 className="text-xs font-semibold text-muted-foreground">
-              レベル {level}
+              {formatDiagnosisLevelLabel(level as DiagnosisLevel)}
             </h3>
             <ul className="mt-3 flex flex-col gap-4">
               {levelQuestions.map((question) => {

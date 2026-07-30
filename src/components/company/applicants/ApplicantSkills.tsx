@@ -1,6 +1,7 @@
 import { Code2 } from "lucide-react";
 import { ItssBadge } from "@/components/engineer/profile/ItssBadge";
 import { APPLICANT_DETAIL_META } from "@/constants/company-applicants";
+import { formatItssLevelLabel } from "@/constants/skill-levels";
 
 interface TechnicalSkillItem {
   name: string;
@@ -32,6 +33,7 @@ export function ApplicantSkills({ skills }: ApplicantSkillsProps) {
           {skills.map((skill) => (
             <li
               key={skill.name}
+              title={skill.level !== null ? formatItssLevelLabel(skill.level as 1 | 2 | 3 | 4 | 5 | 6 | 7) : undefined}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pr-3 pl-1.5 text-xs font-medium text-primary"
             >
               {skill.level !== null && (
