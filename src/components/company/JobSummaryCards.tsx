@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Archive, Briefcase, FilePenLine } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { OpportunityListItem } from "@/lib/company/jobs";
@@ -13,7 +14,7 @@ interface JobSummaryCardsProps {
   jobs: OpportunityListItem[];
 }
 
-export function JobSummaryCards({ jobs }: JobSummaryCardsProps) {
+export const JobSummaryCards = memo(function JobSummaryCards({ jobs }: JobSummaryCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {JOB_SUMMARY_CARD_META.map((card) => {
@@ -31,4 +32,4 @@ export function JobSummaryCards({ jobs }: JobSummaryCardsProps) {
       })}
     </div>
   );
-}
+});

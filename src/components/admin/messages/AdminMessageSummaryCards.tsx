@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { MessagesSquare, Sparkles } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
 import { ADMIN_MESSAGE_SUMMARY_LABELS } from "@/constants/admin-messages";
@@ -7,7 +8,9 @@ interface AdminMessageSummaryCardsProps {
   conversations: AdminConversationListItem[];
 }
 
-export function AdminMessageSummaryCards({ conversations }: AdminMessageSummaryCardsProps) {
+export const AdminMessageSummaryCards = memo(function AdminMessageSummaryCards({
+  conversations,
+}: AdminMessageSummaryCardsProps) {
   const total = conversations.length;
   const today = new Date().toDateString();
   const updatedToday = conversations.filter((c) => new Date(c.updatedAtISO).toDateString() === today).length;
@@ -23,4 +26,4 @@ export function AdminMessageSummaryCards({ conversations }: AdminMessageSummaryC
       />
     </div>
   );
-}
+});

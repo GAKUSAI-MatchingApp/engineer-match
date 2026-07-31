@@ -8,15 +8,12 @@ import { ENGINEER_REPLY_LABELS } from "@/constants/reviews";
 import { updateEngineerReply } from "@/lib/engineer/reviews";
 import { createClient } from "@/lib/supabase/client";
 import type { EngineerReview } from "@/lib/reviews";
+import { formatDateJa } from "@/lib/engineer/format";
 
 interface ReviewCardProps {
   review: EngineerReview;
   /** True only on the Engineer's own profile — Company-side read views never reply. */
   canReply: boolean;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
 }
 
 export function ReviewCard({ review, canReply }: ReviewCardProps) {
@@ -65,7 +62,7 @@ export function ReviewCard({ review, canReply }: ReviewCardProps) {
         <StarRatingDisplay rating={review.rating} size="sm" />
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        {review.companyName} ・ {formatDate(review.createdAt)}
+        {review.companyName} ・ {formatDateJa(review.createdAt)}
       </p>
       <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap text-foreground">{review.comment}</p>
 

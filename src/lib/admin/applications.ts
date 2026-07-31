@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ADMIN_OPPORTUNITY_CONTRACT_TYPE_LABEL, type AdminOpportunityContractType } from "@/lib/admin/opportunities";
+import { formatDateJa } from "@/lib/engineer/format";
 
 /** public.applications.status (011_applications.sql widened by 049_application_completion_status.sql). */
 export type AdminApplicationStatus =
@@ -33,11 +34,6 @@ export const ADMIN_APPLICATION_STATUS_TONE: Record<
   withdrawn: "neutral",
   completed: "positive",
 };
-
-function formatDateLabel(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
 
 export interface AdminApplicationListItem {
   id: string;
@@ -99,9 +95,9 @@ export async function listAdminApplications(supabase: SupabaseClient): Promise<A
       companyName: opp ? (companyNameById.get(opp.posted_by as string) ?? "") : "",
       contractType: (opp?.contract_type as AdminOpportunityContractType | undefined) ?? "employment",
       status: row.status as AdminApplicationStatus,
-      appliedAtLabel: formatDateLabel(row.applied_at as string),
+      appliedAtLabel: formatDateJa(row.applied_at as string),
       appliedAtISO: row.applied_at as string,
-      updatedAtLabel: formatDateLabel(row.updated_at as string),
+      updatedAtLabel: formatDateJa(row.updated_at as string),
     };
   });
 }
@@ -166,7 +162,7 @@ export async function getAdminApplicationDetail(
       messagePreview = {
         chatRoomId: chatRoom.id as string,
         lastMessageBody: lastMessage.body as string,
-        lastMessageAtLabel: formatDateLabel(lastMessage.sent_at as string),
+        lastMessageAtLabel: formatDateJa(lastMessage.sent_at as string),
       };
     }
   }
@@ -181,10 +177,10 @@ export async function getAdminApplicationDetail(
     companyName,
     contractType: (opportunity?.contract_type as AdminOpportunityContractType | undefined) ?? "employment",
     status: row.status as AdminApplicationStatus,
-    appliedAtLabel: formatDateLabel(row.applied_at as string),
+    appliedAtLabel: formatDateJa(row.applied_at as string),
     appliedAtISO: row.applied_at as string,
-    updatedAtLabel: formatDateLabel(row.updated_at as string),
-    completedAtLabel: row.completed_at ? formatDateLabel(row.completed_at as string) : null,
+    updatedAtLabel: formatDateJa(row.updated_at as string),
+    completedAtLabel: row.completed_at ? formatDateJa(row.completed_at as string) : null,
     messagePreview,
   };
 }

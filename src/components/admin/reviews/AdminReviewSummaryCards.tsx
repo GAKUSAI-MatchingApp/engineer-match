@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { MessageCircle, Star } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
 import type { AdminReviewListItem } from "@/lib/admin/reviews";
@@ -6,7 +7,9 @@ interface AdminReviewSummaryCardsProps {
   reviews: AdminReviewListItem[];
 }
 
-export function AdminReviewSummaryCards({ reviews }: AdminReviewSummaryCardsProps) {
+export const AdminReviewSummaryCards = memo(function AdminReviewSummaryCards({
+  reviews,
+}: AdminReviewSummaryCardsProps) {
   const total = reviews.length;
   const average =
     total === 0 ? null : Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / total) * 10) / 10;
@@ -19,4 +22,4 @@ export function AdminReviewSummaryCards({ reviews }: AdminReviewSummaryCardsProp
       <AdminSummaryCard label="返信済み" value={`${replied}件`} icon={MessageCircle} />
     </div>
   );
-}
+});

@@ -1,13 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-function formatDateLabel(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
+import { formatDateJa } from "@/lib/engineer/format";
 
 function formatDateTimeLabel(iso: string): string {
   const date = new Date(iso);
-  return `${formatDateLabel(iso)} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  return `${formatDateJa(iso)} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 export interface AdminConversationListItem {

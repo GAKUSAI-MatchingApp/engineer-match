@@ -15,6 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { getCompanyOpportunity, listSkills } from "@/lib/company/jobs";
 import { getCompanyHeaderIdentity } from "@/lib/company/profile";
+import { formatDateJa } from "@/lib/engineer/format";
 
 interface CompanyJobDetailPageProps {
   params: Promise<{ id: string }>;
@@ -35,11 +36,6 @@ export async function generateMetadata({
       ? `${detail.opportunity.title} | ENGINEER MATCH`
       : "求人詳細 | ENGINEER MATCH",
   };
-}
-
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 export default async function CompanyJobDetailPage({ params }: CompanyJobDetailPageProps) {
@@ -95,10 +91,10 @@ export default async function CompanyJobDetailPage({ params }: CompanyJobDetailP
             {CONTRACT_TYPE_LABEL[opportunity.contract_type as keyof typeof CONTRACT_TYPE_LABEL]}
           </span>
           <span className="text-xs text-muted-foreground">
-            {JOB_DETAIL_META.createdLabel}: {formatDate(opportunity.created_at)}
+            {JOB_DETAIL_META.createdLabel}: {formatDateJa(opportunity.created_at)}
           </span>
           <span className="text-xs text-muted-foreground">
-            {JOB_DETAIL_META.updatedLabel}: {formatDate(opportunity.updated_at)}
+            {JOB_DETAIL_META.updatedLabel}: {formatDateJa(opportunity.updated_at)}
           </span>
         </div>
       </div>

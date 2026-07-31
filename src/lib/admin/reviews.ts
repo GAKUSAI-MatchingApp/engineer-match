@@ -1,9 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-function formatDateLabel(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
+import { formatDateJa } from "@/lib/engineer/format";
 
 export interface AdminReviewListItem {
   id: string;
@@ -70,8 +66,8 @@ export async function listAllAdminReviews(supabase: SupabaseClient): Promise<Adm
     rating: row.rating as number,
     comment: row.comment as string,
     engineerReply: (row.engineer_reply as string | null) ?? null,
-    repliedAtLabel: row.replied_at ? formatDateLabel(row.replied_at as string) : null,
-    createdAtLabel: formatDateLabel(row.created_at as string),
+    repliedAtLabel: row.replied_at ? formatDateJa(row.replied_at as string) : null,
+    createdAtLabel: formatDateJa(row.created_at as string),
     createdAtISO: row.created_at as string,
   }));
 }

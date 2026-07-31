@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Award, CalendarClock, CheckCircle2, ClipboardList, Send, XCircle } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
 import { ADMIN_APPLICATION_SUMMARY_LABELS } from "@/constants/admin-applications";
@@ -7,7 +8,9 @@ interface AdminApplicationSummaryCardsProps {
   applications: AdminApplicationListItem[];
 }
 
-export function AdminApplicationSummaryCards({ applications }: AdminApplicationSummaryCardsProps) {
+export const AdminApplicationSummaryCards = memo(function AdminApplicationSummaryCards({
+  applications,
+}: AdminApplicationSummaryCardsProps) {
   const total = applications.length;
   const screening = applications.filter((a) => a.status === "applied" || a.status === "screening").length;
   const interview = applications.filter((a) => a.status === "interview").length;
@@ -49,4 +52,4 @@ export function AdminApplicationSummaryCards({ applications }: AdminApplicationS
       />
     </div>
   );
-}
+});

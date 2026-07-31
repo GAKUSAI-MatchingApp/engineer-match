@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { CheckCircle2, Clock, Flag, Loader2 } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
 import { ADMIN_REPORT_SUMMARY_LABELS } from "@/constants/admin-reports";
@@ -7,7 +8,9 @@ interface AdminReportSummaryCardsProps {
   reports: AdminReportListItem[];
 }
 
-export function AdminReportSummaryCards({ reports }: AdminReportSummaryCardsProps) {
+export const AdminReportSummaryCards = memo(function AdminReportSummaryCards({
+  reports,
+}: AdminReportSummaryCardsProps) {
   const total = reports.length;
   const pending = reports.filter((r) => r.status === "pending").length;
   const inProgress = reports.filter((r) => r.status === "in_progress").length;
@@ -36,4 +39,4 @@ export function AdminReportSummaryCards({ reports }: AdminReportSummaryCardsProp
       />
     </div>
   );
-}
+});

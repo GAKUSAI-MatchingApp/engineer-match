@@ -15,6 +15,11 @@ export function formatTimeJa(iso: string): string {
   return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
+/** First 2 characters of a name, used as an avatar-circle fallback (e.g. chat conversation lists). */
+export function initialsFor(name: string): string {
+  return name.trim().slice(0, 2) || "?";
+}
+
 export function formatRelativeDaysJa(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));

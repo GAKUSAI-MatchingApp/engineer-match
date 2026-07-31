@@ -1,16 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdminApprovalItem } from "@/constants/admin";
+import { formatDateJa } from "@/lib/engineer/format";
 
 /** public.abuse_reports.status -> UI label (017_abuse_reports.sql). */
 const REPORT_STATUS_LABEL: Record<string, string> = {
   pending: "未対応",
   in_progress: "対応中",
 };
-
-function formatDateLabel(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
 
 export interface AdminSummaryCardData {
   id: string;
@@ -88,7 +84,7 @@ export async function getAdminDashboardData(supabase: SupabaseClient): Promise<A
     type: "通報対応待ち",
     title: (row.reason as string).slice(0, 60),
     submittedBy: reporterNameById.get(row.reporter_id as string) ?? "不明なユーザー",
-    dateLabel: formatDateLabel(row.created_at as string),
+    dateLabel: formatDateJa(row.created_at as string),
     status: REPORT_STATUS_LABEL[row.status as string] ?? (row.status as string),
     detailsHref: `/admin/reports/${row.id}`,
   }));
@@ -106,7 +102,7 @@ export async function getAdminDashboardData(supabase: SupabaseClient): Promise<A
     title: `${row.action_type as string} (${row.target_type as string})`,
     description: (row.reason as string | null) ?? "",
     actor: adminNameById.get(row.admin_user_id as string) ?? "管理者",
-    dateLabel: formatDateLabel(row.created_at as string),
+    dateLabel: formatDateJa(row.created_at as string),
   }));
 
   return {

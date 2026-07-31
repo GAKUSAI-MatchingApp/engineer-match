@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Ban, Building2, CheckCircle2, UserPlus } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
 import { ADMIN_COMPANY_SUMMARY_LABELS } from "@/constants/admin-companies";
@@ -13,7 +14,9 @@ function isThisMonth(iso: string): boolean {
   return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
 }
 
-export function AdminCompanySummaryCards({ companies }: AdminCompanySummaryCardsProps) {
+export const AdminCompanySummaryCards = memo(function AdminCompanySummaryCards({
+  companies,
+}: AdminCompanySummaryCardsProps) {
   const total = companies.length;
   const active = companies.filter((c) => c.usageStatus === "ACTIVE").length;
   const suspended = companies.filter((c) => c.usageStatus === "SUSPENDED").length;
@@ -42,4 +45,4 @@ export function AdminCompanySummaryCards({ companies }: AdminCompanySummaryCards
       />
     </div>
   );
-}
+});

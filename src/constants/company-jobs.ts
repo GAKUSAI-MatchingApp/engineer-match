@@ -11,24 +11,15 @@
 // Shared vocabulary (DB enum values + display labels)
 // ============================================================
 
-export const CONTRACT_TYPE_OPTIONS = [
-  { value: "employment", label: "就職" },
-  { value: "project", label: "案件" },
-  { value: "hourly", label: "時間精算" },
-] as const;
-export type CompanyContractType = (typeof CONTRACT_TYPE_OPTIONS)[number]["value"];
-
-export const CONTRACT_TYPE_LABEL: Record<CompanyContractType, string> = {
-  employment: "就職",
-  project: "案件",
-  hourly: "時間精算",
-};
-
-export const CONTRACT_TYPE_BADGE_STYLES: Record<CompanyContractType, string> = {
-  employment: "bg-blue-50 text-blue-700",
-  project: "bg-indigo-50 text-primary",
-  hourly: "bg-amber-50 text-amber-700",
-};
+export {
+  CONTRACT_TYPE_OPTIONS,
+  CONTRACT_TYPE_LABEL,
+  CONTRACT_TYPE_BADGE_STYLES,
+  WORK_STYLE_OPTIONS,
+  WORK_STYLE_LABEL,
+  WORK_STYLE_BADGE_STYLES,
+} from "@/constants/contract-type";
+export type { CompanyContractType } from "@/constants/contract-type";
 
 export const JOB_STATUS_OPTIONS = [
   { value: "draft", label: "下書き" },
@@ -47,24 +38,6 @@ export const JOB_STATUS_BADGE_STYLES: Record<JobStatus, string> = {
   published: "bg-green-50 text-green-700",
   draft: "bg-amber-50 text-amber-700",
   closed: "bg-gray-100 text-gray-600",
-};
-
-export const WORK_STYLE_OPTIONS = [
-  { value: "REMOTE", label: "フルリモート" },
-  { value: "ONSITE", label: "出社" },
-  { value: "HYBRID", label: "一部リモート" },
-] as const;
-
-export const WORK_STYLE_LABEL: Record<string, string> = {
-  REMOTE: "フルリモート",
-  ONSITE: "出社",
-  HYBRID: "一部リモート",
-};
-
-export const WORK_STYLE_BADGE_STYLES: Record<string, string> = {
-  REMOTE: "bg-teal-50 text-teal-700",
-  ONSITE: "bg-muted text-muted-foreground",
-  HYBRID: "bg-cyan-50 text-cyan-700",
 };
 
 // ============================================================

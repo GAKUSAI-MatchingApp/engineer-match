@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Archive, Briefcase, FileEdit, Send } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
 import { ADMIN_OPPORTUNITY_SUMMARY_LABELS } from "@/constants/admin-opportunities";
@@ -7,7 +8,9 @@ interface AdminOpportunitySummaryCardsProps {
   opportunities: AdminOpportunityListItem[];
 }
 
-export function AdminOpportunitySummaryCards({ opportunities }: AdminOpportunitySummaryCardsProps) {
+export const AdminOpportunitySummaryCards = memo(function AdminOpportunitySummaryCards({
+  opportunities,
+}: AdminOpportunitySummaryCardsProps) {
   const total = opportunities.length;
   const published = opportunities.filter((o) => o.status === "published").length;
   const draft = opportunities.filter((o) => o.status === "draft").length;
@@ -31,4 +34,4 @@ export function AdminOpportunitySummaryCards({ opportunities }: AdminOpportunity
       />
     </div>
   );
-}
+});

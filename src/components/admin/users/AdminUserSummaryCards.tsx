@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Ban, Building2, ShieldCheck, UserPlus, UserRound, Users } from "lucide-react";
 import { AdminSummaryCard } from "@/components/admin/shared/AdminSummaryCard";
 import { ADMIN_USER_SUMMARY_LABELS } from "@/constants/admin-users";
@@ -13,7 +14,9 @@ function isThisMonth(iso: string): boolean {
   return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
 }
 
-export function AdminUserSummaryCards({ users }: AdminUserSummaryCardsProps) {
+export const AdminUserSummaryCards = memo(function AdminUserSummaryCards({
+  users,
+}: AdminUserSummaryCardsProps) {
   const total = users.length;
   const engineers = users.filter((user) => user.role === "ENGINEER").length;
   const companyStaff = users.filter((user) => user.role === "COMPANY").length;
@@ -49,4 +52,4 @@ export function AdminUserSummaryCards({ users }: AdminUserSummaryCardsProps) {
       />
     </div>
   );
-}
+});

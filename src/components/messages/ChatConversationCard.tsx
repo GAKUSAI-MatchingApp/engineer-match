@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MessageSquareText } from "lucide-react";
-import { formatRelativeDaysJa } from "@/lib/engineer/format";
+import { formatRelativeDaysJa, initialsFor } from "@/lib/engineer/format";
 
 interface ChatConversationCardProps {
   href: string;
@@ -11,10 +11,6 @@ interface ChatConversationCardProps {
   unreadCount: number;
   unreadSuffix: string;
   isActive: boolean;
-}
-
-function initialsFor(name: string): string {
-  return name.trim().slice(0, 2) || "?";
 }
 
 export function ChatConversationCard({

@@ -24,10 +24,6 @@ export const COMPANY_CONVERSATION_LIST_META = {
   noConversationsDescription: "応募者詳細ページからメッセージを送ると、ここに表示されます。",
 } as const;
 
-export const COMPANY_EMPTY_CONVERSATION_LABELS = {
-  message: "会話を選択してください。",
-} as const;
-
 export const COMPANY_COMPOSER_LABELS = {
   placeholder: "メッセージを入力",
   sendLabel: "送信",

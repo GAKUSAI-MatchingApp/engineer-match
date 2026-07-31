@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { Plus } from "lucide-react";
 import { MasterDataTabs } from "@/components/admin/master-data/MasterDataTabs";
 import { MasterDataTable } from "@/components/admin/master-data/MasterDataTable";
 import { MasterDataMobileCards } from "@/components/admin/master-data/MasterDataMobileCards";
-import { MasterDataFormDialog, type MasterDataFormValues } from "@/components/admin/master-data/MasterDataFormDialog";
+import type { MasterDataFormValues } from "@/components/admin/master-data/MasterDataFormDialog";
 import { AdminSearchInput } from "@/components/admin/shared/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/shared/AdminEmptyState";
 import {
@@ -34,6 +35,14 @@ import {
   type AdminMasterDataItem,
 } from "@/lib/admin/master-data";
 import { createClient } from "@/lib/supabase/client";
+
+// Deferred: only ever needed after the admin clicks "add"/"edit", not on
+// initial page load.
+const MasterDataFormDialog = dynamic(() =>
+  import("@/components/admin/master-data/MasterDataFormDialog").then(
+    (mod) => mod.MasterDataFormDialog,
+  ),
+);
 
 interface MasterDataListProps {
   data: AdminMasterData;

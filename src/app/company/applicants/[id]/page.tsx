@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCompanyApplicantDetail } from "@/lib/company/applicants";
 import { getCompanyHeaderIdentity } from "@/lib/company/profile";
 import { getReviewForApplication } from "@/lib/company/reviews";
+import { formatDateJa } from "@/lib/engineer/format";
 
 interface ApplicantDetailPageProps {
   params: Promise<{ id: string }>;
@@ -44,14 +45,6 @@ export async function generateMetadata({
   return {
     title: applicant ? `${applicant.name} | ENGINEER MATCH` : "応募者詳細 | ENGINEER MATCH",
   };
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 }
 
 export default async function CompanyApplicantDetailPage({
@@ -114,8 +107,8 @@ export default async function CompanyApplicantDetailPage({
                   {applicant.opportunityTitle} ・ {CONTRACT_TYPE_LABEL[applicant.contractType]}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  応募日：{formatDate(applicant.appliedAt)} ・ 最終更新日：
-                  {formatDate(applicant.updatedAt)}
+                  応募日：{formatDateJa(applicant.appliedAt)} ・ 最終更新日：
+                  {formatDateJa(applicant.updatedAt)}
                 </p>
               </div>
             </div>

@@ -6,6 +6,7 @@ import {
   CONTRACT_TYPE_BADGE_STYLES,
   CONTRACT_TYPE_LABEL,
 } from "@/constants/applications";
+import { initialsFor } from "@/lib/engineer/format";
 
 interface ChatMessageHeaderProps {
   counterpartName: string;
@@ -18,10 +19,6 @@ interface ChatMessageHeaderProps {
   backLabel: string;
   isRefreshing: boolean;
   onRefresh: () => void;
-}
-
-function initialsFor(name: string): string {
-  return name.trim().slice(0, 2) || "?";
 }
 
 export function ChatMessageHeader({

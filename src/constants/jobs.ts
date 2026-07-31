@@ -16,52 +16,23 @@
 // Shared vocabulary (DB enum values + display labels)
 // ============================================================
 
-export const CONTRACT_TYPE_OPTIONS = [
-  { value: "employment", label: "就職" },
-  { value: "project", label: "案件" },
-  { value: "hourly", label: "時間精算" },
-] as const;
+import { WORK_STYLE_OPTIONS } from "@/constants/contract-type";
 
-export const CONTRACT_TYPE_LABEL: Record<string, string> = {
-  employment: "就職",
-  project: "案件",
-  hourly: "時間精算",
-};
-
-export const CONTRACT_TYPE_BADGE_STYLES: Record<string, string> = {
-  employment: "bg-blue-50 text-blue-700",
-  project: "bg-indigo-50 text-primary",
-  hourly: "bg-amber-50 text-amber-700",
-};
-
-export const WORK_STYLE_LABEL: Record<string, string> = {
-  REMOTE: "フルリモート",
-  ONSITE: "出社",
-  HYBRID: "一部リモート",
-};
-
-/** opportunity_employment.work_style, per chk_opportunity_employment_work_style (006_opportunity_employment.sql). BR-39 search filter. */
-export const WORK_STYLE_OPTIONS = [
-  { value: "REMOTE", label: "フルリモート" },
-  { value: "ONSITE", label: "出社" },
-  { value: "HYBRID", label: "一部リモート" },
-] as const;
+export {
+  CONTRACT_TYPE_OPTIONS,
+  CONTRACT_TYPE_LABEL,
+  CONTRACT_TYPE_BADGE_STYLES,
+  WORK_STYLE_OPTIONS,
+  WORK_STYLE_LABEL,
+  WORK_STYLE_BADGE_STYLES,
+} from "@/constants/contract-type";
 export type WorkStyleFilterValue = (typeof WORK_STYLE_OPTIONS)[number]["value"] | "";
-
-export const WORK_STYLE_BADGE_STYLES: Record<string, string> = {
-  REMOTE: "bg-teal-50 text-teal-700",
-  ONSITE: "bg-muted text-muted-foreground",
-  HYBRID: "bg-cyan-50 text-cyan-700",
-};
 
 export const SORT_OPTIONS = [
   { value: "newest", label: "新しい順" },
   { value: "oldest", label: "古い順" },
 ] as const;
 export type SortOption = (typeof SORT_OPTIONS)[number]["value"];
-
-/** Display-only label list (e.g. admin filter chips) — not a data-entity list. */
-export const CONTRACT_TYPE_FILTER_OPTIONS = CONTRACT_TYPE_OPTIONS.map((option) => option.label);
 
 // ============================================================
 // Search header / filters

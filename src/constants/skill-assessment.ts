@@ -28,10 +28,6 @@ export const ASSESSMENT_ACTION_LABELS = {
   backToProfile: "プロフィールに戻る",
 } as const;
 
-export const ASSESSMENT_LOADING_LABELS = {
-  message: "診断を読み込んでいます…",
-} as const;
-
 export const ASSESSMENT_ERROR_LABELS = {
   loadFailedTitle: "診断の読み込みに失敗しました。",
   loadFailedDescription: "しばらくしてから再度お試しください。",

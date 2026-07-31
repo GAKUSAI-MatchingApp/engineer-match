@@ -3,17 +3,10 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { ApplicantStatusBadge } from "@/components/company/applicants/ApplicantStatusBadge";
 import type { ApplicantListItem } from "@/lib/company/applicants";
 import { APPLICANT_LIST_META } from "@/constants/company-applicants";
+import { formatDateJa } from "@/lib/engineer/format";
 
 interface ApplicantCardProps {
   applicant: ApplicantListItem;
-}
-
-function formatAppliedDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 }
 
 export function ApplicantCard({ applicant }: ApplicantCardProps) {
@@ -70,7 +63,7 @@ export function ApplicantCard({ applicant }: ApplicantCardProps) {
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
           {APPLICANT_LIST_META.appliedPrefix}
-          {formatAppliedDate(applicant.appliedAt)}
+          {formatDateJa(applicant.appliedAt)}
         </span>
         <Link
           href={`/company/applicants/${applicant.id}`}

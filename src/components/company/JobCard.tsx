@@ -13,35 +13,18 @@ import {
   WORK_STYLE_BADGE_STYLES,
   WORK_STYLE_LABEL,
 } from "@/constants/company-jobs";
+import { formatDateJa, formatSalaryLabel } from "@/lib/engineer/format";
 
 interface JobCardProps {
   job: OpportunityListItem;
   onCloseRecruitment: (id: string) => Promise<void>;
 }
 
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
-
-function formatCompensation(job: OpportunityListItem): string {
-  if (job.contract_type === "employment" && job.salaryMin != null && job.salaryMax != null) {
-    return `年収 ${job.salaryMin}万円〜${job.salaryMax}万円`;
-  }
-  if (job.contract_type === "project" && job.budget != null) {
-    return `予算 ${job.budget}万円`;
-  }
-  if (job.contract_type === "hourly" && job.hourlyRate != null) {
-    return `時給 ${job.hourlyRate.toLocaleString("ja-JP")}円`;
-  }
-  return "";
-}
-
 export function JobCard({ job, onCloseRecruitment }: JobCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const canClose = job.status === "published" || job.status === "draft";
-  const compensation = formatCompensation(job);
+  const compensation = formatSalaryLabel(job);
 
   async function handleConfirmClose() {
     if (isClosing) return;
@@ -117,14 +100,14 @@ export function JobCard({ job, onCloseRecruitment }: JobCardProps) {
           <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">
             {JOB_CARD_LABELS.createdPrefix}
-            {formatDate(job.created_at)}
+            {formatDateJa(job.created_at)}
           </span>
         </span>
         <span className="flex min-w-0 items-center gap-1">
           <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">
             {JOB_CARD_LABELS.updatedPrefix}
-            {formatDate(job.updated_at)}
+            {formatDateJa(job.updated_at)}
           </span>
         </span>
       </div>

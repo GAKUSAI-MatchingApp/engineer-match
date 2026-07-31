@@ -107,7 +107,7 @@ export async function getCompanyProfile(
 
   if (!data) return null;
 
-  const profile = data as unknown as CompanyProfile;
+  const profile = data as CompanyProfile;
   return {
     ...profile,
     industry: resolveCompanyIndustryName(profile),

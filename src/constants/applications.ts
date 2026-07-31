@@ -66,17 +66,7 @@ export const WITHDRAWABLE_STATUSES = ["applied", "screening", "interview"] as co
 // Contract type (shared badge vocabulary with Job Search)
 // ============================================================
 
-export const CONTRACT_TYPE_LABEL: Record<string, string> = {
-  employment: "就職",
-  project: "案件",
-  hourly: "時間精算",
-};
-
-export const CONTRACT_TYPE_BADGE_STYLES: Record<string, string> = {
-  employment: "bg-blue-50 text-blue-700",
-  project: "bg-indigo-50 text-primary",
-  hourly: "bg-amber-50 text-amber-700",
-};
+export { CONTRACT_TYPE_LABEL, CONTRACT_TYPE_BADGE_STYLES } from "@/constants/contract-type";
 
 // ============================================================
 // Summary cards

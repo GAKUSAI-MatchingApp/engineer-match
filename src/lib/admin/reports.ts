@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { writeAdminAuditLog } from "@/lib/admin/audit";
+import { formatDateJa } from "@/lib/engineer/format";
 
 /** public.abuse_reports.status (017_abuse_reports.sql). */
 export type AdminReportStatus = "pending" | "in_progress" | "resolved" | "rejected";
@@ -25,11 +26,6 @@ export const ADMIN_REPORT_TARGET_TYPE_LABEL: Record<AdminReportTargetType, strin
   company: "企業",
   opportunity: "求人・案件",
 };
-
-function formatDateLabel(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
 
 export interface AdminReportListItem {
   id: string;
@@ -122,7 +118,7 @@ export async function listAdminReports(supabase: SupabaseClient): Promise<AdminR
       targetHref: targetHref(targetType, targetId),
       status: row.status as AdminReportStatus,
       assigneeName: row.handled_by ? (assigneeNameById.get(row.handled_by as string) ?? null) : null,
-      createdAtLabel: formatDateLabel(row.created_at as string),
+      createdAtLabel: formatDateJa(row.created_at as string),
       createdAtISO: row.created_at as string,
     };
   });
@@ -171,11 +167,11 @@ export async function getAdminReportDetail(
     targetHref: targetHref(targetType, targetId),
     status: row.status as AdminReportStatus,
     assigneeName: (assignee?.name as string | undefined) ?? null,
-    createdAtLabel: formatDateLabel(row.created_at as string),
+    createdAtLabel: formatDateJa(row.created_at as string),
     createdAtISO: row.created_at as string,
     reason: row.reason as string,
     adminNote: (row.admin_note as string | null) ?? null,
-    handledAtLabel: row.handled_at ? formatDateLabel(row.handled_at as string) : null,
+    handledAtLabel: row.handled_at ? formatDateJa(row.handled_at as string) : null,
   };
 }
 

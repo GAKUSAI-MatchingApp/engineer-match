@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdminUserStatus } from "@/lib/admin/users";
 import { resolveCompanyIndustryName } from "@/lib/company/profile";
+import { formatDateJa } from "@/lib/engineer/format";
 
 /** public.company_profiles.company_size (004_profile_tables.sql: chk_company_profiles_size). */
 export const ADMIN_COMPANY_SIZE_LABEL: Record<string, string> = {
@@ -18,11 +19,6 @@ export const ADMIN_OPPORTUNITY_STATUS_LABEL: Record<string, string> = {
   published: "公開中",
   closed: "終了",
 };
-
-function formatDateLabel(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
 
 export interface AdminCompanyListItem {
   id: string;
@@ -91,7 +87,7 @@ export async function listAdminCompanies(supabase: SupabaseClient): Promise<Admi
       contactEmail: (user?.email as string | undefined) ?? "",
       jobCount: jobCountByOwner.get(row.id as string) ?? 0,
       usageStatus: (user?.status as AdminUserStatus | undefined) ?? "ACTIVE",
-      createdAtLabel: formatDateLabel(row.created_at as string),
+      createdAtLabel: formatDateJa(row.created_at as string),
       createdAtISO: row.created_at as string,
     };
   });
@@ -166,7 +162,7 @@ export async function getAdminCompanyDetail(
     contactEmail: (user?.email as string | undefined) ?? "",
     jobCount: (opportunities ?? []).length,
     usageStatus: (user?.status as AdminUserStatus | undefined) ?? "ACTIVE",
-    createdAtLabel: formatDateLabel(row.created_at as string),
+    createdAtLabel: formatDateJa(row.created_at as string),
     createdAtISO: row.created_at as string,
     address: (row.address as string | null) ?? null,
     websiteUrl: (row.website_url as string | null) ?? null,

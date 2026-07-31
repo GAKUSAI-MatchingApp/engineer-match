@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { writeAdminAuditLog } from "@/lib/admin/audit";
+import { formatDateJa } from "@/lib/engineer/format";
 
 /** public.users.role (002_users.sql). */
 export type AdminUserRole = "ENGINEER" | "INSTRUCTOR" | "COMPANY" | "ADMIN";
@@ -31,14 +32,9 @@ export interface AdminUserListItem {
   avatarInitials: string;
 }
 
-function formatDateLabel(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-}
-
 function formatDateTimeLabel(iso: string): string {
   const date = new Date(iso);
-  return `${formatDateLabel(iso)} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  return `${formatDateJa(iso)} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 const LIST_CAP = 1000;
@@ -80,7 +76,7 @@ export async function listAdminUsers(supabase: SupabaseClient): Promise<AdminUse
       role: row.role as AdminUserRole,
       status: row.status as AdminUserStatus,
       companyName: companyNameById.get(row.id as string) ?? null,
-      createdAtLabel: formatDateLabel(row.created_at as string),
+      createdAtLabel: formatDateJa(row.created_at as string),
       createdAtISO: row.created_at as string,
       avatarInitials: name.charAt(0),
     };
@@ -210,7 +206,7 @@ export async function getAdminUserDetail(
         title: opp?.title ?? "（求人情報なし）",
         subtitle: opp ? (companyNameByUserId.get(opp.posted_by as string) ?? "") : "",
         statusLabel: APPLICATION_STATUS_LABEL[row.status as string] ?? (row.status as string),
-        dateLabel: formatDateLabel(row.applied_at as string),
+        dateLabel: formatDateJa(row.applied_at as string),
       };
     });
   } else if (role === "COMPANY") {
@@ -227,7 +223,7 @@ export async function getAdminUserDetail(
       title: row.title as string,
       subtitle: "",
       statusLabel: OPPORTUNITY_STATUS_LABEL[row.status as string] ?? (row.status as string),
-      dateLabel: formatDateLabel(row.created_at as string),
+      dateLabel: formatDateJa(row.created_at as string),
     }));
   }
 
@@ -288,7 +284,7 @@ export async function getAdminUserDetail(
     role,
     status: userRow.status as AdminUserStatus,
     companyName,
-    createdAtLabel: formatDateLabel(userRow.created_at as string),
+    createdAtLabel: formatDateJa(userRow.created_at as string),
     createdAtISO: userRow.created_at as string,
     avatarInitials: name.charAt(0),
     prefecture,

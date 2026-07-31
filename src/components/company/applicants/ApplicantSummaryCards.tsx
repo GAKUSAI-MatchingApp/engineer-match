@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { FileText, MessagesSquare, UserCheck, Users } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { ApplicantListItem } from "@/lib/company/applicants";
@@ -14,7 +15,9 @@ interface ApplicantSummaryCardsProps {
   applicants: ApplicantListItem[];
 }
 
-export function ApplicantSummaryCards({ applicants }: ApplicantSummaryCardsProps) {
+export const ApplicantSummaryCards = memo(function ApplicantSummaryCards({
+  applicants,
+}: ApplicantSummaryCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {SUMMARY_CARDS.map((card) => {
@@ -34,4 +37,4 @@ export function ApplicantSummaryCards({ applicants }: ApplicantSummaryCardsProps
       })}
     </div>
   );
-}
+});

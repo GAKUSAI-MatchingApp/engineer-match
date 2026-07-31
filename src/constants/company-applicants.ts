@@ -42,15 +42,10 @@ export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
   completed: "完了",
 };
 
-export const APPLICATION_STATUS_BADGE_STYLES: Record<ApplicationStatus, string> = {
-  applied: "bg-blue-50 text-blue-700",
-  screening: "bg-indigo-50 text-indigo-700",
-  interview: "bg-amber-50 text-amber-700",
-  accepted: "bg-green-50 text-green-700",
-  rejected: "bg-red-50 text-red-700",
-  withdrawn: "bg-gray-100 text-gray-600",
-  completed: "bg-teal-50 text-teal-700",
-};
+// Badge colors are identical to the Engineer-side application status vocabulary
+// (only the label wording differs — "applied" reads "応募受付" here vs "応募済み"
+// on the Engineer side); reuse that single source rather than redeclaring it.
+export { APPLICATION_STATUS_BADGE_STYLES } from "@/constants/applications";
 
 export const EXPERIENCE_FILTER_OPTIONS = [
   { label: "指定なし", years: null },

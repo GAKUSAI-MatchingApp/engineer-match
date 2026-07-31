@@ -95,8 +95,3 @@ export async function updateEngineerReview(
 
   return { data: data ? mapReviewRow(data) : null, error };
 }
-
-/** Review eligibility gate: work must be marked completed (applications.status='completed', 049). */
-export function canReviewApplication(status: string): boolean {
-  return status === "completed";
-}

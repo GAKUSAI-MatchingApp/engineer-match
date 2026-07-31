@@ -19,7 +19,7 @@ export type ApplicationStatusValue =
   | "withdrawn"
   | "completed";
 
-export const APPLICATION_STATUS_TRANSITIONS: Record<
+const APPLICATION_STATUS_TRANSITIONS: Record<
   ApplicationStatusValue,
   readonly ApplicationStatusValue[]
 > = {

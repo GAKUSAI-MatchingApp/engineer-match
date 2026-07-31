@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   Briefcase,
   Building2,
@@ -39,7 +40,7 @@ interface AdminSummaryCardsProps {
   cards: AdminSummaryCardData[];
 }
 
-export function AdminSummaryCards({ cards }: AdminSummaryCardsProps) {
+export const AdminSummaryCards = memo(function AdminSummaryCards({ cards }: AdminSummaryCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map((card) => (
@@ -47,4 +48,4 @@ export function AdminSummaryCards({ cards }: AdminSummaryCardsProps) {
       ))}
     </div>
   );
-}
+});
