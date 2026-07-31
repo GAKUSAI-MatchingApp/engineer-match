@@ -25,11 +25,17 @@ const DEFAULT_FILTERS: ApplicantFiltersState = {
 
 interface ApplicantListProps {
   applicants: ApplicantListItem[];
+  /** Pre-selects the "応募求人" filter, e.g. when arriving from a specific job card's "応募者確認" link. Ignored if it doesn't match any applicant's job title. */
+  initialAppliedJob?: string;
 }
 
-export function ApplicantList({ applicants }: ApplicantListProps) {
+export function ApplicantList({ applicants, initialAppliedJob }: ApplicantListProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<ApplicantFiltersState>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<ApplicantFiltersState>(() =>
+    initialAppliedJob && applicants.some((item) => item.opportunityTitle === initialAppliedJob)
+      ? { ...DEFAULT_FILTERS, appliedJob: initialAppliedJob }
+      : DEFAULT_FILTERS,
+  );
   const [sortOption, setSortOption] = useState<SortOption>("newest");
 
   function updateFilters(patch: Partial<ApplicantFiltersState>) {

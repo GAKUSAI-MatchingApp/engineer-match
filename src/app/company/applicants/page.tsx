@@ -12,7 +12,12 @@ export const metadata: Metadata = {
   description: "求人・案件への応募者を確認・管理できます。",
 };
 
-export default async function CompanyApplicantsPage() {
+export default async function CompanyApplicantsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ job?: string }>;
+}) {
+  const { job } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user: authUser },
@@ -41,7 +46,7 @@ export default async function CompanyApplicantsPage() {
         </p>
       </div>
 
-      <ApplicantList applicants={applicants} />
+      <ApplicantList applicants={applicants} initialAppliedJob={job} />
     </DashboardShell>
   );
 }

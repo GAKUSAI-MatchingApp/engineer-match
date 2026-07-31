@@ -60,7 +60,7 @@ export function Footer() {
         </div>
 
         <div className="mt-16 border-t border-border pt-8 text-center text-xs text-muted-foreground">
-          {FOOTER.copyright}
+          © {new Date().getFullYear()} ENGINEER MATCH. All Rights Reserved.
         </div>
       </div>
     </footer>

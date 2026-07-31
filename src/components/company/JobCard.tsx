@@ -145,7 +145,7 @@ export function JobCard({ job, onCloseRecruitment }: JobCardProps) {
           {JOB_CARD_LABELS.editLabel}
         </Link>
         <Link
-          href="/company/applicants"
+          href={`/company/applicants?job=${encodeURIComponent(job.title)}`}
           className="inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

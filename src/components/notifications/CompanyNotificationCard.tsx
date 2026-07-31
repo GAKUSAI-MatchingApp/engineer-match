@@ -25,6 +25,13 @@ function linkFor(notification: NotificationItem): string {
       ? `/company/messages/${notification.relatedApplicationId}`
       : "/company/messages";
   }
+  if (notification.relatedEntityType === "engineer_review") {
+    // The review (and any engineer reply) is shown on the applicant detail
+    // page (ApplicantReviewSection), keyed by application id.
+    return notification.relatedApplicationId
+      ? `/company/applicants/${notification.relatedApplicationId}`
+      : "/company/applicants";
+  }
   return "/company/applicants";
 }
 

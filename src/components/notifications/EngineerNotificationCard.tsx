@@ -25,6 +25,11 @@ function linkFor(notification: NotificationItem): string {
       ? `/messages/${notification.relatedApplicationId}`
       : "/messages";
   }
+  if (notification.relatedEntityType === "engineer_review") {
+    // Reviews received by the engineer are shown on their own profile
+    // (EngineerReviewsSection), not on the applications list.
+    return "/engineer/profile";
+  }
   return "/engineer/applications";
 }
 

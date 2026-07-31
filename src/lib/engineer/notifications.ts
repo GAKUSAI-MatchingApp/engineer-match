@@ -77,6 +77,31 @@ export async function listMyNotifications(
     (chatRooms ?? []).map((row) => [row.id as string, row.application_id as string]),
   );
 
+  // review_received / review_reply_received notifications point at an
+  // engineer_reviews row (related_entity_type: "engineer_review") -- resolve
+  // it to the underlying application_id too, same as chat_room above, so the
+  // notification card can deep-link a company to /company/applicants/[id]
+  // (ApplicantReviewSection) instead of the generic applicant list.
+  const reviewIds = [
+    ...new Set(
+      rows
+        .filter(
+          (row) => row.related_entity_type === "engineer_review" && row.related_entity_id,
+        )
+        .map((row) => row.related_entity_id as string),
+    ),
+  ];
+  const { data: reviews } =
+    reviewIds.length > 0
+      ? await supabase
+          .from("engineer_reviews")
+          .select("id, application_id")
+          .in("id", reviewIds)
+      : { data: [] as { id: string; application_id: string }[] };
+  const applicationIdByReview = new Map(
+    (reviews ?? []).map((row) => [row.id as string, row.application_id as string]),
+  );
+
   return rows.map((row) => ({
     id: row.id,
     type: row.type,
@@ -85,7 +110,9 @@ export async function listMyNotifications(
     relatedEntityType: row.related_entity_type,
     relatedEntityId: row.related_entity_id,
     relatedApplicationId: row.related_entity_id
-      ? (applicationIdByChatRoom.get(row.related_entity_id) ?? null)
+      ? (applicationIdByChatRoom.get(row.related_entity_id) ??
+        applicationIdByReview.get(row.related_entity_id) ??
+        null)
       : null,
     isRead: row.is_read,
     createdAt: row.created_at,

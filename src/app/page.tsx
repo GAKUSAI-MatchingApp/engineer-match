@@ -36,17 +36,19 @@ export default async function Home() {
   return (
     <>
       <Header />
-      <Hero />
-      <Statistics stats={stats} />
-      <ServiceCategories />
-      <PopularSkills />
-      <FeaturedOpportunities opportunities={featuredOpportunities} />
-      <WhyChooseUs />
-      <ItssSection />
-      <HowItWorks />
-      <ForCompanies />
-      <Faq />
-      <FinalCta />
+      <main>
+        <Hero />
+        <Statistics stats={stats} />
+        <ServiceCategories />
+        <PopularSkills />
+        <FeaturedOpportunities opportunities={featuredOpportunities} />
+        <WhyChooseUs />
+        <ItssSection />
+        <HowItWorks />
+        <ForCompanies />
+        <Faq />
+        <FinalCta />
+      </main>
 
       <Footer />
     </>

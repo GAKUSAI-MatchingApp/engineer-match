@@ -330,7 +330,14 @@ export function MasterDataList({ data: initialData }: MasterDataListProps) {
                 description: formDialog.item.description ?? "",
                 organization: formDialog.item.organization ?? "",
                 category: formDialog.item.categoryText ?? "",
-                categoryId: activeTab === "skillSubcategories" ? (formDialog.item.parentId ?? "") : data.categoryOptions[0]?.id ?? "",
+                categoryId:
+                  activeTab === "skillSubcategories"
+                    ? (formDialog.item.parentId ?? "")
+                    : activeTab === "skills"
+                      ? (data.subcategoryOptions.find((option) => option.id === formDialog.item!.parentId)?.categoryId ??
+                        data.categoryOptions[0]?.id ??
+                        "")
+                      : (data.categoryOptions[0]?.id ?? ""),
                 subcategoryId: activeTab === "skills" ? (formDialog.item.parentId ?? "") : data.subcategoryOptions[0]?.id ?? "",
               }
             : undefined

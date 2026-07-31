@@ -404,5 +404,4 @@ export const FOOTER = {
       ],
     },
   ],
-  copyright: `© ${new Date().getFullYear()} ENGINEER MATCH. All Rights Reserved.`,
 } as const;

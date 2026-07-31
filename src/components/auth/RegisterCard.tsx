@@ -27,6 +27,7 @@ import {
 import { fadeUpItem } from "@/lib/motion";
 import { createClient } from "@/lib/supabase/client";
 import { getDashboardPathForRole, getUserAccount } from "@/lib/auth/account";
+import { saveCompanyProfile } from "@/lib/company/profile";
 
 export type AccountType = "engineer" | "company";
 
@@ -128,6 +129,8 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
       type === "engineer"
         ? String(formData.get("name") ?? "").trim()
         : String(formData.get("representative") ?? "").trim();
+    const companyName =
+      type === "company" ? String(formData.get("companyName") ?? "").trim() : "";
     const passwordField = type === "engineer" ? "engineer-password" : "company-password";
     const confirmField =
       type === "engineer" ? "engineer-confirm-password" : "company-confirm-password";
@@ -209,6 +212,30 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
       if (!account) {
         setFormMessage(REGISTER_ERRORS.missingProfile);
         return;
+      }
+
+      if (type === "company" && companyName) {
+        // No trigger creates company_profiles on signup (see saveCompanyProfile's
+        // own docs) — without this, the 会社名 the user just typed would be
+        // silently discarded and the dashboard would fall back to showing the
+        // representative's name instead.
+        const { error: profileError } = await saveCompanyProfile(supabase, user.id, {
+          company_name: companyName,
+          logo_url: null,
+          prefecture: null,
+          address: null,
+          business_description: null,
+          website_url: null,
+          contact_person: null,
+          company_size: null,
+          industry_category_id: null,
+          established_year: null,
+        });
+        if (profileError) {
+          console.error("[signup] saveCompanyProfile failed:", profileError);
+          // Non-fatal: the account itself was created successfully. The
+          // company can still set their name later on the Company Profile page.
+        }
       }
 
       if (account.role === "INSTRUCTOR") {

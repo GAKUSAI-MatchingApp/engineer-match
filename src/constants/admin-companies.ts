@@ -100,7 +100,7 @@ export const ADMIN_COMPANY_RESULTS_META = {
 } as const;
 
 export const ADMIN_COMPANY_STATUS_ACTION_PENDING_NOTE =
-  "監査ログ機能の実装後に有効化される予定です。";
+  "この操作はユーザー管理画面から行えます。";
 
 // ============================================================
 // Detail page section labels
