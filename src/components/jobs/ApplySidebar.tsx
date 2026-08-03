@@ -33,6 +33,7 @@ export function ApplySidebar({
   const [hasApplied, setHasApplied] = useState(initialHasApplied);
   const [isApplying, setIsApplying] = useState(false);
   const [isFavorited, setIsFavorited] = useState(initialIsFavorited);
+  const [isFavoriting, setIsFavoriting] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(
     null,
   );
@@ -72,8 +73,10 @@ export function ApplySidebar({
       setMessage({ tone: "error", text: APPLY_SIDEBAR_LABELS.signInRequiredMessage });
       return;
     }
+    if (isFavoriting) return;
 
     const wasFavorited = isFavorited;
+    setIsFavoriting(true);
     setIsFavorited(!wasFavorited);
 
     const supabase = createClient();
@@ -81,7 +84,16 @@ export function ApplySidebar({
       ? await removeFavorite(supabase, userId, opportunityId)
       : await addFavorite(supabase, userId, opportunityId);
 
+    setIsFavoriting(false);
+
     if (error) {
+      if (error.code === "23505") {
+        // Row already exists from a prior successful add (double-click
+        // race) — the DB already matches the optimistic "favorited" UI,
+        // so don't revert it.
+        setIsFavorited(true);
+        return;
+      }
       console.error("[apply-sidebar] favorite toggle failed:", error);
       setIsFavorited(wasFavorited);
       setMessage({ tone: "error", text: APPLY_SIDEBAR_LABELS.favoriteErrorMessage });
@@ -144,8 +156,9 @@ export function ApplySidebar({
       <button
         type="button"
         onClick={handleToggleFavorite}
+        disabled={isFavoriting}
         aria-pressed={isFavorited}
-        className={`mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${
+        className={`mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70 ${
           isFavorited
             ? "border-primary bg-primary/5 text-primary"
             : "border-border bg-surface text-foreground hover:bg-muted"

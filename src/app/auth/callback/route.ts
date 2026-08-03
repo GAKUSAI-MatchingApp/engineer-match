@@ -22,5 +22,10 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login`);
+  // No code, or the exchange failed (expired/reused/tampered recovery link):
+  // land on /reset-password rather than /login. ResetPasswordCard's own
+  // getUser() check will find no session and render its already-built
+  // "invalid or expired link" state with a retry CTA, instead of silently
+  // dropping the user on a blank login form with no explanation.
+  return NextResponse.redirect(`${origin}/reset-password`);
 }

@@ -82,6 +82,7 @@ export function JobList({
   const [workStyle, setWorkStyle] = useState<WorkStyleFilterValue>(workStyleValue);
   const [skillQuery, setSkillQuery] = useState("");
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set(initialFavoriteIds));
+  const [pendingFavoriteIds, setPendingFavoriteIds] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const hasActiveFilters =
@@ -139,8 +140,10 @@ export function JobList({
       showToast(JOB_LIST_META.bookmarkLabel + "にはログインが必要です。");
       return;
     }
+    if (pendingFavoriteIds.has(id)) return;
 
     const wasFavorited = favoriteIds.has(id);
+    setPendingFavoriteIds((prev) => new Set(prev).add(id));
     setFavoriteIds((prev) => {
       const next = new Set(prev);
       if (wasFavorited) next.delete(id);
@@ -153,7 +156,20 @@ export function JobList({
       ? await removeFavorite(supabase, userId, id)
       : await addFavorite(supabase, userId, id);
 
+    setPendingFavoriteIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+
     if (error) {
+      if (error.code === "23505") {
+        // Row already exists from a prior successful add (double-click
+        // race) — the DB already matches the optimistic "favorited" UI,
+        // so don't revert it.
+        setFavoriteIds((prev) => new Set(prev).add(id));
+        return;
+      }
       console.error("[job-list] favorite toggle failed:", error);
       setFavoriteIds((prev) => {
         const next = new Set(prev);
@@ -351,6 +367,7 @@ export function JobList({
               <JobCard
                 job={job}
                 isBookmarked={favoriteIds.has(job.id)}
+                isBookmarkPending={pendingFavoriteIds.has(job.id)}
                 onToggleBookmark={handleToggleBookmark}
               />
             </li>

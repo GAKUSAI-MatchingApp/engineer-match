@@ -15,10 +15,11 @@ import type { HydratedOpportunity } from "@/lib/engineer/opportunities";
 interface JobCardProps {
   job: HydratedOpportunity;
   isBookmarked: boolean;
+  isBookmarkPending?: boolean;
   onToggleBookmark: (id: string) => void;
 }
 
-export function JobCard({ job, isBookmarked, onToggleBookmark }: JobCardProps) {
+export function JobCard({ job, isBookmarked, isBookmarkPending, onToggleBookmark }: JobCardProps) {
   const salaryLabel = formatSalaryLabel(job);
 
   return (
@@ -45,11 +46,12 @@ export function JobCard({ job, isBookmarked, onToggleBookmark }: JobCardProps) {
             event.stopPropagation();
             onToggleBookmark(job.id);
           }}
+          disabled={isBookmarkPending}
           aria-pressed={isBookmarked}
           aria-label={
             isBookmarked ? JOB_LIST_META.bookmarkedLabel : JOB_LIST_META.bookmarkLabel
           }
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-200 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-200 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
         >
           <Bookmark
             className={isBookmarked ? "fill-primary text-primary" : ""}
