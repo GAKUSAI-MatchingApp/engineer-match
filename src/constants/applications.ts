@@ -76,7 +76,12 @@ export const SUMMARY_CARDS = [
   { key: "applying", label: "応募中", icon: "send", statuses: ["applied", "screening"] },
   { key: "interviewing", label: "面接中", icon: "messagesSquare", statuses: ["interview"] },
   { key: "offered", label: "内定", icon: "award", statuses: ["accepted"] },
-  { key: "closed", label: "完了", icon: "checkCircle2", statuses: ["rejected", "withdrawn"] },
+  {
+    key: "closed",
+    label: "完了",
+    icon: "checkCircle2",
+    statuses: ["completed", "rejected", "withdrawn"],
+  },
 ] as const;
 
 // ============================================================
