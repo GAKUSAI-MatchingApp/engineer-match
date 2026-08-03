@@ -15,6 +15,10 @@ import {
 } from "lucide-react";
 import { BRAND } from "@/constants/lp";
 import { cn } from "@/lib/utils";
+import { UnreadBadge } from "@/components/dashboard/UnreadBadge";
+
+/** Keyed by nav item href. Only entries for the Messages/Notifications items are ever set. */
+export type DashboardNavBadges = Record<string, { count: number; ariaLabel: string }>;
 
 export interface DashboardNavItem {
   readonly href: string;
@@ -41,18 +45,21 @@ interface DashboardNavLinksProps {
   items: readonly DashboardNavItem[];
   activeHref: string;
   onNavigate?: () => void;
+  badges?: DashboardNavBadges;
 }
 
 export function DashboardNavLinks({
   items,
   activeHref,
   onNavigate,
+  badges,
 }: DashboardNavLinksProps) {
   return (
     <nav className="flex flex-col gap-1">
       {items.map((item) => {
         const Icon = ICON_MAP[item.icon as keyof typeof ICON_MAP];
         const isActive = item.href === activeHref;
+        const badge = badges?.[item.href];
         return (
           <Link
             key={item.href}
@@ -66,7 +73,10 @@ export function DashboardNavLinks({
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <span className="relative inline-flex shrink-0">
+              <Icon className="h-5 w-5" aria-hidden="true" />
+              {badge && <UnreadBadge count={badge.count} ariaLabel={badge.ariaLabel} />}
+            </span>
             {item.label}
           </Link>
         );
@@ -78,9 +88,10 @@ export function DashboardNavLinks({
 interface DashboardSidebarProps {
   items: readonly DashboardNavItem[];
   activeHref: string;
+  badges?: DashboardNavBadges;
 }
 
-export function DashboardSidebar({ items, activeHref }: DashboardSidebarProps) {
+export function DashboardSidebar({ items, activeHref, badges }: DashboardSidebarProps) {
   return (
     <aside className="hidden w-64 shrink-0 border-r border-border bg-surface lg:flex lg:flex-col">
       <div className="flex h-[72px] shrink-0 items-center border-b border-border px-6">
@@ -94,7 +105,7 @@ export function DashboardSidebar({ items, activeHref }: DashboardSidebarProps) {
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        <DashboardNavLinks items={items} activeHref={activeHref} />
+        <DashboardNavLinks items={items} activeHref={activeHref} badges={badges} />
       </div>
     </aside>
   );

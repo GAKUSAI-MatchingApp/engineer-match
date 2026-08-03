@@ -5,8 +5,10 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import {
   DashboardNavLinks,
+  type DashboardNavBadges,
   type DashboardNavItem,
 } from "@/components/dashboard/DashboardSidebar";
+import { UnreadBadge } from "@/components/dashboard/UnreadBadge";
 import { UserMenu } from "@/components/dashboard/UserMenu";
 import { BRAND } from "@/constants/lp";
 import { COMPANY_NAV, ENGINEER_NAV } from "@/constants/dashboard";
@@ -19,6 +21,7 @@ interface DashboardTopbarProps {
   userName: string;
   userInitials: string;
   userEmail?: string;
+  badges?: DashboardNavBadges;
 }
 
 export function DashboardTopbar({
@@ -28,6 +31,7 @@ export function DashboardTopbar({
   userName,
   userInitials,
   userEmail,
+  badges,
 }: DashboardTopbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const closeMenu = () => setIsMenuOpen(false);
@@ -41,6 +45,13 @@ export function DashboardTopbar({
       item.href === ENGINEER_NAV[0].href || item.href === COMPANY_NAV[0].href,
   );
 
+  // Combined count so the collapsed hamburger icon itself shows that
+  // something's unread, not just the nav links once the drawer is open.
+  const menuBadgeCount = Object.values(badges ?? {}).reduce(
+    (total, badge) => total + badge.count,
+    0,
+  );
+
   return (
     <>
       <header className="sticky top-0 z-30 flex h-[72px] shrink-0 items-center justify-between border-b border-border bg-surface/90 px-4 backdrop-blur-md md:px-6">
@@ -48,11 +59,16 @@ export function DashboardTopbar({
           <button
             type="button"
             onClick={() => setIsMenuOpen(true)}
-            aria-label="メニューを開く"
+            aria-label={
+              menuBadgeCount > 0
+                ? `メニューを開く（未読${menuBadgeCount}件）`
+                : "メニューを開く"
+            }
             aria-expanded={isMenuOpen}
-            className="inline-flex items-center justify-center rounded-xl p-2 text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none lg:hidden"
+            className="relative inline-flex items-center justify-center rounded-xl p-2 text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none lg:hidden"
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
+            <UnreadBadge count={menuBadgeCount} />
           </button>
           <h1 className="text-base font-semibold text-foreground sm:text-lg">
             {pageTitle}
@@ -126,6 +142,7 @@ export function DashboardTopbar({
               items={items}
               activeHref={activeHref}
               onNavigate={closeMenu}
+              badges={badges}
             />
           </div>
         </div>
