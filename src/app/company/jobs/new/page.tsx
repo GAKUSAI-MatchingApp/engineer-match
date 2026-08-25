@@ -27,7 +27,7 @@ export default async function CompanyNewJobPage() {
   return (
     <DashboardShell
       navItems={COMPANY_NAV}
-      activeHref="/company/jobs"
+      activeHref="/company/jobs/new"
       pageTitle="新規掲載"
       userName={identity.name}
       userInitials={identity.initials}

@@ -55,6 +55,24 @@ export interface UserSkillItem {
 
 const USER_SKILL_SELECT = "id, skill_id, skill_level, experience_years, skills(name)";
 
+type UserSkillRow = {
+  id: string;
+  skill_id: string;
+  skill_level: number | null;
+  experience_years: number | null;
+  skills: unknown;
+};
+
+export function mapUserSkillRow(row: UserSkillRow): UserSkillItem {
+  return {
+    id: row.id,
+    skillId: row.skill_id,
+    name: firstEmbedded(row.skills as { name: string } | { name: string }[])?.name ?? "",
+    level: row.skill_level,
+    experienceYears: row.experience_years,
+  };
+}
+
 /** The caller's own technical skills -- user_skills_select_own RLS (029_remaining_policies.sql). */
 export async function listUserSkills(
   supabase: SupabaseClient,
@@ -71,21 +89,7 @@ export async function listUserSkills(
     return [];
   }
 
-  return (
-    (data ?? []) as {
-      id: string;
-      skill_id: string;
-      skill_level: number | null;
-      experience_years: number | null;
-      skills: unknown;
-    }[]
-  ).map((row) => ({
-    id: row.id,
-    skillId: row.skill_id,
-    name: firstEmbedded(row.skills as { name: string } | { name: string }[])?.name ?? "",
-    level: row.skill_level,
-    experienceYears: row.experience_years,
-  }));
+  return ((data ?? []) as UserSkillRow[]).map(mapUserSkillRow);
 }
 
 export const MAX_USER_SKILLS = 20;
@@ -166,4 +170,97 @@ export async function removeUserSkill(
   }
 
   return supabase.from("user_skills").delete().eq("id", userSkillId);
+}
+
+/** Case/whitespace-insensitive key for matching skill names, review #18. */
+export function normalizeSkillName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+/** public.skills.name is VARCHAR(50) (003_master_tables.sql). */
+export const SKILL_NAME_MAX_LENGTH = 50;
+
+export const INVALID_SKILL_NAME_ERROR = "invalid_skill_name";
+
+/**
+ * The reserved skill_subcategories row an Engineer's self-registered skill
+ * must land in -- seeded by 076_engineer_skill_self_registration.sql and the
+ * only subcategory_id skills_engineer_insert_self_registered (same
+ * migration) permits a non-admin INSERT into. Looked up by name instead of a
+ * hardcoded id since the row is created by a DML seed, not a fixed UUID
+ * literal.
+ */
+const USER_SUBMITTED_SKILL_SUBCATEGORY_NAME = "その他（ユーザー登録）";
+
+async function getUserSubmittedSkillSubcategoryId(supabase: SupabaseClient): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("skill_subcategories")
+    .select("id")
+    .eq("name", USER_SUBMITTED_SKILL_SUBCATEGORY_NAME)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("[engineer-skills] user-submitted skill subcategory unavailable:", error);
+    return null;
+  }
+
+  return data.id as string;
+}
+
+/**
+ * Adds a technical skill by name rather than by an existing catalog id --
+ * review #18: lets an Engineer register a skill that isn't in the catalog
+ * yet. Reuses an existing skill (case/whitespace-insensitive) whenever one
+ * already matches, re-checked fresh against the database (not just the
+ * page's initial catalog snapshot) so two Engineers submitting the same new
+ * name moments apart still converge on one row rather than creating a
+ * near-duplicate. Only creates a new public.skills row when no match exists
+ * anywhere in the catalog, and only into the reserved "その他（ユーザー登録）"
+ * subcategory -- skills_engineer_insert_self_registered
+ * (076_engineer_skill_self_registration.sql) is the DB-level backstop that
+ * rejects anything else, including a bypassed direct API call.
+ */
+export async function createUserSkill(
+  supabase: SupabaseClient,
+  userId: string,
+  rawName: string,
+  level: number,
+  experienceYears: number | null,
+) {
+  const name = rawName.trim();
+  if (!name || name.length > SKILL_NAME_MAX_LENGTH) {
+    return { data: null, error: { message: INVALID_SKILL_NAME_ERROR } };
+  }
+
+  const currentCount = await countUserSkills(supabase, userId);
+  if (currentCount >= MAX_USER_SKILLS) {
+    return { data: null, error: { message: SKILL_LIMIT_MAX_ERROR } };
+  }
+
+  const catalog = await listSkillCatalog(supabase);
+  const target = normalizeSkillName(name);
+  const existing = catalog.find((item) => normalizeSkillName(item.name) === target);
+
+  let skillId: string;
+  if (existing) {
+    skillId = existing.id;
+  } else {
+    const subcategoryId = await getUserSubmittedSkillSubcategoryId(supabase);
+    if (!subcategoryId) {
+      return { data: null, error: { message: "skill_subcategory_unavailable" } };
+    }
+
+    const { data: created, error: createError } = await supabase
+      .from("skills")
+      .insert({ name, subcategory_id: subcategoryId, created_by: userId, is_active: true })
+      .select("id")
+      .single();
+
+    if (createError || !created) {
+      return { data: null, error: createError ?? { message: "skill_create_failed" } };
+    }
+    skillId = created.id as string;
+  }
+
+  return addUserSkill(supabase, userId, skillId, level, experienceYears);
 }

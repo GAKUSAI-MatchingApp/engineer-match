@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { createClient } from "@/lib/supabase/client";
 import { saveEngineerProfile, updateUserName, type EngineerProfile } from "@/lib/engineer/profile";
 import {
@@ -15,7 +15,7 @@ import {
   BASIC_INFO_FORM_META,
   JOB_CATEGORY_OPTIONS,
   VISIBILITY_FORM_LABEL,
-  VISIBILITY_OPTIONS,
+  VISIBILITY_STATUS_LABEL,
   WORK_STYLE_OPTIONS,
 } from "@/constants/engineer-profile";
 
@@ -37,12 +37,9 @@ interface FormState {
   yearsOfExperience: string;
   availabilityStatus: string;
   workStyle: string;
-  desiredRateMin: string;
-  desiredRateMax: string;
-  desiredAnnualIncomeMin: string;
-  desiredAnnualIncomeMax: string;
-  desiredHourlyRateMin: string;
-  desiredHourlyRateMax: string;
+  desiredHourlyRate: string;
+  minimumHourlyRate: string;
+  desiredAnnualIncome: string;
   availableFrom: string;
   portfolioUrl: string;
   githubUrl: string;
@@ -62,19 +59,14 @@ function buildFormState(name: string, profile: EngineerProfile | null): FormStat
         : "",
     availabilityStatus: profile?.availability_status ?? "",
     workStyle: profile?.work_style ?? "",
-    desiredRateMin: profile?.desired_rate_min ? String(profile.desired_rate_min) : "",
-    desiredRateMax: profile?.desired_rate_max ? String(profile.desired_rate_max) : "",
-    desiredAnnualIncomeMin: profile?.desired_annual_income_min
-      ? String(profile.desired_annual_income_min)
+    desiredHourlyRate: profile?.desired_hourly_rate_max
+      ? String(profile.desired_hourly_rate_max)
       : "",
-    desiredAnnualIncomeMax: profile?.desired_annual_income_max
-      ? String(profile.desired_annual_income_max)
-      : "",
-    desiredHourlyRateMin: profile?.desired_hourly_rate_min
+    minimumHourlyRate: profile?.desired_hourly_rate_min
       ? String(profile.desired_hourly_rate_min)
       : "",
-    desiredHourlyRateMax: profile?.desired_hourly_rate_max
-      ? String(profile.desired_hourly_rate_max)
+    desiredAnnualIncome: profile?.desired_annual_income_yen
+      ? String(profile.desired_annual_income_yen)
       : "",
     availableFrom: profile?.available_from ?? "",
     portfolioUrl: profile?.portfolio_url ?? "",
@@ -138,93 +130,40 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
       return;
     }
 
-    if (!form.desiredRateMin.trim() || !form.desiredRateMax.trim()) {
-      setMessage(BASIC_INFO_FORM_META.desiredRateRequired);
+    if (!form.desiredHourlyRate.trim() || !form.minimumHourlyRate.trim()) {
+      setMessage(BASIC_INFO_FORM_META.desiredHourlyRateRequired);
       setStatus("error");
       return;
     }
-    const desiredRateMin = Number(form.desiredRateMin);
-    const desiredRateMax = Number(form.desiredRateMax);
+    const desiredHourlyRate = Number(form.desiredHourlyRate);
+    const minimumHourlyRate = Number(form.minimumHourlyRate);
     if (
-      !Number.isInteger(desiredRateMin) ||
-      desiredRateMin < 1 ||
-      desiredRateMin > 999 ||
-      !Number.isInteger(desiredRateMax) ||
-      desiredRateMax < 1 ||
-      desiredRateMax > 999
+      !Number.isInteger(desiredHourlyRate) ||
+      desiredHourlyRate < 1 ||
+      desiredHourlyRate > 99999 ||
+      !Number.isInteger(minimumHourlyRate) ||
+      minimumHourlyRate < 1 ||
+      minimumHourlyRate > 99999
     ) {
-      setMessage(BASIC_INFO_FORM_META.invalidRate);
+      setMessage(BASIC_INFO_FORM_META.invalidHourlyRate);
       setStatus("error");
       return;
     }
-    if (desiredRateMin > desiredRateMax) {
-      setMessage(BASIC_INFO_FORM_META.invalidRateOrder);
-      setStatus("error");
-      return;
-    }
-
-    let desiredAnnualIncomeMin: number | null = null;
-    if (form.desiredAnnualIncomeMin.trim()) {
-      const parsed = Number(form.desiredAnnualIncomeMin);
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 9999) {
-        setMessage(BASIC_INFO_FORM_META.invalidAnnualIncome);
-        setStatus("error");
-        return;
-      }
-      desiredAnnualIncomeMin = parsed;
-    }
-
-    let desiredAnnualIncomeMax: number | null = null;
-    if (form.desiredAnnualIncomeMax.trim()) {
-      const parsed = Number(form.desiredAnnualIncomeMax);
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 9999) {
-        setMessage(BASIC_INFO_FORM_META.invalidAnnualIncome);
-        setStatus("error");
-        return;
-      }
-      desiredAnnualIncomeMax = parsed;
-    }
-
-    if (
-      desiredAnnualIncomeMin !== null &&
-      desiredAnnualIncomeMax !== null &&
-      desiredAnnualIncomeMin > desiredAnnualIncomeMax
-    ) {
-      setMessage(BASIC_INFO_FORM_META.invalidAnnualIncomeOrder);
-      setStatus("error");
-      return;
-    }
-
-    let desiredHourlyRateMin: number | null = null;
-    if (form.desiredHourlyRateMin.trim()) {
-      const parsed = Number(form.desiredHourlyRateMin);
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 99999) {
-        setMessage(BASIC_INFO_FORM_META.invalidHourlyRate);
-        setStatus("error");
-        return;
-      }
-      desiredHourlyRateMin = parsed;
-    }
-
-    let desiredHourlyRateMax: number | null = null;
-    if (form.desiredHourlyRateMax.trim()) {
-      const parsed = Number(form.desiredHourlyRateMax);
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 99999) {
-        setMessage(BASIC_INFO_FORM_META.invalidHourlyRate);
-        setStatus("error");
-        return;
-      }
-      desiredHourlyRateMax = parsed;
-    }
-
-    if (
-      desiredHourlyRateMin !== null &&
-      desiredHourlyRateMax !== null &&
-      desiredHourlyRateMin > desiredHourlyRateMax
-    ) {
+    if (minimumHourlyRate > desiredHourlyRate) {
       setMessage(BASIC_INFO_FORM_META.invalidHourlyRateOrder);
       setStatus("error");
       return;
+    }
+
+    let desiredAnnualIncome: number | null = null;
+    if (form.desiredAnnualIncome.trim()) {
+      const parsed = Number(form.desiredAnnualIncome);
+      if (!Number.isInteger(parsed) || parsed < 10000 || parsed > 99990000) {
+        setMessage(BASIC_INFO_FORM_META.invalidAnnualIncome);
+        setStatus("error");
+        return;
+      }
+      desiredAnnualIncome = parsed;
     }
 
     if (form.selfPr.length > 2000) {
@@ -245,18 +184,15 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
           years_of_experience: yearsOfExperience,
           self_pr: form.selfPr.trim() || null,
           work_style: (form.workStyle || null) as EngineerProfile["work_style"],
-          desired_rate_min: desiredRateMin,
-          desired_rate_max: desiredRateMax,
           portfolio_url: form.portfolioUrl.trim() || null,
           is_public: form.isPublic,
           job_title: form.jobTitle.trim() || null,
           job_category: (form.jobCategory || null) as EngineerProfile["job_category"],
           availability_status: (form.availabilityStatus || null) as EngineerProfile["availability_status"],
           github_url: form.githubUrl.trim() || null,
-          desired_annual_income_min: desiredAnnualIncomeMin,
-          desired_annual_income_max: desiredAnnualIncomeMax,
-          desired_hourly_rate_min: desiredHourlyRateMin,
-          desired_hourly_rate_max: desiredHourlyRateMax,
+          desired_annual_income_yen: desiredAnnualIncome,
+          desired_hourly_rate_min: minimumHourlyRate,
+          desired_hourly_rate_max: desiredHourlyRate,
           available_from: form.availableFrom || null,
         }),
       ]);
@@ -297,7 +233,13 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="basic-email">メールアドレス</Label>
-          <Input id="basic-email" type="email" value={email} disabled className="h-9" />
+          <Input
+            id="basic-email"
+            type="email"
+            value={email}
+            readOnly
+            className="h-9 read-only:cursor-default read-only:bg-input/50 read-only:text-muted-foreground read-only:opacity-70"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="basic-job-title">{BASIC_INFO_FORM_FIELDS.jobTitle.label}</Label>
@@ -428,94 +370,52 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-rate-min">
-            {BASIC_INFO_FORM_FIELDS.desiredRateMin.label}
+          <Label htmlFor="basic-desired-hourly-rate">
+            {BASIC_INFO_FORM_FIELDS.desiredHourlyRate.label}
             <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="basic-rate-min"
+            id="basic-desired-hourly-rate"
             type="number"
             inputMode="numeric"
             min={1}
-            max={999}
-            placeholder={BASIC_INFO_FORM_FIELDS.desiredRateMin.placeholder}
-            value={form.desiredRateMin}
-            onChange={(event) => updateField("desiredRateMin", event.target.value)}
+            max={99999}
+            placeholder={BASIC_INFO_FORM_FIELDS.desiredHourlyRate.placeholder}
+            value={form.desiredHourlyRate}
+            onChange={(event) => updateField("desiredHourlyRate", event.target.value)}
             className="h-9"
             required
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-rate-max">
-            {BASIC_INFO_FORM_FIELDS.desiredRateMax.label}
+          <Label htmlFor="basic-minimum-hourly-rate">
+            {BASIC_INFO_FORM_FIELDS.minimumHourlyRate.label}
             <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="basic-rate-max"
+            id="basic-minimum-hourly-rate"
             type="number"
             inputMode="numeric"
             min={1}
-            max={999}
-            placeholder={BASIC_INFO_FORM_FIELDS.desiredRateMax.placeholder}
-            value={form.desiredRateMax}
-            onChange={(event) => updateField("desiredRateMax", event.target.value)}
+            max={99999}
+            placeholder={BASIC_INFO_FORM_FIELDS.minimumHourlyRate.placeholder}
+            value={form.minimumHourlyRate}
+            onChange={(event) => updateField("minimumHourlyRate", event.target.value)}
             className="h-9"
             required
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-annual-income-min">{BASIC_INFO_FORM_FIELDS.desiredAnnualIncomeMin.label}</Label>
+          <Label htmlFor="basic-annual-income">{BASIC_INFO_FORM_FIELDS.desiredAnnualIncome.label}</Label>
           <Input
-            id="basic-annual-income-min"
+            id="basic-annual-income"
             type="number"
             inputMode="numeric"
-            min={1}
-            max={9999}
-            placeholder={BASIC_INFO_FORM_FIELDS.desiredAnnualIncomeMin.placeholder}
-            value={form.desiredAnnualIncomeMin}
-            onChange={(event) => updateField("desiredAnnualIncomeMin", event.target.value)}
-            className="h-9"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-annual-income-max">{BASIC_INFO_FORM_FIELDS.desiredAnnualIncomeMax.label}</Label>
-          <Input
-            id="basic-annual-income-max"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={9999}
-            placeholder={BASIC_INFO_FORM_FIELDS.desiredAnnualIncomeMax.placeholder}
-            value={form.desiredAnnualIncomeMax}
-            onChange={(event) => updateField("desiredAnnualIncomeMax", event.target.value)}
-            className="h-9"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-hourly-rate-min">{BASIC_INFO_FORM_FIELDS.desiredHourlyRateMin.label}</Label>
-          <Input
-            id="basic-hourly-rate-min"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={99999}
-            placeholder={BASIC_INFO_FORM_FIELDS.desiredHourlyRateMin.placeholder}
-            value={form.desiredHourlyRateMin}
-            onChange={(event) => updateField("desiredHourlyRateMin", event.target.value)}
-            className="h-9"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-hourly-rate-max">{BASIC_INFO_FORM_FIELDS.desiredHourlyRateMax.label}</Label>
-          <Input
-            id="basic-hourly-rate-max"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={99999}
-            placeholder={BASIC_INFO_FORM_FIELDS.desiredHourlyRateMax.placeholder}
-            value={form.desiredHourlyRateMax}
-            onChange={(event) => updateField("desiredHourlyRateMax", event.target.value)}
+            min={10000}
+            max={99990000}
+            placeholder={BASIC_INFO_FORM_FIELDS.desiredAnnualIncome.placeholder}
+            value={form.desiredAnnualIncome}
+            onChange={(event) => updateField("desiredAnnualIncome", event.target.value)}
             className="h-9"
           />
         </div>
@@ -534,23 +434,17 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
 
       <div className="flex flex-col gap-1.5">
         <span className="text-sm leading-none font-medium">{VISIBILITY_FORM_LABEL}</span>
-        <RadioGroup
-          value={String(form.isPublic)}
-          onValueChange={(value) => updateField("isPublic", value === "true")}
-          aria-label={VISIBILITY_FORM_LABEL}
-          className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-        >
-          {VISIBILITY_OPTIONS.map((option) => (
-            <label
-              key={String(option.value)}
-              htmlFor={`visibility-${option.value}`}
-              className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground has-[[data-checked]]:border-primary has-[[data-checked]]:bg-primary/5"
-            >
-              <RadioGroupItem value={String(option.value)} id={`visibility-${option.value}`} />
-              {option.label}
-            </label>
-          ))}
-        </RadioGroup>
+        <div className="flex items-center gap-3">
+          <Switch
+            id="basic-visibility"
+            checked={form.isPublic}
+            onCheckedChange={(checked) => updateField("isPublic", checked)}
+            aria-label={VISIBILITY_FORM_LABEL}
+          />
+          <Label htmlFor="basic-visibility" className="cursor-pointer text-foreground">
+            {form.isPublic ? VISIBILITY_STATUS_LABEL.public : VISIBILITY_STATUS_LABEL.private}
+          </Label>
+        </div>
       </div>
 
       {message && (

@@ -9,21 +9,25 @@ export const COMPANY_PAGE = {
     title: "運営会社",
     description: "ENGINEER MATCHを運営する会社の概要をご紹介します。",
   },
-  overviewNote: "※ 掲載内容はデモ表示です。",
+  overviewNote: "",
   overview: {
     label: "COMPANY",
     title: "会社概要",
     items: [
-      { label: "会社名", value: "株式会社エンジニアマッチ" },
-      { label: "設立", value: "2021年4月1日" },
-      { label: "代表者", value: "代表取締役　山田 太郎" },
-      { label: "資本金", value: "1,000万円" },
-      { label: "従業員数", value: "42名（2026年7月現在）" },
-      { label: "事業内容", value: "エンジニア向けマッチングプラットフォーム「ENGINEER MATCH」の企画・開発・運営" },
+      { label: "会社名", value: "株式会社GAKUSAI" },
+      { label: "設立", value: "2023年3月16日" },
+      { label: "代表者", value: "代表取締役　前田 美香" },
+      { label: "資本金", value: "6,300万円" },
+      {
+        label: "事業内容",
+        value:
+          "研修事業、産学連携事業、事業支援事業、人材支援事業、有料職業紹介事業（13-ユ-315843）、労働者派遣事業（派13-316932）",
+      },
       {
         label: "所在地",
-        value: "〒150-0001　東京都渋谷区神宮前1-2-3　ENGINEER MATCHビル5F",
+        value: "東京都中央区新川1-6-11　ニューリバータワーB1",
       },
+      { label: "電話番号", value: "03-5244-9450" },
     ],
   },
   missionVision: {
@@ -62,6 +66,50 @@ export const COMPANY_PAGE = {
   cta: {
     title: "ご不明な点がございましたら",
     description: "サービスに関するご質問・お問い合わせはこちらから承っております。",
+    buttonLabel: "お問い合わせはこちら",
+    href: "/contact",
+  },
+} as const;
+
+/**
+ * Confirmed pricing (review #6): 求人者（企業） pay a flat monthly
+ * subscription; 求職者（エンジニア） are always free. No other fees,
+ * features, or contract terms have been confirmed, so none are stated here
+ * beyond these two figures.
+ */
+export const PRICING_PAGE = {
+  hero: {
+    title: "料金プラン",
+    description: "ENGINEER MATCHの料金についてご案内します。",
+  },
+  section: {
+    label: "PRICING",
+    title: "シンプルな料金体系",
+    description: "求職者は登録・ご利用無料、求人者は月額制のサブスクリプションでご利用いただけます。",
+  },
+  plans: [
+    {
+      icon: "building2",
+      audience: "求人者（企業）の方",
+      price: "10,000",
+      priceSuffix: "円／月（税別）",
+      billingLabel: "サブスクリプション",
+      note: "月額のサブスクリプションでご利用いただけます。",
+      highlighted: true,
+    },
+    {
+      icon: "usersRound",
+      audience: "求職者（エンジニア）の方",
+      price: "0",
+      priceSuffix: "円",
+      billingLabel: null,
+      note: "登録・求人検索は無料でご利用いただけます。",
+      highlighted: false,
+    },
+  ],
+  cta: {
+    title: "ご不明な点がございましたら",
+    description: "料金に関するご質問はお問い合わせよりお気軽にご連絡ください。",
     buttonLabel: "お問い合わせはこちら",
     href: "/contact",
   },

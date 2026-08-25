@@ -5,6 +5,7 @@ import {
   type DashboardNavItem,
 } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
+import { ENGINEER_NAV, COMPANY_NAV } from "@/constants/dashboard";
 import { getUnreadBadgeCounts } from "@/lib/dashboard/badges";
 import { createClient } from "@/lib/supabase/server";
 
@@ -71,9 +72,24 @@ export async function DashboardShell({
 
   const badges = buildNavBadges(navItems, unreadMessages, unreadNotifications);
 
+  // Matched by content (not reference) against ENGINEER_NAV / COMPANY_NAV's
+  // own dashboard entries, same as DashboardTopbar's hasWorkingLogout /
+  // profileHref -- keeps the sidebar brand link's target derived from the
+  // nav actually passed in rather than a hardcoded role check.
+  const homeHref =
+    navItems.find(
+      (item) =>
+        item.href === ENGINEER_NAV[0].href || item.href === COMPANY_NAV[0].href,
+    )?.href ?? "/";
+
   return (
     <div className="flex min-h-svh bg-background">
-      <DashboardSidebar items={navItems} activeHref={activeHref} badges={badges} />
+      <DashboardSidebar
+        items={navItems}
+        activeHref={activeHref}
+        badges={badges}
+        homeHref={homeHref}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <DashboardTopbar

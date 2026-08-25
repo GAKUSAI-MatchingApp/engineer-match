@@ -6,12 +6,16 @@ import { ItssBadge } from "@/components/engineer/profile/ItssBadge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  INVALID_SKILL_NAME_ERROR,
   ITSS_SKILL_LEVELS,
   MAX_USER_SKILLS,
   MIN_USER_SKILLS,
   SKILL_LIMIT_MAX_ERROR,
   SKILL_LIMIT_MIN_ERROR,
   addUserSkill,
+  createUserSkill,
+  mapUserSkillRow,
+  normalizeSkillName,
   removeUserSkill,
   updateUserSkillLevel,
   type SkillCatalogItem,
@@ -36,6 +40,7 @@ export function TechnicalSkillsManager({
   catalog,
 }: TechnicalSkillsManagerProps) {
   const [skills, setSkills] = useState<UserSkillItem[]>(initialSkills);
+  const [catalogState, setCatalogState] = useState<SkillCatalogItem[]>(catalog);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,48 +48,69 @@ export function TechnicalSkillsManager({
   const atMinSkills = skills.length <= MIN_USER_SKILLS;
   const availableToAdd = atMaxSkills
     ? []
-    : catalog.filter((item) => !skills.some((skill) => skill.skillId === item.id));
-  const [newSkillId, setNewSkillId] = useState<string>(availableToAdd[0]?.id ?? "");
+    : catalogState.filter((item) => !skills.some((skill) => skill.skillId === item.id));
+
+  const [skillQuery, setSkillQuery] = useState<string>("");
+  const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false);
   const [newLevel, setNewLevel] = useState<number>(1);
   const [newExperienceYears, setNewExperienceYears] = useState<string>("");
 
+  const trimmedQuery = skillQuery.trim();
+  const normalizedQuery = normalizeSkillName(trimmedQuery);
+  const exactCatalogMatch = trimmedQuery
+    ? catalogState.find((item) => normalizeSkillName(item.name) === normalizedQuery)
+    : undefined;
+  const isExactMatchOwned = exactCatalogMatch
+    ? skills.some((skill) => skill.skillId === exactCatalogMatch.id)
+    : false;
+  const showRegisterNewOption = trimmedQuery.length > 0 && !exactCatalogMatch;
+  const filteredOptions = availableToAdd.filter(
+    (item) => trimmedQuery === "" || item.name.toLowerCase().includes(normalizedQuery),
+  );
+
+  function selectSkillOption(name: string) {
+    setSkillQuery(name);
+    setIsSkillDropdownOpen(false);
+  }
+
   async function handleAdd() {
-    if (isSubmitting || !newSkillId || atMaxSkills) return;
+    if (isSubmitting || atMaxSkills || !trimmedQuery) return;
+
+    if (isExactMatchOwned) {
+      setError(TECHNICAL_SKILL_EDITOR_LABELS.alreadyAddedError);
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     const experienceYears = newExperienceYears.trim() ? Number(newExperienceYears) : null;
     const supabase = createClient();
-    const { data, error: addError } = await addUserSkill(
-      supabase,
-      userId,
-      newSkillId,
-      newLevel,
-      experienceYears,
-    );
+    const { data, error: addError } = exactCatalogMatch
+      ? await addUserSkill(supabase, userId, exactCatalogMatch.id, newLevel, experienceYears)
+      : await createUserSkill(supabase, userId, trimmedQuery, newLevel, experienceYears);
 
     setIsSubmitting(false);
 
     if (addError || !data) {
       console.error("[technical-skills] add failed:", addError);
+      const message = (addError as { message?: string } | null)?.message;
       setError(
-        (addError as { message?: string } | null)?.message === SKILL_LIMIT_MAX_ERROR
+        message === SKILL_LIMIT_MAX_ERROR
           ? TECHNICAL_SKILL_EDITOR_LABELS.limitMaxError
-          : TECHNICAL_SKILL_EDITOR_LABELS.addError,
+          : message === INVALID_SKILL_NAME_ERROR
+            ? TECHNICAL_SKILL_EDITOR_LABELS.invalidSkillNameError
+            : TECHNICAL_SKILL_EDITOR_LABELS.addError,
       );
       return;
     }
 
-    const skillName = catalog.find((item) => item.id === newSkillId)?.name ?? "";
-    const nextSkills = [
-      ...skills,
-      { id: data.id as string, skillId: newSkillId, name: skillName, level: newLevel, experienceYears },
-    ];
-    setSkills(nextSkills);
-    const nextAvailable = catalog.filter(
-      (item) => !nextSkills.some((skill) => skill.skillId === item.id),
-    );
-    setNewSkillId(nextAvailable[0]?.id ?? "");
+    const mapped = mapUserSkillRow(data);
+    setSkills((prev) => [...prev, mapped]);
+    if (!exactCatalogMatch) {
+      setCatalogState((prev) => [...prev, { id: mapped.skillId, name: mapped.name, subcategoryName: "" }]);
+    }
+    setSkillQuery("");
     setNewLevel(1);
     setNewExperienceYears("");
   }
@@ -172,6 +198,19 @@ export function TechnicalSkillsManager({
         <p className="text-sm text-muted-foreground">{TECHNICAL_SKILL_EDITOR_LABELS.emptyMessage}</p>
       )}
 
+      {skills.length > 0 && (
+        <div
+          aria-hidden="true"
+          className="hidden items-center gap-3 px-3 text-xs font-medium text-muted-foreground sm:flex"
+        >
+          <span className="w-7 shrink-0" />
+          <span className="min-w-32 flex-1">{TECHNICAL_SKILL_EDITOR_LABELS.skillLabel}</span>
+          <span className="w-44">{TECHNICAL_SKILL_EDITOR_LABELS.levelLabel}</span>
+          <span className="w-32">{TECHNICAL_SKILL_EDITOR_LABELS.experienceYearsLabel}</span>
+          <span className="w-9 shrink-0" />
+        </div>
+      )}
+
       {skills.map((skill) => (
         <div
           key={skill.id}
@@ -233,22 +272,75 @@ export function TechnicalSkillsManager({
         </div>
       ))}
 
-      {availableToAdd.length > 0 ? (
+      {!atMaxSkills ? (
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-border p-3">
-          <div className="flex min-w-40 flex-1 flex-col gap-1.5">
+          <div className="relative flex min-w-40 flex-1 flex-col gap-1.5">
             <Label htmlFor="new-skill-name">{TECHNICAL_SKILL_EDITOR_LABELS.skillLabel}</Label>
-            <select
+            <Input
               id="new-skill-name"
-              value={newSkillId}
-              onChange={(event) => setNewSkillId(event.target.value)}
-              className={SELECT_CLASS}
-            >
-              {availableToAdd.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.subcategoryName ? `${item.name}（${item.subcategoryName}）` : item.name}
-                </option>
-              ))}
-            </select>
+              type="text"
+              autoComplete="off"
+              value={skillQuery}
+              placeholder={TECHNICAL_SKILL_EDITOR_LABELS.skillNamePlaceholder}
+              onChange={(event) => {
+                setSkillQuery(event.target.value);
+                setIsSkillDropdownOpen(true);
+              }}
+              onFocus={() => setIsSkillDropdownOpen(true)}
+              onBlur={() => setIsSkillDropdownOpen(false)}
+              className="h-9"
+            />
+            {isSkillDropdownOpen && (
+              <div
+                role="listbox"
+                // onMouseDown here fires (and is cancelled) before the input's
+                // onBlur, so clicking an option selects it instead of just
+                // closing the dropdown out from under the click.
+                onMouseDown={(event) => event.preventDefault()}
+                className="absolute top-full left-0 z-40 mt-1 max-h-56 w-full min-w-56 overflow-y-auto rounded-xl border border-border bg-surface py-1.5 shadow-lg"
+              >
+                {filteredOptions.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={normalizeSkillName(item.name) === normalizedQuery}
+                    onClick={() => selectSkillOption(item.name)}
+                    className="flex w-full items-center px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                  >
+                    {item.subcategoryName ? `${item.name}（${item.subcategoryName}）` : item.name}
+                  </button>
+                ))}
+                {showRegisterNewOption && (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    onClick={() => setIsSkillDropdownOpen(false)}
+                    className="flex w-full items-center gap-1.5 border-t border-border px-3 py-2 text-left text-sm font-semibold text-primary transition-colors duration-200 hover:bg-primary/5 focus-visible:bg-primary/5 focus-visible:outline-none"
+                  >
+                    <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {TECHNICAL_SKILL_EDITOR_LABELS.registerNewPrefix}
+                    {trimmedQuery}
+                    {TECHNICAL_SKILL_EDITOR_LABELS.registerNewSuffix}
+                  </button>
+                )}
+                {filteredOptions.length === 0 && !showRegisterNewOption && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">
+                    {isExactMatchOwned
+                      ? TECHNICAL_SKILL_EDITOR_LABELS.alreadyAddedError
+                      : TECHNICAL_SKILL_EDITOR_LABELS.emptyCatalogMessage}
+                  </p>
+                )}
+              </div>
+            )}
+            {!isSkillDropdownOpen && showRegisterNewOption && (
+              <p className="text-xs text-primary">
+                {TECHNICAL_SKILL_EDITOR_LABELS.registerNewPrefix}
+                {trimmedQuery}
+                {TECHNICAL_SKILL_EDITOR_LABELS.registerNewSuffix}
+              </p>
+            )}
           </div>
           <div className="flex w-44 flex-col gap-1.5">
             <Label htmlFor="new-skill-level">{TECHNICAL_SKILL_EDITOR_LABELS.levelLabel}</Label>
@@ -280,7 +372,7 @@ export function TechnicalSkillsManager({
           <button
             type="button"
             onClick={handleAdd}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !trimmedQuery || isExactMatchOwned}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-border px-3 text-xs font-semibold text-primary transition-colors duration-200 hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
@@ -293,11 +385,7 @@ export function TechnicalSkillsManager({
         </div>
       ) : (
         skills.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {atMaxSkills
-              ? TECHNICAL_SKILL_EDITOR_LABELS.limitMaxError
-              : TECHNICAL_SKILL_EDITOR_LABELS.emptyCatalogMessage}
-          </p>
+          <p className="text-xs text-muted-foreground">{TECHNICAL_SKILL_EDITOR_LABELS.limitMaxError}</p>
         )
       )}
 

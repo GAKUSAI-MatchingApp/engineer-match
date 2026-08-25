@@ -47,13 +47,28 @@ const ACCOUNT_TYPE_OPTIONS = [
   { ...REGISTER_FORM.accountTypes.company, icon: Building2 },
 ] as const;
 
-function AgreeTerms({ id }: { id: string }) {
+interface AgreeTermsProps {
+  id: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}
+
+function AgreeTerms({ id, checked, onCheckedChange }: AgreeTermsProps) {
   return (
     <div className="flex items-start gap-2.5">
-      <Checkbox id={id} name={id} required className="mt-0.5" />
+      <Checkbox
+        id={id}
+        name={id}
+        required
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        className="mt-0.5"
+      />
       <Label htmlFor={id} className="font-normal text-white/60">
         <Link
           href="/terms"
+          target="_blank"
+          rel="noopener noreferrer"
           className="rounded text-cyan-300 underline-offset-2 hover:underline hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:outline-none"
         >
           {REGISTER_FORM.agreeTermsTermsLabel}
@@ -61,6 +76,8 @@ function AgreeTerms({ id }: { id: string }) {
         {REGISTER_FORM.agreeTermsMiddle}
         <Link
           href="/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
           className="rounded text-cyan-300 underline-offset-2 hover:underline hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:outline-none"
         >
           {REGISTER_FORM.agreeTermsPrivacyLabel}
@@ -92,6 +109,10 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
+  // Kept separate (not one shared flag) so switching account type never
+  // carries one form's agreement into the other's checkbox.
+  const [engineerAgreed, setEngineerAgreed] = useState(false);
+  const [companyAgreed, setCompanyAgreed] = useState(false);
   const completionHeadingRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -471,7 +492,11 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
                   autoComplete="new-password"
                 />
 
-                <AgreeTerms id="engineer-agree-terms" />
+                <AgreeTerms
+                  id="engineer-agree-terms"
+                  checked={engineerAgreed}
+                  onCheckedChange={setEngineerAgreed}
+                />
 
                 <div
                   ref={accountType === "engineer" ? errorRef : undefined}
@@ -490,7 +515,7 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
 
                 <Button
                   type="submit"
-                  disabled={isLoading || oauthLoading !== null}
+                  disabled={isLoading || oauthLoading !== null || !engineerAgreed}
                   aria-busy={isLoading}
                   className="h-12 w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#2563EB] text-sm font-semibold text-white shadow-lg shadow-indigo-950/20 hover:brightness-110 disabled:opacity-70"
                 >
@@ -592,7 +617,11 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
                   autoComplete="new-password"
                 />
 
-                <AgreeTerms id="company-agree-terms" />
+                <AgreeTerms
+                  id="company-agree-terms"
+                  checked={companyAgreed}
+                  onCheckedChange={setCompanyAgreed}
+                />
 
                 <div
                   ref={accountType === "company" ? errorRef : undefined}
@@ -611,7 +640,7 @@ export function RegisterCard({ initialAccountType, blockedRole }: RegisterCardPr
 
                 <Button
                   type="submit"
-                  disabled={isLoading || oauthLoading !== null}
+                  disabled={isLoading || oauthLoading !== null || !companyAgreed}
                   aria-busy={isLoading}
                   className="h-12 w-full rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#2563EB] text-sm font-semibold text-white shadow-lg shadow-indigo-950/20 hover:brightness-110 disabled:opacity-70"
                 >

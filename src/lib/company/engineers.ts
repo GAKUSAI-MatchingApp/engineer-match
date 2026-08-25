@@ -169,15 +169,12 @@ export interface EngineerDetail {
   yearsOfExperience: number | null;
   selfPr: string | null;
   workStyle: "REMOTE" | "ONSITE" | "HYBRID" | null;
-  desiredRateMin: number | null;
-  desiredRateMax: number | null;
   portfolioUrl: string | null;
   jobTitle: string | null;
   jobCategory: string | null;
   availabilityStatus: string | null;
   githubUrl: string | null;
-  desiredAnnualIncomeMin: number | null;
-  desiredAnnualIncomeMax: number | null;
+  desiredAnnualIncome: number | null;
   desiredHourlyRateMin: number | null;
   desiredHourlyRateMax: number | null;
   availableFrom: string | null;
@@ -239,7 +236,7 @@ export async function getSearchableEngineerDetail(
   const { data: profile, error: profileError } = await supabase
     .from("engineer_profiles")
     .select(
-      "id, prefecture, years_of_experience, self_pr, work_style, desired_rate_min, desired_rate_max, portfolio_url, job_title, job_category, availability_status, github_url, desired_annual_income_min, desired_annual_income_max, desired_hourly_rate_min, desired_hourly_rate_max, available_from",
+      "id, prefecture, years_of_experience, self_pr, work_style, portfolio_url, job_title, job_category, availability_status, github_url, desired_annual_income_yen, desired_hourly_rate_min, desired_hourly_rate_max, available_from",
     )
     .eq("id", id)
     .maybeSingle();
@@ -322,15 +319,12 @@ export async function getSearchableEngineerDetail(
     yearsOfExperience: (profile.years_of_experience as number | null) ?? null,
     selfPr: (profile.self_pr as string | null) ?? null,
     workStyle: (profile.work_style as EngineerDetail["workStyle"]) ?? null,
-    desiredRateMin: (profile.desired_rate_min as number | null) ?? null,
-    desiredRateMax: (profile.desired_rate_max as number | null) ?? null,
     portfolioUrl: (profile.portfolio_url as string | null) ?? null,
     jobTitle: (profile.job_title as string | null) ?? null,
     jobCategory: (profile.job_category as string | null) ?? null,
     availabilityStatus: (profile.availability_status as string | null) ?? null,
     githubUrl: (profile.github_url as string | null) ?? null,
-    desiredAnnualIncomeMin: (profile.desired_annual_income_min as number | null) ?? null,
-    desiredAnnualIncomeMax: (profile.desired_annual_income_max as number | null) ?? null,
+    desiredAnnualIncome: (profile.desired_annual_income_yen as number | null) ?? null,
     desiredHourlyRateMin: (profile.desired_hourly_rate_min as number | null) ?? null,
     desiredHourlyRateMax: (profile.desired_hourly_rate_max as number | null) ?? null,
     availableFrom: (profile.available_from as string | null) ?? null,

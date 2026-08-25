@@ -30,7 +30,6 @@ export function DashboardTopbar({
   pageTitle,
   userName,
   userInitials,
-  userEmail,
   badges,
 }: DashboardTopbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -44,6 +43,13 @@ export function DashboardTopbar({
     (item) =>
       item.href === ENGINEER_NAV[0].href || item.href === COMPANY_NAV[0].href,
   );
+
+  // Same nav (not the sidebar's own "プロフィール" entry) drives the
+  // UserMenu's "マイページ" link, so both stay pointed at the same page.
+  const profileHref = items.find(
+    (item) =>
+      item.href === ENGINEER_NAV[1].href || item.href === COMPANY_NAV[1].href,
+  )?.href;
 
   // Combined count so the collapsed hamburger icon itself shows that
   // something's unread, not just the nav links once the drawer is open.
@@ -76,7 +82,7 @@ export function DashboardTopbar({
         </div>
 
         {hasWorkingLogout ? (
-          <UserMenu userName={userName} userInitials={userInitials} userEmail={userEmail} />
+          <UserMenu userName={userName} userInitials={userInitials} profileHref={profileHref} />
         ) : (
           <div className="flex items-center gap-2 rounded-full border border-border py-1.5 pr-3 pl-1.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">

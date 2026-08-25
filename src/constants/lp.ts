@@ -87,8 +87,6 @@ export const SERVICE_CATEGORIES = [
   },
 ] as const;
 
-export const SERVICE_CATEGORIES_CTA_LABEL = "詳しく見る";
-
 export const SKILLS = {
   label: "SKILLS",
   title: "人気のスキルから探す",
@@ -224,6 +222,8 @@ export const ITSS_LEVELS = [
 export const ITSS_INFO_CARD = {
   title: "ITSSとは？",
   body: "ITSS（ITスキル標準）は、IT人材のスキルを体系的に整理した指標です。\n本サービスでは、スキルの目安として活用しています。",
+  linkLabel: "IPA公式サイト",
+  linkUrl: "https://www.ipa.go.jp/jinzai/skill-standard/plus-it-ui/itss/index.html",
 } as const;
 
 export const HOW_IT_WORKS = {
@@ -319,7 +319,8 @@ export const FAQ = {
 export const FAQ_ITEMS = [
   {
     question: "利用料金はかかりますか？",
-    answer: "エンジニアの登録・求人検索は無料です。",
+    answer:
+      "求職者（エンジニア）の登録・求人検索は無料です。\n求人者（企業）は月額10,000円（税別）のサブスクリプションでご利用いただけます。",
   },
   {
     question: "どのような契約形態がありますか？",
@@ -372,9 +373,7 @@ export const FOOTER = {
       links: [
         { label: "企業の方へ", href: "/#for-companies" },
         { label: "ご利用の流れ", href: "/#how-it-works" },
-        // No standalone pricing page yet -- routed to the FAQ section, the
-        // closest existing content that actually answers a pricing question.
-        { label: "料金プラン", href: "/#faq" },
+        { label: "料金プラン", href: "/pricing" },
         // No standalone case-studies page yet -- routed to "why choose us",
         // the closest existing section (social proof / platform strengths).
         { label: "導入事例", href: "/#why-us" },
@@ -396,11 +395,6 @@ export const FOOTER = {
         { label: "運営会社", href: "/company" },
         { label: "利用規約", href: "/terms" },
         { label: "プライバシーポリシー", href: "/privacy" },
-        // Legally-mandated commercial-transactions disclosure page does not
-        // exist. Deliberately left without a destination rather than routed
-        // to an unrelated section or filled with placeholder legal content --
-        // see Footer.tsx for how this is rendered.
-        { label: "特定商取引法に基づく表記", href: "#" },
       ],
     },
   ],

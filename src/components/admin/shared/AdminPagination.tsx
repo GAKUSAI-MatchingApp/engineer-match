@@ -21,7 +21,12 @@ export function AdminPagination({
   pageLabelPrefix,
 }: AdminPaginationProps) {
   if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  const MAX_VISIBLE_PAGES = 5;
+  let start = Math.max(1, currentPage - Math.floor(MAX_VISIBLE_PAGES / 2));
+  const end = Math.min(totalPages, start + MAX_VISIBLE_PAGES - 1);
+  start = Math.max(1, end - MAX_VISIBLE_PAGES + 1);
+  const pages = Array.from({ length: end - start + 1 }, (_, index) => start + index);
 
   return (
     <nav aria-label="ページネーション" className="flex items-center justify-center gap-1.5">

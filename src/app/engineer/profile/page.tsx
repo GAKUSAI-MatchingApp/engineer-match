@@ -149,7 +149,7 @@ export default async function EngineerProfilePage() {
     hasPrefecture: Boolean(profile?.prefecture),
     hasYearsOfExperience: profile?.years_of_experience !== null && profile?.years_of_experience !== undefined,
     hasWorkStyle: Boolean(profile?.work_style),
-    hasDesiredRate: Boolean(profile?.desired_rate_min && profile?.desired_rate_max),
+    hasDesiredRate: Boolean(profile?.desired_hourly_rate_min && profile?.desired_hourly_rate_max),
     hasTechnicalSkill: technicalSkills.length > 0,
     hasQualification: qualifications.length > 0,
     hasJobTitle: Boolean(profile?.job_title),
@@ -158,8 +158,8 @@ export default async function EngineerProfilePage() {
   });
 
   const desiredRateLabel =
-    profile?.desired_rate_min && profile?.desired_rate_max
-      ? `${profile.desired_rate_min}万円〜${profile.desired_rate_max}万円`
+    profile?.desired_hourly_rate_min && profile?.desired_hourly_rate_max
+      ? `${profile.desired_hourly_rate_min}円〜${profile.desired_hourly_rate_max}円`
       : BASIC_INFO_LABELS.unset;
 
   return (
@@ -470,12 +470,9 @@ export default async function EngineerProfilePage() {
               locations={preferredLocations.map((item) => item.location)}
               workStyleLabel={profile?.work_style ? WORK_STYLE_LABEL[profile.work_style] : null}
               availableFrom={profile?.available_from ?? null}
-              desiredRateMin={profile?.desired_rate_min ?? null}
-              desiredRateMax={profile?.desired_rate_max ?? null}
-              desiredAnnualIncomeMin={profile?.desired_annual_income_min ?? null}
-              desiredAnnualIncomeMax={profile?.desired_annual_income_max ?? null}
-              desiredHourlyRateMin={profile?.desired_hourly_rate_min ?? null}
-              desiredHourlyRateMax={profile?.desired_hourly_rate_max ?? null}
+              desiredHourlyRate={profile?.desired_hourly_rate_max ?? null}
+              minimumHourlyRate={profile?.desired_hourly_rate_min ?? null}
+              desiredAnnualIncome={profile?.desired_annual_income_yen ?? null}
             />
           </ProfileSection>
 

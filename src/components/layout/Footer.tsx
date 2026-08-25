@@ -30,30 +30,16 @@ export function Footer() {
                 {column.title}
               </h3>
               <ul className="mt-4 space-y-3">
-                {column.links.map((link) =>
-                  // "#" is reserved for links with no legitimate destination
-                  // yet (see FOOTER in src/constants/lp.ts) -- rendered as
-                  // plain non-interactive text, not a fabricated link.
-                  link.href === "#" ? (
-                    <li key={link.label}>
-                      <span
-                        aria-disabled="true"
-                        className="text-sm text-muted-foreground/50"
-                      >
-                        {link.label}
-                      </span>
-                    </li>
-                  ) : (
-                    <li key={link.label}>
-                      <a
-                        href={link.href}
-                        className="text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
-                      >
-                        {link.label}
-                      </a>
-                    </li>
-                  ),
-                )}
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
               </ul>
             </div>
           ))}
