@@ -1,6 +1,6 @@
 "use client";
 
-import { Info } from "lucide-react";
+import { ExternalLink, Info } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ITSS, ITSS_INFO_CARD, ITSS_LEVELS } from "@/constants/lp";
@@ -137,6 +137,15 @@ export function ItssSection() {
           <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
             {ITSS_INFO_CARD.body}
           </p>
+          <a
+            href={ITSS_INFO_CARD.linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary underline underline-offset-2 transition-colors duration-200 hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            <span>{ITSS_INFO_CARD.linkLabel}</span>
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          </a>
         </div>
       </div>
     </section>

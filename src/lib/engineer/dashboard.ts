@@ -66,7 +66,7 @@ export async function getEngineerDashboardData(
     hasYearsOfExperience:
       profile?.years_of_experience !== null && profile?.years_of_experience !== undefined,
     hasWorkStyle: Boolean(profile?.work_style),
-    hasDesiredRate: Boolean(profile?.desired_rate_min && profile?.desired_rate_max),
+    hasDesiredRate: Boolean(profile?.desired_hourly_rate_min && profile?.desired_hourly_rate_max),
     hasTechnicalSkill: technicalSkills.length > 0,
     hasQualification: qualifications.length > 0,
     hasJobTitle: Boolean(profile?.job_title),

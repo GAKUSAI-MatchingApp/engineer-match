@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   BriefcaseBusiness,
   Building2,
   CircleCheck,
@@ -8,11 +7,7 @@ import {
 } from "lucide-react";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import {
-  SERVICE_CATEGORIES,
-  SERVICE_CATEGORIES_CTA_LABEL,
-  SERVICES,
-} from "@/constants/lp";
+import { SERVICE_CATEGORIES, SERVICES } from "@/constants/lp";
 
 const ICON_MAP = {
   briefcase: BriefcaseBusiness,
@@ -70,11 +65,6 @@ export function ServiceCategories() {
                     </li>
                   ))}
                 </ul>
-
-                <div className="mt-auto flex items-center gap-1 pt-6 text-sm font-medium text-primary">
-                  {SERVICE_CATEGORIES_CTA_LABEL}
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </div>
               </div>
             );
           })}

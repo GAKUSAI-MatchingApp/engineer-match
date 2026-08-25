@@ -8,12 +8,9 @@ interface PreferredConditionsSectionProps {
   preferredLocations: string[];
   workStyle: "REMOTE" | "ONSITE" | "HYBRID" | null;
   availableFrom: string | null;
-  desiredRateMin: number | null;
-  desiredRateMax: number | null;
-  desiredAnnualIncomeMin: number | null;
-  desiredAnnualIncomeMax: number | null;
-  desiredHourlyRateMin: number | null;
-  desiredHourlyRateMax: number | null;
+  desiredHourlyRate: number | null;
+  minimumHourlyRate: number | null;
+  desiredAnnualIncome: number | null;
 }
 
 /** Shared by Company Engineer Detail and Company Applicant Detail. */
@@ -22,12 +19,9 @@ export function PreferredConditionsSection({
   preferredLocations,
   workStyle,
   availableFrom,
-  desiredRateMin,
-  desiredRateMax,
-  desiredAnnualIncomeMin,
-  desiredAnnualIncomeMax,
-  desiredHourlyRateMin,
-  desiredHourlyRateMax,
+  desiredHourlyRate,
+  minimumHourlyRate,
+  desiredAnnualIncome,
 }: PreferredConditionsSectionProps) {
   return (
     <section className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
@@ -46,12 +40,9 @@ export function PreferredConditionsSection({
           locations={preferredLocations}
           workStyleLabel={workStyle ? WORK_STYLE_LABEL[workStyle] : null}
           availableFrom={availableFrom}
-          desiredRateMin={desiredRateMin}
-          desiredRateMax={desiredRateMax}
-          desiredAnnualIncomeMin={desiredAnnualIncomeMin}
-          desiredAnnualIncomeMax={desiredAnnualIncomeMax}
-          desiredHourlyRateMin={desiredHourlyRateMin}
-          desiredHourlyRateMax={desiredHourlyRateMax}
+          desiredHourlyRate={desiredHourlyRate}
+          minimumHourlyRate={minimumHourlyRate}
+          desiredAnnualIncome={desiredAnnualIncome}
         />
       </div>
     </section>

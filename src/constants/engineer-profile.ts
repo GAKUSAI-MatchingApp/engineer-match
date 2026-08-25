@@ -66,14 +66,12 @@ export const BASIC_INFO_LABELS = {
   prefecture: "居住地",
   yearsOfExperience: "経験年数",
   workStyle: "希望の働き方",
-  desiredRate: "希望単価（月額）",
+  desiredRate: "希望単価（円／時間）",
   portfolioUrl: "Portfolio URL",
   jobTitle: "職種",
   jobCategory: "職種カテゴリ",
   availabilityStatus: "稼働状況",
   githubUrl: "GitHub",
-  desiredAnnualIncome: "希望年収",
-  desiredHourlyRate: "希望時間単価",
   availableFrom: "稼働開始可能日",
   unset: "未設定",
 } as const;
@@ -178,13 +176,18 @@ export const TECHNICAL_SKILL_EDITOR_LABELS = {
   addLabel: "テクニカルスキルを追加",
   removeLabel: "このスキルを削除",
   countSuffix: "件登録中",
-  emptyCatalogMessage: "追加可能なスキルがありません。",
+  skillNamePlaceholder: "スキル名を入力（例: React）",
+  emptyCatalogMessage: "候補がありません。スキル名を入力すると新規登録できます。",
   emptyMessage: "テクニカルスキルが未登録です。",
   addError: "スキルの追加に失敗しました。しばらくしてから再度お試しください。",
   updateError: "スキルの更新に失敗しました。しばらくしてから再度お試しください。",
   removeError: "スキルの削除に失敗しました。しばらくしてから再度お試しください。",
   limitMaxError: "テクニカルスキルは20件まで登録できます。",
   limitMinError: "テクニカルスキルは1件以上登録する必要があるため、削除できません。",
+  alreadyAddedError: "このスキルは既に登録済みです。",
+  invalidSkillNameError: "スキル名を1〜50文字で入力してください。",
+  registerNewPrefix: "「",
+  registerNewSuffix: "」を新規登録",
 } as const;
 
 // ============================================================
@@ -428,12 +431,9 @@ export const BASIC_INFO_FORM_FIELDS = {
   yearsOfExperience: { label: "経験年数（年）", placeholder: "6" },
   availabilityStatus: { label: "稼働状況" },
   workStyle: { label: "希望の働き方" },
-  desiredRateMin: { label: "希望単価（下限・万円/月）", placeholder: "60" },
-  desiredRateMax: { label: "希望単価（上限・万円/月）", placeholder: "90" },
-  desiredAnnualIncomeMin: { label: "希望年収（下限・万円）", placeholder: "700" },
-  desiredAnnualIncomeMax: { label: "希望年収（上限・万円）", placeholder: "900" },
-  desiredHourlyRateMin: { label: "希望時間単価（下限・円）", placeholder: "4500" },
-  desiredHourlyRateMax: { label: "希望時間単価（上限・円）", placeholder: "6000" },
+  desiredHourlyRate: { label: "希望単価（円／時間）", placeholder: "6000" },
+  minimumHourlyRate: { label: "最低単価（円／時間）", placeholder: "4500" },
+  desiredAnnualIncome: { label: "希望年収（円／年）", placeholder: "6000000" },
   availableFrom: { label: "稼働開始可能日" },
   portfolioUrl: { label: "Portfolio URL", placeholder: "https://example.com" },
   githubUrl: { label: "GitHub", placeholder: "https://github.com/username" },
@@ -447,11 +447,6 @@ export const WORK_STYLE_OPTIONS = [
   { value: "HYBRID", label: "一部リモート" },
 ] as const;
 
-export const VISIBILITY_OPTIONS = [
-  { value: true, label: "公開" },
-  { value: false, label: "非公開" },
-] as const;
-
 export const VISIBILITY_FORM_LABEL = "プロフィールの公開状態";
 
 export const BASIC_INFO_FORM_META = {
@@ -460,16 +455,13 @@ export const BASIC_INFO_FORM_META = {
   savedMessage: "プロフィールを更新しました。",
   saveFailedMessage: "プロフィールの保存に失敗しました。しばらくしてから再度お試しください。",
   invalidYearsOfExperience: "経験年数は0〜50の範囲で入力してください。",
-  invalidRate: "希望単価は1〜999の範囲で入力してください。",
-  invalidRateOrder: "希望単価は下限が上限以下になるように入力してください。",
-  invalidAnnualIncome: "希望年収は1〜9999の範囲で入力してください。",
-  invalidAnnualIncomeOrder: "希望年収は下限が上限以下になるように入力してください。",
-  invalidHourlyRate: "希望時間単価は1〜99999の範囲で入力してください。",
-  invalidHourlyRateOrder: "希望時間単価は下限が上限以下になるように入力してください。",
+  invalidHourlyRate: "希望単価・最低単価は1〜99999の範囲で入力してください。",
+  invalidHourlyRateOrder: "最低単価は希望単価以下になるように入力してください。",
+  invalidAnnualIncome: "希望年収は10000〜99990000の範囲で入力してください。",
   invalidSelfPr: "自己紹介は2000文字以内で入力してください。",
   nameRequired: "氏名を入力してください。",
   prefectureRequired: "居住地を入力してください。",
   yearsOfExperienceRequired: "経験年数を入力してください。",
   workStyleRequired: "希望の働き方を選択してください。",
-  desiredRateRequired: "希望単価の下限・上限を入力してください。",
+  desiredHourlyRateRequired: "希望単価・最低単価を入力してください。",
 } as const;

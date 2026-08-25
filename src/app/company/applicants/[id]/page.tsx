@@ -148,12 +148,9 @@ export default async function CompanyApplicantDetailPage({
               preferredLocations={applicant.preferredLocations}
               workStyle={applicant.workStyle}
               availableFrom={applicant.availableFrom}
-              desiredRateMin={applicant.desiredRateMin}
-              desiredRateMax={applicant.desiredRateMax}
-              desiredAnnualIncomeMin={applicant.desiredAnnualIncomeMin}
-              desiredAnnualIncomeMax={applicant.desiredAnnualIncomeMax}
-              desiredHourlyRateMin={applicant.desiredHourlyRateMin}
-              desiredHourlyRateMax={applicant.desiredHourlyRateMax}
+              desiredHourlyRate={applicant.desiredHourlyRateMax}
+              minimumHourlyRate={applicant.desiredHourlyRateMin}
+              desiredAnnualIncome={applicant.desiredAnnualIncome}
             />
           </div>
 

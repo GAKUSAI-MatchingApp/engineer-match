@@ -12,8 +12,6 @@ export interface EngineerProfile {
   years_of_experience: number | null;
   self_pr: string | null;
   work_style: "REMOTE" | "ONSITE" | "HYBRID" | null;
-  desired_rate_min: number | null;
-  desired_rate_max: number | null;
   portfolio_url: string | null;
   avatar_url: string | null;
   is_public: boolean;
@@ -34,10 +32,9 @@ export interface EngineerProfile {
   /** 稼働状況, per chk_engineer_profiles_availability_status (039). */
   availability_status: "IMMEDIATE" | "NEGOTIABLE" | "CURRENTLY_EMPLOYED" | "ON_LEAVE" | null;
   github_url: string | null;
-  /** 希望年収 (万円), for 契約形態=就職. */
-  desired_annual_income_min: number | null;
-  desired_annual_income_max: number | null;
-  /** 希望時間単価 (円), for 契約形態=時間精算. */
+  /** 希望年収 (円/年), review #16 -- replaces the old 万円 desired_annual_income_min/max pair. */
+  desired_annual_income_yen: number | null;
+  /** 希望単価・最低単価 (円/時間) -- required, per review #16 (075_engineer_hourly_rate_required.sql). */
   desired_hourly_rate_min: number | null;
   desired_hourly_rate_max: number | null;
   /** 稼働開始可能日. */
@@ -93,7 +90,7 @@ function validateEngineerProfileInput(input: EngineerProfileInput): boolean {
   if (!input.prefecture || !input.prefecture.trim()) return false;
   if (input.years_of_experience === null || input.years_of_experience === undefined) return false;
   if (!input.work_style) return false;
-  if (input.desired_rate_min === null || input.desired_rate_max === null) return false;
+  if (input.desired_hourly_rate_min === null || input.desired_hourly_rate_max === null) return false;
   return true;
 }
 
@@ -215,11 +212,11 @@ const COMPLETION_ITEM_LABELS: Record<keyof ProfileCompletionInput, string> = {
   hasYearsOfExperience: "経験年数の入力",
   hasWorkStyle: "希望の働き方の入力",
   hasDesiredRate: "希望単価の入力",
-  hasTechnicalSkill: "テクニカルスキルの登録",
-  hasQualification: "資格情報の登録",
+  hasTechnicalSkill: "テクニカルスキルの入力",
+  hasQualification: "資格情報の入力",
   hasJobTitle: "職種の入力",
-  hasWorkExperience: "職務経歴の登録",
-  hasLanguage: "言語情報の登録",
+  hasWorkExperience: "職務経歴の入力",
+  hasLanguage: "言語情報の入力",
 };
 
 /** Drives ProfileCompletion off real signals only -- no fabricated percentage. */

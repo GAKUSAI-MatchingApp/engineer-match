@@ -8,7 +8,8 @@ interface EngineerProfileOverviewProps {
 }
 
 export function EngineerProfileOverview({ engineer }: EngineerProfileOverviewProps) {
-  const hasRateRange = engineer.desiredRateMin !== null && engineer.desiredRateMax !== null;
+  const hasRateRange =
+    engineer.desiredHourlyRateMin !== null && engineer.desiredHourlyRateMax !== null;
 
   return (
     <section className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
@@ -52,7 +53,7 @@ export function EngineerProfileOverview({ engineer }: EngineerProfileOverviewPro
           <div>
             <dt className="text-xs text-muted-foreground">希望単価</dt>
             <dd className="mt-1 text-sm font-medium text-foreground">
-              {engineer.desiredRateMin}万円〜{engineer.desiredRateMax}万円/月
+              {engineer.desiredHourlyRateMin}円〜{engineer.desiredHourlyRateMax}円/時間
             </dd>
           </div>
         )}

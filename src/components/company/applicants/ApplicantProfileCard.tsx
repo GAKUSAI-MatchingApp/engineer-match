@@ -9,7 +9,8 @@ interface ApplicantProfileCardProps {
 }
 
 export function ApplicantProfileCard({ applicant }: ApplicantProfileCardProps) {
-  const hasRateRange = applicant.desiredRateMin !== null && applicant.desiredRateMax !== null;
+  const hasRateRange =
+    applicant.desiredHourlyRateMin !== null && applicant.desiredHourlyRateMax !== null;
   const jobCategoryLabel = JOB_CATEGORY_OPTIONS.find((o) => o.value === applicant.jobCategory)?.label;
   const availabilityLabel = AVAILABILITY_STATUS_OPTIONS.find(
     (o) => o.value === applicant.availabilityStatus,
@@ -73,7 +74,7 @@ export function ApplicantProfileCard({ applicant }: ApplicantProfileCardProps) {
           <div>
             <dt className="text-xs text-muted-foreground">希望単価</dt>
             <dd className="mt-1 text-sm font-medium text-foreground">
-              {applicant.desiredRateMin}万円〜{applicant.desiredRateMax}万円/月
+              {applicant.desiredHourlyRateMin}円〜{applicant.desiredHourlyRateMax}円/時間
             </dd>
           </div>
         )}

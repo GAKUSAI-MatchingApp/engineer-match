@@ -3,12 +3,12 @@ interface PreferredConditionsDisplayProps {
   locations: string[];
   workStyleLabel: string | null;
   availableFrom: string | null;
-  desiredRateMin: number | null;
-  desiredRateMax: number | null;
-  desiredAnnualIncomeMin: number | null;
-  desiredAnnualIncomeMax: number | null;
-  desiredHourlyRateMin: number | null;
-  desiredHourlyRateMax: number | null;
+  /** 円/時間, engineer_profiles.desired_hourly_rate_max. */
+  desiredHourlyRate: number | null;
+  /** 円/時間, engineer_profiles.desired_hourly_rate_min. */
+  minimumHourlyRate: number | null;
+  /** 円/年, engineer_profiles.desired_annual_income_yen. */
+  desiredAnnualIncome: number | null;
 }
 
 /** Shared between the engineer's own profile page and the company detail view -- restores the old PreferredConditions.tsx sharing pattern. */
@@ -17,16 +17,12 @@ export function PreferredConditionsDisplay({
   locations,
   workStyleLabel,
   availableFrom,
-  desiredRateMin,
-  desiredRateMax,
-  desiredAnnualIncomeMin,
-  desiredAnnualIncomeMax,
-  desiredHourlyRateMin,
-  desiredHourlyRateMax,
+  desiredHourlyRate,
+  minimumHourlyRate,
+  desiredAnnualIncome,
 }: PreferredConditionsDisplayProps) {
-  const hasMonthlyRate = desiredRateMin !== null && desiredRateMax !== null;
-  const hasAnnualIncome = desiredAnnualIncomeMin !== null && desiredAnnualIncomeMax !== null;
-  const hasHourlyRate = desiredHourlyRateMin !== null && desiredHourlyRateMax !== null;
+  const hasHourlyRate = desiredHourlyRate !== null && minimumHourlyRate !== null;
+  const hasAnnualIncome = desiredAnnualIncome !== null;
 
   return (
     <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -72,27 +68,19 @@ export function PreferredConditionsDisplay({
           <dd className="mt-1.5 text-sm font-semibold text-foreground">{availableFrom}</dd>
         </div>
       )}
+      {hasHourlyRate && (
+        <div>
+          <dt className="text-xs text-muted-foreground">希望単価・最低単価</dt>
+          <dd className="mt-1.5 text-sm font-semibold text-foreground">
+            {minimumHourlyRate}円〜{desiredHourlyRate}円/時間
+          </dd>
+        </div>
+      )}
       {hasAnnualIncome && (
         <div>
           <dt className="text-xs text-muted-foreground">希望年収</dt>
           <dd className="mt-1.5 text-sm font-semibold text-foreground">
-            {desiredAnnualIncomeMin}万円〜{desiredAnnualIncomeMax}万円
-          </dd>
-        </div>
-      )}
-      {hasMonthlyRate && (
-        <div>
-          <dt className="text-xs text-muted-foreground">希望月額単価</dt>
-          <dd className="mt-1.5 text-sm font-semibold text-foreground">
-            {desiredRateMin}万円〜{desiredRateMax}万円
-          </dd>
-        </div>
-      )}
-      {hasHourlyRate && (
-        <div>
-          <dt className="text-xs text-muted-foreground">希望時間単価</dt>
-          <dd className="mt-1.5 text-sm font-semibold text-foreground">
-            {desiredHourlyRateMin}円〜{desiredHourlyRateMax}円
+            {desiredAnnualIncome}円/年
           </dd>
         </div>
       )}

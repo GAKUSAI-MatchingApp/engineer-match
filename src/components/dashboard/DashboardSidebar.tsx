@@ -89,13 +89,14 @@ interface DashboardSidebarProps {
   items: readonly DashboardNavItem[];
   activeHref: string;
   badges?: DashboardNavBadges;
+  homeHref: string;
 }
 
-export function DashboardSidebar({ items, activeHref, badges }: DashboardSidebarProps) {
+export function DashboardSidebar({ items, activeHref, badges, homeHref }: DashboardSidebarProps) {
   return (
     <aside className="hidden w-64 shrink-0 border-r border-border bg-surface lg:flex lg:flex-col">
       <div className="flex h-[72px] shrink-0 items-center border-b border-border px-6">
-        <Link href="/" className="flex flex-col leading-tight">
+        <Link href={homeHref} className="flex flex-col leading-tight">
           <span className="text-base font-bold tracking-tight text-foreground">
             {BRAND.name}
           </span>
