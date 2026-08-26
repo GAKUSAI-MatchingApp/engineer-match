@@ -33,6 +33,52 @@ export const ENGINEER_PRIVACY_SETTINGS = {
 } as const;
 
 // ============================================================
+// LINE通知連携 -- public.line_notification_links (077_line_notification_links.sql).
+// Notification-linking only -- LINE is never a Supabase Auth sign-in method
+// here (see src/app/auth/line/callback/route.ts's header comment).
+// ============================================================
+
+export const ENGINEER_LINE_SETTINGS = {
+  title: "LINE通知連携",
+  description:
+    "LINEアカウントと連携すると、新着メッセージや選考ステータスの更新などの通知をLINEでも受け取れます。",
+  unlinked: {
+    connectButtonLabel: "LINEと連携する",
+    note: "連携時に、LINEの氏名・プロフィール画像の取得と、通知メッセージ送信のための連携を行います。",
+  },
+  needsFriend: {
+    badgeLabel: "友だち追加が必要です",
+    message: "通知を受け取るには、LINE公式アカウントを友だち追加してください。",
+    addFriendButtonLabel: "公式アカウントを追加する",
+  },
+  active: {
+    badgeLabel: "連携済み",
+    connectedAsLabel: (name: string) => `${name}さんと連携中`,
+    toggleLabel: "LINE通知",
+    toggleDescription: "オンにすると、アプリ内通知をLINEでも受け取れます。",
+  },
+  unlinkButtonLabel: "連携を解除",
+  unlinkDialog: {
+    title: "LINE連携を解除しますか？",
+    description: "解除後はLINEで通知を受け取れなくなります。いつでも再連携できます。",
+    cancelLabel: "キャンセル",
+    confirmLabel: "解除する",
+    submittingLabel: "処理中…",
+    errorGeneric: "LINE連携の解除に失敗しました。しばらくしてから再度お試しください。",
+  },
+  toast: {
+    linkedActive: "LINE連携が完了しました。通知が届きます。",
+    linkedNeedsFriend: "LINE連携が完了しました。通知を受け取るには友だち追加してください。",
+    errorAlreadyLinked: "このLINEアカウントは既に別のアカウントで使用されています。",
+    errorStateMismatch: "連携処理を確認できませんでした。もう一度お試しください。",
+    errorDenied: "LINE連携がキャンセルされました。",
+    errorIneligible: "現在のアカウントではLINE連携を利用できません。",
+    errorGeneric: "LINE連携に失敗しました。しばらくしてから再度お試しください。",
+  },
+  errorToggleGeneric: "LINE通知設定の変更に失敗しました。しばらくしてから再度お試しください。",
+} as const;
+
+// ============================================================
 // セキュリティ設定 -- supabase.auth.updateUser({ password })
 // ============================================================
 

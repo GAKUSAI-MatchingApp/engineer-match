@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { EngineerPrivacySettings } from "@/components/engineer/settings/EngineerPrivacySettings";
+import { EngineerLineSettings } from "@/components/engineer/settings/EngineerLineSettings";
 import { EngineerSecuritySettings } from "@/components/engineer/settings/EngineerSecuritySettings";
 import { EngineerDangerZone } from "@/components/engineer/settings/EngineerDangerZone";
 import { ENGINEER_NAV } from "@/constants/dashboard";
@@ -9,21 +10,28 @@ import { ENGINEER_SETTINGS_PAGE } from "@/constants/engineer-settings";
 import { SIGN_IN_REQUIRED_LABELS } from "@/constants/applications";
 import { createClient } from "@/lib/supabase/server";
 import { getEngineerHeaderIdentity, getEngineerProfile } from "@/lib/engineer/profile";
+import { getEngineerLineLink } from "@/lib/engineer/line-link";
 
 export const metadata: Metadata = {
   title: `${ENGINEER_SETTINGS_PAGE.title} | ENGINEER MATCH`,
   description: ENGINEER_SETTINGS_PAGE.description,
 };
 
-export default async function EngineerSettingsPage() {
+export default async function EngineerSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lineLinked?: string; lineError?: string; active?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
+  const lineCallback = await searchParams;
 
-  const [profile, identity] = await Promise.all([
+  const [profile, identity, lineLink] = await Promise.all([
     authUser ? getEngineerProfile(supabase, authUser.id) : Promise.resolve(null),
     getEngineerHeaderIdentity(supabase, authUser),
+    authUser ? getEngineerLineLink(supabase, authUser.id) : Promise.resolve(null),
   ]);
 
   return (
@@ -47,6 +55,12 @@ export default async function EngineerSettingsPage() {
       {authUser ? (
         <>
           <EngineerPrivacySettings initialIsPublic={profile?.is_public ?? false} />
+          <EngineerLineSettings
+            initialLink={lineLink}
+            lineLinked={lineCallback.lineLinked}
+            lineError={lineCallback.lineError}
+            lineActive={lineCallback.active}
+          />
           <EngineerSecuritySettings />
           <EngineerDangerZone />
         </>
