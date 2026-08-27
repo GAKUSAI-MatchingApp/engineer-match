@@ -107,7 +107,7 @@ async function JobListSection({
       sort,
     }),
     listMyFavoriteOpportunityIds(supabase, authUser.id),
-    listSkillCatalog(supabase),
+    listSkillCatalog(supabase, authUser.id),
   ]);
 
   if (result.error) {

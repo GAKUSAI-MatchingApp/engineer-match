@@ -18,11 +18,28 @@ export interface SkillCatalogItem {
   subcategoryName: string;
 }
 
-/** Active technical skills only -- skills_select_active RLS (022_master_table_policies.sql). */
-export async function listSkillCatalog(supabase: SupabaseClient): Promise<SkillCatalogItem[]> {
+/**
+ * Active technical skills only -- skills_select_active RLS
+ * (022_master_table_policies.sql).
+ *
+ * Review #26: a self-registered skill (created_by IS NOT NULL,
+ * 076_engineer_skill_self_registration.sql) is excluded here unless it
+ * belongs to `userId` -- otherwise one Engineer's free-text submission
+ * (typos, junk, near-duplicates) would get suggested to every other
+ * Engineer's add-skill picker, polluting what's meant to be a curated
+ * catalog. The row itself is never hidden from its own creator, so review
+ * #18's "reuse what you already registered" behavior keeps working.
+ * Filtered client-side (not via RLS/query) since this is a UI-suggestion
+ * concern, not an access-control one -- every row here is still something
+ * `userId` is legitimately allowed to read.
+ */
+export async function listSkillCatalog(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<SkillCatalogItem[]> {
   const { data, error } = await supabase
     .from("skills")
-    .select("id, name, display_order, skill_subcategories(name)")
+    .select("id, name, display_order, created_by, skill_subcategories(name)")
     .order("display_order");
 
   if (error) {
@@ -30,15 +47,20 @@ export async function listSkillCatalog(supabase: SupabaseClient): Promise<SkillC
     return [];
   }
 
-  return ((data ?? []) as { id: string; name: string; skill_subcategories: unknown }[]).map(
-    (row) => ({
+  return ((data ?? []) as {
+    id: string;
+    name: string;
+    created_by: string | null;
+    skill_subcategories: unknown;
+  }[])
+    .filter((row) => row.created_by === null || row.created_by === userId)
+    .map((row) => ({
       id: row.id,
       name: row.name,
       subcategoryName:
         firstEmbedded(row.skill_subcategories as { name: string } | { name: string }[])?.name ??
         "",
-    }),
-  );
+    }));
 }
 
 /** ITSS level 1-7, per skill_levels (003_master_tables.sql). Never 1-5 -- Technical Skills are not Human/Business ratings. */
@@ -183,6 +205,18 @@ export const SKILL_NAME_MAX_LENGTH = 50;
 export const INVALID_SKILL_NAME_ERROR = "invalid_skill_name";
 
 /**
+ * Review #26: require at least one alphanumeric/kana/kanji character so a
+ * submitted name can't be pure symbols (e.g. "!!!", "###"). Deliberately
+ * narrow -- this is not a quality/profanity filter (low-effort-but-valid
+ * input like "あああ" is contained instead by scoping who a self-registered
+ * skill is suggested to, see listSkillCatalog()) -- and it must keep
+ * accepting real technical names built mostly from symbols/digits: "C++",
+ * "C#", ".NET", "Node.js" all contain a Latin letter and pass.
+ */
+const SKILL_NAME_MEANINGFUL_CHARACTER_PATTERN =
+  /[0-9A-Za-z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/;
+
+/**
  * The reserved skill_subcategories row an Engineer's self-registered skill
  * must land in -- seeded by 076_engineer_skill_self_registration.sql and the
  * only subcategory_id skills_engineer_insert_self_registered (same
@@ -191,6 +225,33 @@ export const INVALID_SKILL_NAME_ERROR = "invalid_skill_name";
  * literal.
  */
 const USER_SUBMITTED_SKILL_SUBCATEGORY_NAME = "その他（ユーザー登録）";
+
+/**
+ * Every active skill regardless of who registered it, for createUserSkill()'s
+ * own duplicate check only. Deliberately bypasses listSkillCatalog()'s
+ * review #26 created_by scoping: that scoping controls what gets *suggested*
+ * to a given viewer, but duplicate detection must still see every other
+ * Engineer's self-registered skill too, or two people submitting the same
+ * new name would each create their own near-duplicate row instead of
+ * converging on one (the exact behavior review #18 relies on).
+ */
+async function findExistingSkillIdByName(
+  supabase: SupabaseClient,
+  name: string,
+): Promise<string | null> {
+  const { data, error } = await supabase.from("skills").select("id, name");
+
+  if (error) {
+    console.error("[engineer-skills] failed to check for an existing skill match:", error);
+    return null;
+  }
+
+  const target = normalizeSkillName(name);
+  const match = ((data ?? []) as { id: string; name: string }[]).find(
+    (row) => normalizeSkillName(row.name) === target,
+  );
+  return match?.id ?? null;
+}
 
 async function getUserSubmittedSkillSubcategoryId(supabase: SupabaseClient): Promise<string | null> {
   const { data, error } = await supabase
@@ -231,19 +292,20 @@ export async function createUserSkill(
   if (!name || name.length > SKILL_NAME_MAX_LENGTH) {
     return { data: null, error: { message: INVALID_SKILL_NAME_ERROR } };
   }
+  if (!SKILL_NAME_MEANINGFUL_CHARACTER_PATTERN.test(name)) {
+    return { data: null, error: { message: INVALID_SKILL_NAME_ERROR } };
+  }
 
   const currentCount = await countUserSkills(supabase, userId);
   if (currentCount >= MAX_USER_SKILLS) {
     return { data: null, error: { message: SKILL_LIMIT_MAX_ERROR } };
   }
 
-  const catalog = await listSkillCatalog(supabase);
-  const target = normalizeSkillName(name);
-  const existing = catalog.find((item) => normalizeSkillName(item.name) === target);
+  const existingSkillId = await findExistingSkillIdByName(supabase, name);
 
   let skillId: string;
-  if (existing) {
-    skillId = existing.id;
+  if (existingSkillId) {
+    skillId = existingSkillId;
   } else {
     const subcategoryId = await getUserSubmittedSkillSubcategoryId(supabase);
     if (!subcategoryId) {

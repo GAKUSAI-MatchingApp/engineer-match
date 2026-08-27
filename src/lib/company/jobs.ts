@@ -361,11 +361,19 @@ export async function countPublishedOpportunities(
   return count ?? 0;
 }
 
-/** Active, non-deprecated skills for the required-skills picker. */
+/**
+ * Active, admin-curated skills for the required-skills picker.
+ *
+ * Review #26: excludes every Engineer self-registered skill (created_by IS
+ * NOT NULL, 076_engineer_skill_self_registration.sql), not just inactive
+ * ones -- a company defining a job's required skills should only see the
+ * curated catalog, not one Engineer's free-text submission (typos, junk,
+ * near-duplicates) that happens to already exist in public.skills.
+ */
 export async function listSkills(supabase: SupabaseClient): Promise<Skill[]> {
   const { data, error } = await supabase
     .from("skills")
-    .select("id, name")
+    .select("id, name, created_by")
     .eq("is_active", true)
     .order("display_order");
 
@@ -374,7 +382,9 @@ export async function listSkills(supabase: SupabaseClient): Promise<Skill[]> {
     return [];
   }
 
-  return (data ?? []) as Skill[];
+  return ((data ?? []) as (Skill & { created_by: string | null })[])
+    .filter((skill) => skill.created_by === null)
+    .map(({ id, name }) => ({ id, name }));
 }
 
 /**
