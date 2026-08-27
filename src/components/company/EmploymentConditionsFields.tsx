@@ -28,12 +28,8 @@ interface FieldProps {
   errors: Record<string, string>;
 }
 
-function RequiredBadge() {
-  return (
-    <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
-      必須
-    </span>
-  );
+function RequiredMark() {
+  return <span className="text-destructive">*</span>;
 }
 
 function FieldWrapper({
@@ -49,7 +45,7 @@ function FieldWrapper({
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>
         {meta.label}
-        {meta.required && <RequiredBadge />}
+        {meta.required && <RequiredMark />}
       </Label>
       {children}
       {error && (

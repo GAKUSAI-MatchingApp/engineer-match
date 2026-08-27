@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { ENGINEER_SECURITY_SETTINGS } from "@/constants/engineer-settings";
 import { createClient } from "@/lib/supabase/client";
 
@@ -78,6 +79,7 @@ export function EngineerSecuritySettings() {
         <div className="flex flex-col gap-2">
           <Label htmlFor={currentPasswordId}>
             {ENGINEER_SECURITY_SETTINGS.currentPasswordLabel}
+            <span className="text-destructive">*</span>
           </Label>
           <Input
             id={currentPasswordId}
@@ -91,7 +93,10 @@ export function EngineerSecuritySettings() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor={newPasswordId}>{ENGINEER_SECURITY_SETTINGS.newPasswordLabel}</Label>
+          <Label htmlFor={newPasswordId}>
+            {ENGINEER_SECURITY_SETTINGS.newPasswordLabel}
+            <span className="text-destructive">*</span>
+          </Label>
           <div className="relative">
             <Input
               id={newPasswordId}
@@ -121,6 +126,7 @@ export function EngineerSecuritySettings() {
         <div className="flex flex-col gap-2">
           <Label htmlFor={confirmPasswordId}>
             {ENGINEER_SECURITY_SETTINGS.confirmPasswordLabel}
+            <span className="text-destructive">*</span>
           </Label>
           <Input
             id={confirmPasswordId}
@@ -132,6 +138,8 @@ export function EngineerSecuritySettings() {
             required
           />
         </div>
+
+        <FormStatusMessage message={message?.text ?? null} status={message?.type ?? null} />
 
         <button
           type="submit"
@@ -145,15 +153,6 @@ export function EngineerSecuritySettings() {
             : ENGINEER_SECURITY_SETTINGS.submitLabel}
         </button>
       </form>
-
-      {message && (
-        <p
-          role={message.type === "error" ? "alert" : "status"}
-          className={`mt-4 text-sm font-medium ${message.type === "error" ? "text-red-600" : "text-green-700"}`}
-        >
-          {message.text}
-        </p>
-      )}
     </SectionCard>
   );
 }

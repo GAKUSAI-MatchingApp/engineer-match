@@ -29,6 +29,7 @@ import {
   BUSINESS_SKILL_EDIT_NOTE,
   HUMAN_SKILL_EDIT_NOTE,
   PROFILE_EDIT_META,
+  PROFILE_EDIT_SAVE_NOTICES,
   PROFILE_EDIT_SECTIONS,
   SKILLS_SECTION,
 } from "@/constants/engineer-profile";
@@ -114,13 +115,21 @@ export default async function EngineerProfileEditPage() {
       </div>
 
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.basicInfo} icon={Users}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.basicInfo}
+          description={PROFILE_EDIT_SAVE_NOTICES.independentSection}
+          icon={Users}
+        >
           {authUser ? (
             <BasicProfileForm userId={authUser.id} initialName={name} email={email} profile={profile} />
           ) : null}
         </ProfileSection>
 
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.personalInfo} icon={User}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.personalInfo}
+          description={PROFILE_EDIT_SAVE_NOTICES.independentSection}
+          icon={User}
+        >
           {authUser ? (
             <PersonalInfoForm
               userId={authUser.id}
@@ -130,7 +139,11 @@ export default async function EngineerProfileEditPage() {
           ) : null}
         </ProfileSection>
 
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.skills} icon={Code2}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.skills}
+          description={PROFILE_EDIT_SAVE_NOTICES.autoSave}
+          icon={Code2}
+        >
           <div className="flex flex-col gap-8">
             {authUser && (
               <TechnicalSkillsManager
@@ -177,7 +190,11 @@ export default async function EngineerProfileEditPage() {
           </div>
         </ProfileSection>
 
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.qualifications} icon={Award}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.qualifications}
+          description={PROFILE_EDIT_SAVE_NOTICES.autoSave}
+          icon={Award}
+        >
           {authUser && (
             <QualificationsManager
               userId={authUser.id}
@@ -187,23 +204,43 @@ export default async function EngineerProfileEditPage() {
           )}
         </ProfileSection>
 
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.workExperience} icon={BriefcaseBusiness}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.workExperience}
+          description={PROFILE_EDIT_SAVE_NOTICES.autoSave}
+          icon={BriefcaseBusiness}
+        >
           {authUser && <WorkExperienceManager userId={authUser.id} initialItems={workExperiences} />}
         </ProfileSection>
 
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.education} icon={GraduationCap}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.education}
+          description={PROFILE_EDIT_SAVE_NOTICES.autoSave}
+          icon={GraduationCap}
+        >
           {authUser && <EducationManager userId={authUser.id} initialItems={educations} />}
         </ProfileSection>
 
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.portfolio} icon={FolderGit2}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.portfolio}
+          description={PROFILE_EDIT_SAVE_NOTICES.autoSave}
+          icon={FolderGit2}
+        >
           {authUser && <PortfolioManager userId={authUser.id} initialItems={portfolioProjects} />}
         </ProfileSection>
 
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.languages} icon={LanguagesIcon}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.languages}
+          description={PROFILE_EDIT_SAVE_NOTICES.autoSave}
+          icon={LanguagesIcon}
+        >
           {authUser && <LanguagesManager userId={authUser.id} initialItems={languages} />}
         </ProfileSection>
 
-        <ProfileSection title={PROFILE_EDIT_SECTIONS.preferredConditions} icon={MapPin}>
+        <ProfileSection
+          title={PROFILE_EDIT_SECTIONS.preferredConditions}
+          description={PROFILE_EDIT_SAVE_NOTICES.autoSave}
+          icon={MapPin}
+        >
           {authUser && (
             <PreferredConditionsManager
               userId={authUser.id}

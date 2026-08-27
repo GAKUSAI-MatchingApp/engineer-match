@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { AdminDetailSection } from "@/components/admin/shared/AdminDetailSection";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import {
   ADMIN_REPORT_STATUS_FORM_LABELS as LABELS,
   ADMIN_REPORT_STATUS_LABEL,
@@ -80,17 +81,7 @@ export function AdminReportStatusForm({ report, onUpdated }: AdminReportStatusFo
           />
         </div>
 
-        {message && (
-          <p
-            className={
-              message.tone === "success"
-                ? "rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
-                : "rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700"
-            }
-          >
-            {message.text}
-          </p>
-        )}
+        <FormStatusMessage message={message?.text ?? null} status={message?.tone ?? null} />
 
         <button
           type="submit"

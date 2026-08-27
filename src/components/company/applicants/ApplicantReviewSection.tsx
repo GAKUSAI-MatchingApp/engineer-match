@@ -6,6 +6,7 @@ import { useApplicantStatusContext } from "@/components/company/applicants/Appli
 import { StarRatingDisplay } from "@/components/reviews/StarRatingDisplay";
 import { StarRatingInput } from "@/components/reviews/StarRatingInput";
 import { Textarea } from "@/components/ui/textarea";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { COMPANY_REVIEW_ACTION_LABELS, REVIEW_SECTION_LABELS } from "@/constants/reviews";
 import { createEngineerReview, updateEngineerReview, type CompanyReviewRecord } from "@/lib/company/reviews";
 import { createClient } from "@/lib/supabase/client";
@@ -129,11 +130,17 @@ export function ApplicantReviewSection({
         {isEditing && (
           <div className="flex flex-col gap-4">
             <div>
-              <p className="mb-2 text-sm font-medium text-foreground">{COMPANY_REVIEW_ACTION_LABELS.ratingLabel}</p>
+              <p className="mb-2 text-sm font-medium text-foreground">
+                {COMPANY_REVIEW_ACTION_LABELS.ratingLabel}
+                <span className="text-destructive">*</span>
+              </p>
               <StarRatingInput value={rating} onChange={setRating} disabled={isSubmitting} />
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium text-foreground">{COMPANY_REVIEW_ACTION_LABELS.commentLabel}</p>
+              <p className="mb-2 text-sm font-medium text-foreground">
+                {COMPANY_REVIEW_ACTION_LABELS.commentLabel}
+                <span className="text-destructive">*</span>
+              </p>
               <Textarea
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
@@ -141,11 +148,7 @@ export function ApplicantReviewSection({
                 disabled={isSubmitting}
               />
             </div>
-            {error && (
-              <p className="text-sm font-medium text-red-600" role="alert">
-                {error}
-              </p>
-            )}
+            <FormStatusMessage message={error} status={error ? "error" : null} />
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -171,7 +174,9 @@ export function ApplicantReviewSection({
           </div>
         )}
 
-        {success && !isEditing && <p className="mt-3 text-sm font-medium text-green-700">{success}</p>}
+        {success && !isEditing && (
+          <FormStatusMessage message={success} status="success" className="mt-3" />
+        )}
       </div>
     </section>
   );

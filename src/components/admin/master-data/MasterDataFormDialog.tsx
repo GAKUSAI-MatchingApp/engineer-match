@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { MASTER_DATA_FORM_LABELS as LABELS, type MasterDataTabKey } from "@/constants/admin-master-data";
 import type { AdminMasterDataOption } from "@/lib/admin/master-data";
 
@@ -104,6 +105,7 @@ export function MasterDataFormDialog({
           <div className="flex flex-col gap-2">
             <label htmlFor="master-data-name" className="text-sm font-medium text-foreground">
               {LABELS.nameLabel}
+              <span className="text-destructive">*</span>
             </label>
             <input
               id="master-data-name"
@@ -197,6 +199,7 @@ export function MasterDataFormDialog({
               <div className="flex flex-col gap-2">
                 <label htmlFor="master-data-organization" className="text-sm font-medium text-foreground">
                   {LABELS.organizationLabel}
+                  <span className="text-destructive">*</span>
                 </label>
                 <input
                   id="master-data-organization"
@@ -224,9 +227,7 @@ export function MasterDataFormDialog({
             </>
           )}
 
-          {errorMessage && (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
-          )}
+          <FormStatusMessage message={errorMessage} status={errorMessage ? "error" : null} />
 
           <div className="flex justify-end gap-3">
             <button

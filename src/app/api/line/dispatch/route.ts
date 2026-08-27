@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
   const { data: notification, error: notificationError } = await admin
     .from("notifications")
-    .select("id, user_id, title, body")
+    .select("id, user_id, type, title, body")
     .eq("id", notificationId)
     .maybeSingle();
 
@@ -88,8 +88,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  const lineText =
+    notification.type === "new_message"
+      ? `💬 ${notification.body}`
+      : `${notification.title}\n${notification.body}`;
+
   try {
-    await pushLineMessage(link.line_user_id, `${notification.title}\n${notification.body}`);
+    await pushLineMessage(link.line_user_id, lineText);
     await admin
       .from("line_dispatch_log")
       .update({ status: "sent" })

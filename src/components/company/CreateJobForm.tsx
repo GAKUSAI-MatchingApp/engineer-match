@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { createClient } from "@/lib/supabase/client";
 import {
   createCompanyOpportunity,
@@ -312,7 +313,10 @@ export function JobFormFields({
       <ProfileSection icon={Briefcase} title={JOB_FORM_SECTION_LABELS.basicInfo}>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor={`${idPrefix}-title`}>{JOB_FORM_FIELDS.title.label}</Label>
+            <Label htmlFor={`${idPrefix}-title`}>
+              {JOB_FORM_FIELDS.title.label}
+              <span className="text-destructive">*</span>
+            </Label>
             <Input
               id={`${idPrefix}-title`}
               value={state.title}
@@ -326,6 +330,7 @@ export function JobFormFields({
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor={`${idPrefix}-description`}>
               {JOB_FORM_FIELDS.description.label}
+              <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id={`${idPrefix}-description`}
@@ -404,6 +409,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-work-style`}>
                 {JOB_FORM_FIELDS.workStyle.label}
+                <span className="text-destructive">*</span>
               </Label>
               <select
                 id={`${idPrefix}-work-style`}
@@ -422,6 +428,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-salary-min`}>
                 {JOB_FORM_FIELDS.salaryMin.label}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id={`${idPrefix}-salary-min`}
@@ -436,6 +443,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-salary-max`}>
                 {JOB_FORM_FIELDS.salaryMax.label}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id={`${idPrefix}-salary-max`}
@@ -455,7 +463,10 @@ export function JobFormFields({
         <ProfileSection icon={ClipboardList} title={JOB_FORM_SECTION_LABELS.projectDetails}>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor={`${idPrefix}-deadline`}>{JOB_FORM_FIELDS.deadline.label}</Label>
+              <Label htmlFor={`${idPrefix}-deadline`}>
+                {JOB_FORM_FIELDS.deadline.label}
+                <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id={`${idPrefix}-deadline`}
                 type="date"
@@ -465,7 +476,10 @@ export function JobFormFields({
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor={`${idPrefix}-budget`}>{JOB_FORM_FIELDS.budget.label}</Label>
+              <Label htmlFor={`${idPrefix}-budget`}>
+                {JOB_FORM_FIELDS.budget.label}
+                <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id={`${idPrefix}-budget`}
                 type="number"
@@ -478,6 +492,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-headcount`}>
                 {JOB_FORM_FIELDS.headcount.label}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id={`${idPrefix}-headcount`}
@@ -512,6 +527,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-period-start`}>
                 {JOB_FORM_FIELDS.periodStart.label}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id={`${idPrefix}-period-start`}
@@ -523,6 +539,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-period-end`}>
                 {JOB_FORM_FIELDS.periodEnd.label}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id={`${idPrefix}-period-end`}
@@ -534,6 +551,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-time-start`}>
                 {JOB_FORM_FIELDS.timeStart.label}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id={`${idPrefix}-time-start`}
@@ -543,7 +561,10 @@ export function JobFormFields({
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor={`${idPrefix}-time-end`}>{JOB_FORM_FIELDS.timeEnd.label}</Label>
+              <Label htmlFor={`${idPrefix}-time-end`}>
+                {JOB_FORM_FIELDS.timeEnd.label}
+                <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id={`${idPrefix}-time-end`}
                 type="time"
@@ -554,6 +575,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-hourly-rate`}>
                 {JOB_FORM_FIELDS.hourlyRate.label}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id={`${idPrefix}-hourly-rate`}
@@ -567,6 +589,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-hourly-headcount`}>
                 {JOB_FORM_FIELDS.headcount.label}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id={`${idPrefix}-hourly-headcount`}
@@ -594,6 +617,7 @@ export function JobFormFields({
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${idPrefix}-hourly-work-style`}>
                 {JOB_FORM_FIELDS.workStyle.label}
+                <span className="text-destructive">*</span>
               </Label>
               <select
                 id={`${idPrefix}-hourly-work-style`}
@@ -652,21 +676,7 @@ export function JobFormActions({
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-      {formMessage && (
-        <div
-          ref={errorRef}
-          tabIndex={-1}
-          role="alert"
-          aria-live="assertive"
-          className={
-            formStatus === "success"
-              ? "rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700 focus:outline-none"
-              : "rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 focus:outline-none"
-          }
-        >
-          {formMessage}
-        </div>
-      )}
+      <FormStatusMessage ref={errorRef} message={formMessage} status={formStatus} />
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
@@ -701,6 +711,10 @@ export function CreateJobForm({ skills }: CreateJobFormProps) {
 
   function updateState(patch: Partial<JobFormState>) {
     setState((prev) => ({ ...prev, ...patch }));
+    if (formStatus === "error") {
+      setFormMessage(null);
+      setFormStatus(null);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

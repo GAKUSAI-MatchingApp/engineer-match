@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { Eye, MapPin, Pencil } from "lucide-react";
 import { PROFILE_HEADER_META, VISIBILITY_STATUS_LABEL } from "@/constants/engineer-profile";
@@ -18,7 +15,6 @@ export function ProfileHeader({
   yearsOfExperience,
   isPublic,
 }: ProfileHeaderProps) {
-  const [demoMessage, setDemoMessage] = useState<string | null>(null);
   const avatarInitial = name.trim().charAt(0) || "?";
 
   return (
@@ -60,14 +56,13 @@ export function ProfileHeader({
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setDemoMessage(PROFILE_HEADER_META.previewDemoMessage)}
+          <Link
+            href={PROFILE_HEADER_META.previewHref}
             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <Eye className="h-4 w-4" aria-hidden="true" />
             {PROFILE_HEADER_META.previewLabel}
-          </button>
+          </Link>
           <Link
             href={PROFILE_HEADER_META.editHref}
             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-indigo-700 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -77,15 +72,6 @@ export function ProfileHeader({
           </Link>
         </div>
       </div>
-
-      {demoMessage && (
-        <p
-          role="status"
-          className="mt-4 rounded-xl bg-muted px-4 py-2.5 text-xs text-muted-foreground"
-        >
-          {demoMessage}
-        </p>
-      )}
     </div>
   );
 }
