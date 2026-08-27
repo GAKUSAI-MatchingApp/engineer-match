@@ -54,6 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${notoSansJP.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
