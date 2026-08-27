@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
   const lineText =
     notification.type === "new_message"
-      ? `💬 ${notification.body}`
+      ? notification.body
       : `${notification.title}\n${notification.body}`;
 
   try {
