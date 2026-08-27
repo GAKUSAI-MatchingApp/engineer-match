@@ -6,6 +6,7 @@ import { SectionCard } from "@/components/dashboard/SectionCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import {
   COMPANY_SECURITY_SETTINGS,
   COMPANY_SETTINGS_UNAVAILABLE_NOTE,
@@ -83,6 +84,7 @@ export function CompanySecuritySettings() {
         <div className="flex flex-col gap-2">
           <Label htmlFor={currentPasswordId}>
             {COMPANY_SECURITY_SETTINGS.currentPasswordLabel}
+            <span className="text-destructive">*</span>
           </Label>
           <Input
             id={currentPasswordId}
@@ -96,7 +98,10 @@ export function CompanySecuritySettings() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor={newPasswordId}>{COMPANY_SECURITY_SETTINGS.newPasswordLabel}</Label>
+          <Label htmlFor={newPasswordId}>
+            {COMPANY_SECURITY_SETTINGS.newPasswordLabel}
+            <span className="text-destructive">*</span>
+          </Label>
           <div className="relative">
             <Input
               id={newPasswordId}
@@ -124,7 +129,10 @@ export function CompanySecuritySettings() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor={confirmPasswordId}>{COMPANY_SECURITY_SETTINGS.confirmPasswordLabel}</Label>
+          <Label htmlFor={confirmPasswordId}>
+            {COMPANY_SECURITY_SETTINGS.confirmPasswordLabel}
+            <span className="text-destructive">*</span>
+          </Label>
           <Input
             id={confirmPasswordId}
             type={visible ? "text" : "password"}
@@ -136,6 +144,8 @@ export function CompanySecuritySettings() {
           />
         </div>
 
+        <FormStatusMessage message={message?.text ?? null} status={message?.type ?? null} />
+
         <button
           type="submit"
           disabled={
@@ -145,15 +155,6 @@ export function CompanySecuritySettings() {
         >
           {isSubmitting ? COMPANY_SECURITY_SETTINGS.submittingLabel : COMPANY_SECURITY_SETTINGS.submitLabel}
         </button>
-
-        {message && (
-          <p
-            role={message.type === "error" ? "alert" : "status"}
-            className={`text-sm font-medium ${message.type === "error" ? "text-red-600" : "text-green-700"}`}
-          >
-            {message.text}
-          </p>
-        )}
       </form>
 
       <div className="flex flex-col divide-y divide-border">

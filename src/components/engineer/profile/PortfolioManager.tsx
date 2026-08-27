@@ -5,6 +5,7 @@ import { Loader2, Plus, Trash2, Pencil, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { createClient } from "@/lib/supabase/client";
 import {
   addPortfolioProject,
@@ -166,7 +167,10 @@ export function PortfolioManager({ userId, initialItems }: PortfolioManagerProps
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`${idPrefix}-title`}>{PORTFOLIO_FORM_FIELDS.title}</Label>
+            <Label htmlFor={`${idPrefix}-title`}>
+              {PORTFOLIO_FORM_FIELDS.title}
+              <span className="text-destructive">*</span>
+            </Label>
             <Input
               id={`${idPrefix}-title`}
               type="text"
@@ -359,7 +363,7 @@ export function PortfolioManager({ userId, initialItems }: PortfolioManagerProps
         </button>
       )}
 
-      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+      <FormStatusMessage message={error} status={error ? "error" : null} />
     </div>
   );
 }

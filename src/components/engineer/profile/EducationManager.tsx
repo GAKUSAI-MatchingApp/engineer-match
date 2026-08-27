@@ -5,6 +5,7 @@ import { Loader2, Plus, Trash2, Pencil, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { createClient } from "@/lib/supabase/client";
 import {
   addEducation,
@@ -145,7 +146,10 @@ export function EducationManager({ userId, initialItems }: EducationManagerProps
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`${idPrefix}-school`}>{EDUCATION_FORM_FIELDS.schoolName}</Label>
+            <Label htmlFor={`${idPrefix}-school`}>
+              {EDUCATION_FORM_FIELDS.schoolName}
+              <span className="text-destructive">*</span>
+            </Label>
             <Input
               id={`${idPrefix}-school`}
               type="text"
@@ -296,7 +300,7 @@ export function EducationManager({ userId, initialItems }: EducationManagerProps
         </button>
       )}
 
-      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+      <FormStatusMessage message={error} status={error ? "error" : null} />
     </div>
   );
 }

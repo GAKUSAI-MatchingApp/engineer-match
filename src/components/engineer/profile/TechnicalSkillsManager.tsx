@@ -5,6 +5,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { ItssBadge } from "@/components/engineer/profile/ItssBadge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import {
   INVALID_SKILL_NAME_ERROR,
   ITSS_SKILL_LEVELS,
@@ -275,7 +276,10 @@ export function TechnicalSkillsManager({
       {!atMaxSkills ? (
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-border p-3">
           <div className="relative flex min-w-40 flex-1 flex-col gap-1.5">
-            <Label htmlFor="new-skill-name">{TECHNICAL_SKILL_EDITOR_LABELS.skillLabel}</Label>
+            <Label htmlFor="new-skill-name">
+              {TECHNICAL_SKILL_EDITOR_LABELS.skillLabel}
+              <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="new-skill-name"
               type="text"
@@ -389,7 +393,7 @@ export function TechnicalSkillsManager({
         )
       )}
 
-      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+      <FormStatusMessage message={error} status={error ? "error" : null} />
     </fieldset>
   );
 }

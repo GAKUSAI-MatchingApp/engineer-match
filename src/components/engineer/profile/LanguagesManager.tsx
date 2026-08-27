@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { createClient } from "@/lib/supabase/client";
 import {
   addLanguage,
@@ -141,7 +142,10 @@ export function LanguagesManager({ userId, initialItems }: LanguagesManagerProps
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-border p-3">
         <div className="min-w-40 flex-1 flex-col gap-1.5">
-          <Label htmlFor="new-lang-name">{LANGUAGE_EDITOR_LABELS.languageLabel}</Label>
+          <Label htmlFor="new-lang-name">
+            {LANGUAGE_EDITOR_LABELS.languageLabel}
+            <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="new-lang-name"
             type="text"
@@ -187,7 +191,7 @@ export function LanguagesManager({ userId, initialItems }: LanguagesManagerProps
         </button>
       </div>
 
-      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+      <FormStatusMessage message={error} status={error ? "error" : null} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { ExternalLink, Loader2, MapPin, SquarePen, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { createClient } from "@/lib/supabase/client";
 import {
   saveCompanyProfile,
@@ -286,6 +287,7 @@ export function CompanyProfileHeader({ profile, industryCategories }: CompanyPro
             <div className="flex flex-col gap-2">
               <Label htmlFor="profile-company-name">
                 {COMPANY_PROFILE_FORM.companyNameLabel}
+                <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="profile-company-name"
@@ -419,21 +421,7 @@ export function CompanyProfileHeader({ profile, industryCategories }: CompanyPro
             />
           </div>
 
-          {formMessage && (
-            <div
-              ref={errorRef}
-              tabIndex={-1}
-              role="alert"
-              aria-live="assertive"
-              className={
-                formStatus === "success"
-                  ? "rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700 focus:outline-none"
-                  : "rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 focus:outline-none"
-              }
-            >
-              {formMessage}
-            </div>
-          )}
+          <FormStatusMessage ref={errorRef} message={formMessage} status={formStatus} />
 
           <div className="flex flex-wrap gap-3">
             <button

@@ -7,6 +7,7 @@ import { Loader2, TriangleAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { COMPANY_DANGER_ZONE } from "@/constants/company-settings";
 import { createClient } from "@/lib/supabase/client";
 import { countPublishedOpportunities } from "@/lib/company/jobs";
@@ -212,7 +213,10 @@ export function CompanyDangerZone() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor={passwordId}>{DIALOG.passwordLabel}</Label>
+                  <Label htmlFor={passwordId}>
+                    {DIALOG.passwordLabel}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id={passwordId}
                     type="password"
@@ -226,11 +230,7 @@ export function CompanyDangerZone() {
                   />
                 </div>
 
-                {error && (
-                  <p role="alert" className="text-sm font-medium text-red-600">
-                    {error}
-                  </p>
-                )}
+                <FormStatusMessage message={error} status={error ? "error" : null} />
 
                 <div className="flex justify-end gap-3">
                   <button

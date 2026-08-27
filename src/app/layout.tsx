@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono, Noto_Sans_JP } from "next/font/google";
+import { RouteTransitionIndicator } from "@/components/navigation/RouteTransitionIndicator";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -55,6 +57,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${notoSansJP.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
+        <Suspense fallback={null}>
+          <RouteTransitionIndicator />
+        </Suspense>
         {children}
       </body>
     </html>

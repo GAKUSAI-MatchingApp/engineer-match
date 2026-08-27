@@ -29,6 +29,10 @@ export function EditJobForm({ detail, skills }: EditJobFormProps) {
 
   function updateState(patch: Partial<JobFormState>) {
     setState((prev) => ({ ...prev, ...patch }));
+    if (formStatus === "error") {
+      setFormMessage(null);
+      setFormStatus(null);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

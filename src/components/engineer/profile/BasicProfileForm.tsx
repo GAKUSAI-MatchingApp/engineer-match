@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { FormStatusMessage } from "@/components/ui/FormStatusMessage";
 import { createClient } from "@/lib/supabase/client";
 import { saveEngineerProfile, updateUserName, type EngineerProfile } from "@/lib/engineer/profile";
 import {
@@ -220,7 +221,10 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-name">{BASIC_INFO_FORM_FIELDS.name.label}</Label>
+          <Label htmlFor="basic-name">
+            {BASIC_INFO_FORM_FIELDS.name.label}
+            <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="basic-name"
             type="text"
@@ -447,19 +451,7 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
         </div>
       </div>
 
-      {message && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className={
-            status === "success"
-              ? "rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700"
-              : "rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
-          }
-        >
-          {message}
-        </div>
-      )}
+      <FormStatusMessage message={message} status={status} />
 
       <div className="flex flex-wrap items-center gap-3">
         <button

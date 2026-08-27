@@ -32,7 +32,24 @@ export const PROFILE_HEADER_META = {
   editLabel: "プロフィールを編集",
   editHref: "/engineer/profile/edit",
   previewLabel: "公開プロフィールを確認",
-  previewDemoMessage: "この機能はデモ版のため準備中です（公開プレビューは今後実装予定）。",
+  previewHref: "/engineer/profile/preview",
+} as const;
+
+// ============================================================
+// Public profile preview (RD #21) -- reuses the same display-only
+// components/query as the company-side engineer detail page
+// (src/app/company/engineers/[id]/page.tsx), just called with the viewer's
+// own id. See src/app/engineer/profile/preview/page.tsx.
+// ============================================================
+
+export const PROFILE_PREVIEW_META = {
+  pageTitle: "公開プロフィールのプレビュー",
+  backLabel: "プロフィールに戻る",
+  backHref: "/engineer/profile",
+  privateNotice:
+    "現在プロフィールは非公開です。この画面では公開時の表示を確認できますが、現在は企業から検索・閲覧できません。",
+  notFoundMessage:
+    "プレビューできるプロフィール情報がまだ登録されていません。プロフィールを編集して情報を入力してください。",
 } as const;
 
 export const VISIBILITY_STATUS_LABEL = {
@@ -124,7 +141,7 @@ export const GENDER_OPTIONS = [
 ] as const;
 
 export const PERSONAL_INFO_FORM_META = {
-  saveLabel: "保存する",
+  saveLabel: "個人情報を保存",
   savingLabel: "保存中…",
   savedMessage: "個人情報を更新しました。",
   saveFailedMessage: "個人情報の保存に失敗しました。しばらくしてから再度お試しください。",
@@ -244,7 +261,7 @@ export const WORK_EXPERIENCE_EDITOR_LABELS = {
   addLabel: "職務経歴を追加",
   removeLabel: "この職務経歴を削除",
   emptyMessage: "職務経歴が未登録です。",
-  saveLabel: "保存",
+  saveLabel: "この変更を保存",
   cancelLabel: "キャンセル",
   addError: "職務経歴の追加に失敗しました。しばらくしてから再度お試しください。",
   updateError: "職務経歴の更新に失敗しました。しばらくしてから再度お試しください。",
@@ -271,7 +288,7 @@ export const EDUCATION_EDITOR_LABELS = {
   addLabel: "学歴を追加",
   removeLabel: "この学歴を削除",
   emptyMessage: "学歴が未登録です。",
-  saveLabel: "保存",
+  saveLabel: "この変更を保存",
   cancelLabel: "キャンセル",
   addError: "学歴の追加に失敗しました。しばらくしてから再度お試しください。",
   updateError: "学歴の更新に失敗しました。しばらくしてから再度お試しください。",
@@ -351,7 +368,7 @@ export const PORTFOLIO_EDITOR_LABELS = {
   addLabel: "プロジェクトを追加",
   removeLabel: "このプロジェクトを削除",
   emptyMessage: "ポートフォリオが未登録です。",
-  saveLabel: "保存",
+  saveLabel: "この変更を保存",
   cancelLabel: "キャンセル",
   addError: "プロジェクトの追加に失敗しました。しばらくしてから再度お試しください。",
   updateError: "プロジェクトの更新に失敗しました。しばらくしてから再度お試しください。",
@@ -423,6 +440,19 @@ export const PROFILE_EDIT_SECTIONS = {
   visibility: "公開設定",
 } as const;
 
+/**
+ * RD #23: this edit page has no page-wide "save all" -- 基本情報/個人情報 are
+ * each their own independent form-submit, while every other section below
+ * persists each add/edit/remove immediately. These two notice strings (shown
+ * via ProfileSection's `description` prop, right under each section's own
+ * heading) exist only to make that already-true save behavior legible in the
+ * UI -- they change no save/validation logic.
+ */
+export const PROFILE_EDIT_SAVE_NOTICES = {
+  independentSection: "このセクションの変更内容のみ保存されます。",
+  autoSave: "追加・変更した内容は自動的に保存されます。",
+} as const;
+
 export const BASIC_INFO_FORM_FIELDS = {
   name: { label: "氏名", placeholder: "山田 太郎" },
   jobTitle: { label: "職種", placeholder: "フルスタックエンジニア" },
@@ -450,7 +480,7 @@ export const WORK_STYLE_OPTIONS = [
 export const VISIBILITY_FORM_LABEL = "プロフィールの公開状態";
 
 export const BASIC_INFO_FORM_META = {
-  saveLabel: "保存する",
+  saveLabel: "基本情報を保存",
   savingLabel: "保存中…",
   savedMessage: "プロフィールを更新しました。",
   saveFailedMessage: "プロフィールの保存に失敗しました。しばらくしてから再度お試しください。",
