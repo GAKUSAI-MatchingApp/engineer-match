@@ -185,7 +185,7 @@ export const TECHNICAL_SKILL_EDITOR_LABELS = {
   limitMaxError: "テクニカルスキルは20件まで登録できます。",
   limitMinError: "テクニカルスキルは1件以上登録する必要があるため、削除できません。",
   alreadyAddedError: "このスキルは既に登録済みです。",
-  invalidSkillNameError: "スキル名を1〜50文字で入力してください。",
+  invalidSkillNameError: "スキル名は1〜50文字で、英数字・かな・漢字のいずれかを含めて入力してください。",
   registerNewPrefix: "「",
   registerNewSuffix: "」を新規登録",
 } as const;

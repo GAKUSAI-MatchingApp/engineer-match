@@ -79,7 +79,7 @@ export default async function EngineerProfileEditPage() {
         getPersonalInfo(supabase, authUser.id),
         getContactDetails(supabase, authUser.id),
         listUserSkills(supabase, authUser.id),
-        listSkillCatalog(supabase),
+        listSkillCatalog(supabase, authUser.id),
         listUserQualifications(supabase, authUser.id),
         listQualificationCatalog(supabase),
         listPreferredContractTypes(supabase, authUser.id),
