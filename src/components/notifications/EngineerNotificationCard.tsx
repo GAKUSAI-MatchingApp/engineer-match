@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Award, FileText, Info, MessageSquare } from "lucide-react";
+import { Award, FileText, Info, Mail, MessageSquare } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   ENGINEER_NOTIFICATION_ACTIONS_LABELS,
@@ -16,19 +16,28 @@ const ICON_MAP: Record<string, LucideIcon> = {
   application_status_changed: Award,
   new_message: MessageSquare,
   opportunity_closed: Info,
+  scout_received: Mail,
 };
 
 /** Real-data link target for a notification, based on its related entity. */
 function linkFor(notification: NotificationItem): string {
   if (notification.relatedEntityType === "chat_room" && notification.relatedEntityId) {
-    return notification.relatedApplicationId
-      ? `/messages/${notification.relatedApplicationId}`
-      : "/messages";
+    if (notification.relatedApplicationId) return `/messages/${notification.relatedApplicationId}`;
+    // Scout-originated room (application_id IS NULL, 082_scouts.sql) --
+    // /messages excludes these, so route to the dedicated scout chat page
+    // instead of a dead-end list.
+    if (notification.relatedScoutId) return `/messages/scout/${notification.relatedScoutId}`;
+    return "/messages";
   }
   if (notification.relatedEntityType === "engineer_review") {
     // Reviews received by the engineer are shown on their own profile
     // (EngineerReviewsSection), not on the applications list.
     return "/engineer/profile";
+  }
+  if (notification.relatedEntityType === "scout" && notification.relatedEntityId) {
+    // related_entity_id is the scout's own id (no extra resolution needed,
+    // unlike chat_room -> applicationId above) -- anchor straight to its card.
+    return `/engineer/scouts#scout-${notification.relatedEntityId}`;
   }
   return "/engineer/applications";
 }

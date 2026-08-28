@@ -129,6 +129,17 @@ export default async function CompanyJobDetailPage({ params }: CompanyJobDetailP
                 </p>
               )}
             </div>
+
+            {opportunity.custom_required_skills_note && (
+              <div className="mt-6 border-t border-border pt-6">
+                <h4 className="text-sm font-semibold text-foreground">
+                  {JOB_DETAIL_META.customRequiredSkillsNoteTitle}
+                </h4>
+                <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                  {opportunity.custom_required_skills_note}
+                </p>
+              </div>
+            )}
           </section>
 
           {employment && (

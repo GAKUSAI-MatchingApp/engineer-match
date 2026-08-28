@@ -75,7 +75,14 @@ export async function listMyConversations(
   const { data: rooms, error } = await supabase
     .from("chat_rooms")
     .select("id, application_id, company_user_id")
-    .eq("engineer_id", userId);
+    .eq("engineer_id", userId)
+    // Review #24 (082_scouts.sql) made application_id nullable to allow
+    // scout-originated rooms (scout_id set instead). This list/page is
+    // exclusively the application-based flow -- scout conversations live at
+    // /messages/scout/[scoutId] (ScoutChatThread) instead, so they are
+    // excluded here rather than showing up with a null applicationId (which
+    // downstream code below assumes is always a real application row).
+    .not("application_id", "is", null);
 
   if (error) {
     console.error("[engineer-chat] failed to list chat rooms:", error);

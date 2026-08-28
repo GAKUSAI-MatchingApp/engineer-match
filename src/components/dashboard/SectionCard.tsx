@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 interface SectionCardProps {
+  id?: string;
   title: string;
   description?: string;
   action?: { label: string; href: string };
@@ -10,13 +11,14 @@ interface SectionCardProps {
 }
 
 export function SectionCard({
+  id,
   title,
   description,
   action,
   children,
 }: SectionCardProps) {
   return (
-    <section className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+    <section id={id} className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8 scroll-mt-24">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>

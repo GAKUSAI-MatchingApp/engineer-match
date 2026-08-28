@@ -13,6 +13,7 @@ export const ENGINEER_NAV = [
   { href: "/engineer/profile", label: "プロフィール", icon: "userRound" },
   { href: "/engineer/jobs", label: "求人・案件を探す", icon: "search" },
   { href: "/engineer/applications", label: "応募管理", icon: "clipboardList" },
+  { href: "/engineer/scouts", label: "スカウト", icon: "mail" },
   { href: "/messages", label: "メッセージ", icon: "messageSquare" },
   { href: "/notifications", label: "通知", icon: "bell" },
   { href: "/engineer/favorites", label: "お気に入り", icon: "heart" },

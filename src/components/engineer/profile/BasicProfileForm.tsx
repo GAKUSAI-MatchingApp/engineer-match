@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -236,14 +237,19 @@ export function BasicProfileForm({ userId, initialName, email, profile }: BasicP
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="basic-email">メールアドレス</Label>
-          <Input
-            id="basic-email"
-            type="email"
-            value={email}
-            readOnly
-            className="h-9 read-only:cursor-default read-only:bg-input/50 read-only:text-muted-foreground read-only:opacity-70"
-          />
+          <Label>{BASIC_INFO_FORM_FIELDS.email.label}</Label>
+          <p className="min-h-9 py-1.5 text-sm font-medium break-all text-foreground select-all">
+            {email}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {BASIC_INFO_FORM_FIELDS.email.helperText}{" "}
+            <Link
+              href={BASIC_INFO_FORM_FIELDS.email.changeHref}
+              className="font-semibold text-primary underline-offset-2 hover:underline"
+            >
+              {BASIC_INFO_FORM_FIELDS.email.changeLinkLabel}
+            </Link>
+          </p>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="basic-job-title">{BASIC_INFO_FORM_FIELDS.jobTitle.label}</Label>

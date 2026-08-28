@@ -31,7 +31,12 @@ export async function listCompanyConversations(
   const { data: rooms, error } = await supabase
     .from("chat_rooms")
     .select("id, application_id, engineer_id")
-    .eq("company_user_id", companyUserId);
+    .eq("company_user_id", companyUserId)
+    // Review #24 (082_scouts.sql): application_id is now nullable for
+    // scout-originated rooms (scout_id set instead). Excluded here for the
+    // same reason as listMyConversations() (src/lib/engineer/chat.ts) --
+    // this list assumes application_id is always a real row.
+    .not("application_id", "is", null);
 
   if (error) {
     console.error("[company-chat] failed to list chat rooms:", error);

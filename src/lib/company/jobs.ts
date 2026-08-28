@@ -18,6 +18,12 @@ export interface Opportunity {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  /**
+   * Review #27: free-text supplement for required skills that don't exist
+   * in the public.skills master. Never written to public.skills or
+   * opportunity_required_skills -- display-only, no search/filter impact.
+   */
+  custom_required_skills_note: string | null;
 }
 
 export type CompanyContractType = "employment" | "project" | "hourly";
@@ -139,6 +145,8 @@ export interface OpportunityInput {
   project: ProjectInput | null;
   hourly: HourlyInput | null;
   requiredSkillIds: string[];
+  /** Review #27: optional free text, trimmed; empty/whitespace collapses to null server-side. */
+  customRequiredSkillsNote: string | null;
 }
 
 const LIST_FETCH_BATCH_SIZE = 500;
@@ -487,6 +495,7 @@ export function getTodayDateStringJST(): string {
 function validateOpportunityInput(input: OpportunityInput): boolean {
   if (input.requiredSkillIds.length < 1 || input.requiredSkillIds.length > 10) return false;
   if (input.description.length > 3000) return false;
+  if ((input.customRequiredSkillsNote?.length ?? 0) > 500) return false;
   if (input.contract_type === "project" && input.project) {
     if (input.project.deadline < getTodayDateStringJST()) return false;
   }
@@ -539,6 +548,7 @@ async function saveCompanyOpportunity(
     p_status: input.status,
     p_subtype: getSubtypePayload(input),
     p_required_skill_ids: input.requiredSkillIds,
+    p_custom_required_skills_note: input.customRequiredSkillsNote,
   });
 
   if (error) {

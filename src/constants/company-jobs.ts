@@ -116,6 +116,7 @@ export const JOB_DETAIL_META = {
   backHref: "/company/jobs",
   jobInfoTitle: "求人情報",
   requiredSkillsTitle: "必須スキル",
+  customRequiredSkillsNoteTitle: "その他の必須スキル",
   editLabel: "編集",
   closeLabel: "募集終了",
   createdLabel: "作成日",
@@ -165,6 +166,11 @@ export const JOB_FORM_FIELDS = {
     emptyMessage: "登録されているスキルがありません。",
     selectedCountSuffix: "件選択中",
   },
+  customRequiredSkillsNote: {
+    label: "その他の必須スキル（任意）",
+    helperText: "一覧にないスキルがある場合はこちらに入力してください。",
+    placeholder: "例：社内独自ツール、特殊なフレームワークなど",
+  },
 } as const;
 
 export const JOB_FORM_BUTTON_LABELS = {
@@ -194,6 +200,7 @@ export const JOB_FORM_ERRORS = {
   descriptionTooLong: "仕事内容は3000文字以内で入力してください。",
   requiredSkillsMinimum: "必須スキルを1件以上選択してください。",
   requiredSkillsMaximum: "必須スキルは10件まで選択できます。",
+  customRequiredSkillsNoteTooLong: "その他の必須スキルは500文字以内で入力してください。",
   workStyleRequired: "勤務形態を選択してください。",
   salaryRequired: "年収の下限・上限を入力してください。",
   salaryOutOfRange: "年収は1〜9999万円の範囲で入力してください。",

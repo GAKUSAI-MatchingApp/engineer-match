@@ -116,6 +116,7 @@ export const JOB_DETAIL_META = {
 export const JOB_DETAIL_SECTION_LABELS = {
   descriptionTitle: "仕事内容",
   requiredSkillsTitle: "必須スキル",
+  customRequiredSkillsNoteTitle: "その他の必須スキル",
   companyInfoTitle: "企業情報",
 } as const;
 
