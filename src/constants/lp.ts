@@ -352,7 +352,7 @@ export const CTA = {
   primaryCta: "エンジニアとして登録",
   primaryHref: "/signup",
   secondaryCta: "企業として登録",
-  secondaryHref: "/signup?role=company",
+  secondaryHref: "/signup",
 } as const;
 
 export const FOOTER = {
