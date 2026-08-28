@@ -46,9 +46,14 @@ export function AdminNavLinks({
   activeHref,
   onNavigate,
 }: AdminNavLinksProps) {
+  // Notifications now lives as a bell icon in the topbar (AdminTopbar), not
+  // as a full nav row here -- filtered by icon so href lookups by icon
+  // elsewhere keep working.
+  const linkItems = items.filter((item) => item.icon !== "bell");
+
   return (
     <nav className="flex flex-col gap-1">
-      {items.map((item) => {
+      {linkItems.map((item) => {
         const Icon = ICON_MAP[item.icon as keyof typeof ICON_MAP];
         const isActive = item.href === activeHref;
         return (
@@ -80,7 +85,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ items, activeHref }: AdminSidebarProps) {
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-border bg-surface lg:flex lg:flex-col">
+    <aside className="hidden w-64 shrink-0 border-r border-border bg-surface lg:sticky lg:top-0 lg:flex lg:h-svh lg:flex-col">
       <div className="flex h-[72px] shrink-0 items-center border-b border-border px-6">
         <Link href="/admin" className="flex flex-col leading-tight">
           <span className="text-base font-bold tracking-tight text-foreground">

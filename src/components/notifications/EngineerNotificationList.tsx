@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Layers } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { EngineerNotificationCard } from "@/components/notifications/EngineerNotificationCard";
 import { EngineerNotificationEmptyState } from "@/components/notifications/EngineerNotificationEmptyState";
+import { useUnreadCounts } from "@/components/dashboard/UnreadCountsProvider";
 import {
   ENGINEER_NOTIFICATION_ACTIONS_LABELS,
   ENGINEER_NOTIFICATION_FILTER_OPTIONS,
@@ -27,6 +29,8 @@ export function EngineerNotificationList({
 }: EngineerNotificationListProps) {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [filter, setFilter] = useState<EngineerNotificationFilter>("all");
+  const router = useRouter();
+  const { decrementNotifications } = useUnreadCounts();
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -37,7 +41,13 @@ export function EngineerNotificationList({
   }, [notifications, filter]);
 
   async function handleMarkRead(id: string) {
+    const wasUnread = notifications.some((n) => n.id === id && !n.isRead);
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    if (wasUnread) {
+      decrementNotifications();
+      router.refresh();
+    }
+
     const supabase = createClient();
     const { error } = await markNotificationRead(supabase, id);
     if (error) {
@@ -48,6 +58,10 @@ export function EngineerNotificationList({
   async function handleMarkAllRead() {
     const unreadIds = new Set(notifications.filter((n) => !n.isRead).map((n) => n.id));
     setNotifications((prev) => prev.map((n) => (unreadIds.has(n.id) ? { ...n, isRead: true } : n)));
+    if (unreadIds.size > 0) {
+      decrementNotifications(unreadIds.size);
+      router.refresh();
+    }
 
     const supabase = createClient();
     const {

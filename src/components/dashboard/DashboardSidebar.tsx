@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   Bell,
@@ -17,6 +19,8 @@ import {
 import { BRAND } from "@/constants/lp";
 import { cn } from "@/lib/utils";
 import { UnreadBadge } from "@/components/dashboard/UnreadBadge";
+import { useUnreadCounts } from "@/components/dashboard/UnreadCountsProvider";
+import { buildNavBadges } from "@/lib/dashboard/badges";
 
 /** Keyed by nav item href. Only entries for the Messages/Notifications items are ever set. */
 export type DashboardNavBadges = Record<string, { count: number; ariaLabel: string }>;
@@ -56,9 +60,14 @@ export function DashboardNavLinks({
   onNavigate,
   badges,
 }: DashboardNavLinksProps) {
+  // Notifications now lives as a bell icon in the topbar (DashboardTopbar),
+  // not as a full nav row here -- filtered by icon (not removed from
+  // ENGINEER_NAV/COMPANY_NAV) so href/badge lookups by icon keep working.
+  const linkItems = items.filter((item) => item.icon !== "bell");
+
   return (
     <nav className="flex flex-col gap-1">
-      {items.map((item) => {
+      {linkItems.map((item) => {
         const Icon = ICON_MAP[item.icon as keyof typeof ICON_MAP];
         const isActive = item.href === activeHref;
         const badge = badges?.[item.href];
@@ -90,13 +99,15 @@ export function DashboardNavLinks({
 interface DashboardSidebarProps {
   items: readonly DashboardNavItem[];
   activeHref: string;
-  badges?: DashboardNavBadges;
   homeHref: string;
 }
 
-export function DashboardSidebar({ items, activeHref, badges, homeHref }: DashboardSidebarProps) {
+export function DashboardSidebar({ items, activeHref, homeHref }: DashboardSidebarProps) {
+  const { unreadMessages, unreadNotifications } = useUnreadCounts();
+  const badges = buildNavBadges(items, unreadMessages, unreadNotifications);
+
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-border bg-surface lg:flex lg:flex-col">
+    <aside className="hidden w-64 shrink-0 border-r border-border bg-surface lg:sticky lg:top-0 lg:flex lg:h-svh lg:flex-col">
       <div className="flex h-[72px] shrink-0 items-center border-b border-border px-6">
         <Link href={homeHref} className="flex flex-col leading-tight">
           <span className="text-base font-bold tracking-tight text-foreground">

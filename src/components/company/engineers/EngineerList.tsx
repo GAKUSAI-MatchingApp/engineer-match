@@ -227,7 +227,7 @@ export function EngineerList({ engineers }: EngineerListProps) {
         {filteredEngineers.length === 0 ? (
           <EngineerEmptyState onReset={handleClearAll} />
         ) : (
-          <ul className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {filteredEngineers.map((engineer) => (
               <li key={engineer.id}>
                 <EngineerCard engineer={engineer} />

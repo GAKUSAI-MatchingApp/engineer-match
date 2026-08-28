@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import { AdminNavLinks, type AdminNavItem } from "@/components/admin/AdminSidebar";
 import { UserMenu } from "@/components/dashboard/UserMenu";
 import { ADMIN_BRAND, ADMIN_LABELS } from "@/constants/admin";
@@ -26,6 +26,11 @@ export function AdminTopbar({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const closeMenu = () => setIsMenuOpen(false);
 
+  // Bell icon in the header replaces the old "通知" sidebar row. No unread
+  // count is wired up for admin notifications yet (unlike the
+  // engineer/company DashboardTopbar), so this is a plain link for now.
+  const notificationsHref = items.find((item) => item.icon === "bell")?.href;
+
   return (
     <>
       <header className="sticky top-0 z-30 flex h-[72px] shrink-0 items-center justify-between border-b border-border bg-surface/90 px-4 backdrop-blur-md md:px-6">
@@ -44,7 +49,18 @@ export function AdminTopbar({
           </h1>
         </div>
 
-        <UserMenu userName={userName} userInitials={userInitials} />
+        <div className="flex items-center gap-2">
+          {notificationsHref && (
+            <Link
+              href={notificationsHref}
+              aria-label="通知"
+              className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            >
+              <Bell className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          )}
+          <UserMenu userName={userName} userInitials={userInitials} />
+        </div>
       </header>
 
       <div
