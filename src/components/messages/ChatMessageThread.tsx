@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { ChatMessageBubble } from "@/components/messages/ChatMessageBubble";
 import { ChatMessageComposer } from "@/components/messages/ChatMessageComposer";
 import { ChatMessageHeader } from "@/components/messages/ChatMessageHeader";
+import { useUnreadCounts } from "@/components/dashboard/UnreadCountsProvider";
 import { formatDateJa } from "@/lib/engineer/format";
 import {
   listConversationMessages,
@@ -86,6 +88,15 @@ export function ChatMessageThread({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState(conversation.messageLoadError);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const { decrementMessages } = useUnreadCounts();
+  // Unread count at initial load -- the mount effect's markConversationRead
+  // call marks exactly these as read, so this is what it decrements by.
+  const [initialUnreadCount] = useState(
+    () =>
+      conversation.messages.filter((m) => m.senderId !== currentUserId && m.readAt === null)
+        .length,
+  );
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ block: "end" });
@@ -93,8 +104,13 @@ export function ChatMessageThread({
 
   useEffect(() => {
     const supabase = createClient();
-    void markConversationRead(supabase, conversation.chatRoomId, currentUserId);
-  }, [conversation.chatRoomId, currentUserId]);
+    markConversationRead(supabase, conversation.chatRoomId, currentUserId).then(() => {
+      if (initialUnreadCount > 0) {
+        decrementMessages(initialUnreadCount);
+        router.refresh();
+      }
+    });
+  }, [conversation.chatRoomId, currentUserId, initialUnreadCount, decrementMessages, router]);
 
   async function handleRefresh() {
     if (isRefreshing) return;
@@ -119,7 +135,15 @@ export function ChatMessageThread({
             left.sentAt.localeCompare(right.sentAt) || left.id.localeCompare(right.id),
         );
       });
+
+      const unreadCount = result.messages.filter(
+        (m) => m.senderId !== currentUserId && m.readAt === null,
+      ).length;
       await markConversationRead(supabase, conversation.chatRoomId, currentUserId);
+      if (unreadCount > 0) {
+        decrementMessages(unreadCount);
+        router.refresh();
+      }
     } catch (error) {
       console.error(`[${logPrefix}] failed to refresh messages:`, error);
       setRefreshError(true);

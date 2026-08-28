@@ -69,6 +69,14 @@ export function EngineerNotificationCard({
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
           <Link
             href={linkFor(notification)}
+            // Opening the notification's linked content (message thread,
+            // application, review, etc.) should also mark the notification
+            // itself read -- previously only the explicit "既読にする" button
+            // did this, so clicking straight through left the bell badge
+            // stuck even after the underlying content had been viewed.
+            onClick={() => {
+              if (!notification.isRead) onMarkRead(notification.id);
+            }}
             className="min-w-0 flex-1 rounded-sm text-sm font-semibold text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
           >
             {notification.title}

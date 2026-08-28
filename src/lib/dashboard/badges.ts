@@ -1,8 +1,47 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+  DashboardNavBadges,
+  DashboardNavItem,
+} from "@/components/dashboard/DashboardSidebar";
 
 export interface UnreadBadgeCounts {
   unreadMessages: number;
   unreadNotifications: number;
+}
+
+/**
+ * Builds the sidebar/mobile-nav badge map from navItems + unread counts,
+ * matched by icon (not href) since the Messages/Notifications hrefs differ
+ * between the Engineer nav (/messages, /notifications) and Company nav
+ * (/company/messages, /company/notifications) -- the icon key is the one
+ * thing both share. Runs both server-side (DashboardShell's initial provider
+ * seed) and client-side (DashboardSidebar/DashboardTopbar, reactively off
+ * UnreadCountsProvider's context after an optimistic update).
+ */
+export function buildNavBadges(
+  navItems: readonly DashboardNavItem[],
+  unreadMessages: number,
+  unreadNotifications: number,
+): DashboardNavBadges {
+  const badges: DashboardNavBadges = {};
+
+  const messagesHref = navItems.find((item) => item.icon === "messageSquare")?.href;
+  if (messagesHref) {
+    badges[messagesHref] = {
+      count: unreadMessages,
+      ariaLabel: `未読メッセージ${unreadMessages}件`,
+    };
+  }
+
+  const notificationsHref = navItems.find((item) => item.icon === "bell")?.href;
+  if (notificationsHref) {
+    badges[notificationsHref] = {
+      count: unreadNotifications,
+      ariaLabel: `未読通知${unreadNotifications}件`,
+    };
+  }
+
+  return badges;
 }
 
 /**

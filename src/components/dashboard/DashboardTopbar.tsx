@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import {
   DashboardNavLinks,
-  type DashboardNavBadges,
   type DashboardNavItem,
 } from "@/components/dashboard/DashboardSidebar";
 import { UnreadBadge } from "@/components/dashboard/UnreadBadge";
+import { useUnreadCounts } from "@/components/dashboard/UnreadCountsProvider";
 import { UserMenu } from "@/components/dashboard/UserMenu";
 import { BRAND } from "@/constants/lp";
 import { COMPANY_NAV, ENGINEER_NAV } from "@/constants/dashboard";
+import { buildNavBadges } from "@/lib/dashboard/badges";
 import { cn } from "@/lib/utils";
 
 interface DashboardTopbarProps {
@@ -21,7 +22,6 @@ interface DashboardTopbarProps {
   userName: string;
   userInitials: string;
   userEmail?: string;
-  badges?: DashboardNavBadges;
 }
 
 export function DashboardTopbar({
@@ -30,9 +30,10 @@ export function DashboardTopbar({
   pageTitle,
   userName,
   userInitials,
-  badges,
 }: DashboardTopbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { unreadMessages, unreadNotifications } = useUnreadCounts();
+  const badges = buildNavBadges(items, unreadMessages, unreadNotifications);
   const closeMenu = () => setIsMenuOpen(false);
 
   // This shared topbar is only ever rendered with the engineer or company
@@ -50,6 +51,13 @@ export function DashboardTopbar({
     (item) =>
       item.href === ENGINEER_NAV[1].href || item.href === COMPANY_NAV[1].href,
   )?.href;
+
+  // Bell icon in the header replaces the old "通知" sidebar row --
+  // same href/badge lookup pattern as profileHref above.
+  const notificationsHref = items.find((item) => item.icon === "bell")?.href;
+  const notificationsCount = notificationsHref
+    ? (badges?.[notificationsHref]?.count ?? 0)
+    : 0;
 
   // Combined count so the collapsed hamburger icon itself shows that
   // something's unread, not just the nav links once the drawer is open.
@@ -81,18 +89,34 @@ export function DashboardTopbar({
           </h1>
         </div>
 
-        {hasWorkingLogout ? (
-          <UserMenu userName={userName} userInitials={userInitials} profileHref={profileHref} />
-        ) : (
-          <div className="flex items-center gap-2 rounded-full border border-border py-1.5 pr-3 pl-1.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              {userInitials}
+        <div className="flex items-center gap-2">
+          {notificationsHref && (
+            <Link
+              href={notificationsHref}
+              aria-label={
+                notificationsCount > 0
+                  ? `通知（未読${notificationsCount}件）`
+                  : "通知"
+              }
+              className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-foreground transition-colors duration-200 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            >
+              <Bell className="h-5 w-5" aria-hidden="true" />
+              <UnreadBadge count={notificationsCount} />
+            </Link>
+          )}
+          {hasWorkingLogout ? (
+            <UserMenu userName={userName} userInitials={userInitials} profileHref={profileHref} />
+          ) : (
+            <div className="flex items-center gap-2 rounded-full border border-border py-1.5 pr-3 pl-1.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                {userInitials}
+              </div>
+              <span className="hidden text-sm font-medium text-foreground sm:inline">
+                {userName}
+              </span>
             </div>
-            <span className="hidden text-sm font-medium text-foreground sm:inline">
-              {userName}
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </header>
 
       <div
