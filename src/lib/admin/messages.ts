@@ -32,6 +32,15 @@ export async function listAdminConversations(supabase: SupabaseClient): Promise<
   const { data: rooms, error } = await supabase
     .from("chat_rooms")
     .select("id, application_id, engineer_id, company_user_id, updated_at")
+    // Review #24 (082_scouts.sql) made application_id nullable for
+    // scout-originated rooms (scout_id set instead). This screen is
+    // specifically "応募ベースの会話" monitoring -- every field below
+    // (opportunityId via applications, etc.) assumes a real application_id,
+    // so scout rooms are excluded rather than showing up as a confusing
+    // "（求人情報なし）" application chat. Same exclusion as
+    // listMyConversations/listCompanyConversations (src/lib/engineer/chat.ts,
+    // src/lib/company/chat.ts).
+    .not("application_id", "is", null)
     .order("updated_at", { ascending: false })
     .limit(LIST_CAP);
 
@@ -123,6 +132,11 @@ export async function getAdminConversationDetail(
     return null;
   }
   if (!room) return null;
+  // Scout-originated room (application_id IS NULL, 082_scouts.sql) --
+  // this detail view assumes a real application, so treat it the same as
+  // "not found" rather than rendering with a broken/misleading opportunity
+  // lookup, matching listAdminConversations' exclusion above.
+  if (!room.application_id) return null;
 
   const [{ data: application }, { data: engineer }, { data: company }, { data: messageRows }] = await Promise.all([
     supabase.from("applications").select("opportunity_id").eq("id", room.application_id as string).maybeSingle(),

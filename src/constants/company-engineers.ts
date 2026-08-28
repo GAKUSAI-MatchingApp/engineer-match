@@ -122,5 +122,4 @@ export const ENGINEER_DETAIL_META = {
   businessSkillTitle: "ビジネススキル",
   notFoundTitle: "このエンジニアのプロフィールは見つかりませんでした。",
   notFoundDescription: "存在しないか、非公開に設定されている可能性があります。",
-  contactNote: "※ メッセージ・スカウト機能は準備中です。",
 } as const;

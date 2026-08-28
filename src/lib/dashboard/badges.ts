@@ -23,7 +23,7 @@ export async function getUnreadBadgeCounts(
   const [messagesResult, notificationsResult] = await Promise.all([
     supabase
       .from("messages")
-      .select("id, chat_rooms!inner(engineer_id, company_user_id)", {
+      .select("id, chat_rooms!inner(engineer_id, company_user_id, application_id)", {
         count: "exact",
         head: true,
       })
@@ -31,7 +31,15 @@ export async function getUnreadBadgeCounts(
       .is("read_at", null)
       .or(`engineer_id.eq.${userId},company_user_id.eq.${userId}`, {
         foreignTable: "chat_rooms",
-      }),
+      })
+      // Review #24 (082_scouts.sql): this badge is what the "メッセージ" nav
+      // item shows, and that page (/messages, /company/messages) excludes
+      // scout-originated rooms (application_id IS NULL) -- see
+      // listMyConversations/listCompanyConversations. Excluding them here
+      // too keeps the badge count consistent with what the linked page
+      // actually shows; unread scout messages surface via the スカウト nav
+      // item instead once that gets its own badge.
+      .not("chat_rooms.application_id", "is", null),
     supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })

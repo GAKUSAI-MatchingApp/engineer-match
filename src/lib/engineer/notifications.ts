@@ -5,10 +5,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * (chk_notifications_type) -- there is no client-facing INSERT policy
  * (027_notification_favorite_policies.sql: system-generated only). Real
  * producers today: private.notify_new_message() (new chat messages,
- * 036_chat_mvp_and_message_notifications.sql) and
- * private.notify_new_review() / private.notify_new_review_reply() (Engineer
- * Review/Rating System, 050_engineer_reviews.sql). application_received /
- * application_status_changed / opportunity_closed still have no producer.
+ * 036_chat_mvp_and_message_notifications.sql), private.notify_new_review() /
+ * private.notify_new_review_reply() (Engineer Review/Rating System,
+ * 050_engineer_reviews.sql), and private.notify_scout_received() (new
+ * scouts, 082_scouts.sql). application_received / application_status_changed /
+ * opportunity_closed still have no producer.
  */
 export type NotificationType =
   | "application_received"
@@ -16,7 +17,8 @@ export type NotificationType =
   | "new_message"
   | "opportunity_closed"
   | "review_received"
-  | "review_reply_received";
+  | "review_reply_received"
+  | "scout_received";
 
 export interface NotificationItem {
   id: string;
@@ -26,6 +28,8 @@ export interface NotificationItem {
   relatedEntityType: string | null;
   relatedEntityId: string | null;
   relatedApplicationId: string | null;
+  /** Set only for a chat_room whose messages notification points at a scout-originated room (application_id IS NULL, 082_scouts.sql). */
+  relatedScoutId: string | null;
   isRead: boolean;
   createdAt: string;
 }
@@ -70,11 +74,18 @@ export async function listMyNotifications(
     chatRoomIds.length > 0
       ? await supabase
           .from("chat_rooms")
-          .select("id, application_id")
+          .select("id, application_id, scout_id")
           .in("id", chatRoomIds)
-      : { data: [] as { id: string; application_id: string }[] };
+      : { data: [] as { id: string; application_id: string | null; scout_id: string | null }[] };
   const applicationIdByChatRoom = new Map(
-    (chatRooms ?? []).map((row) => [row.id as string, row.application_id as string]),
+    (chatRooms ?? []).map((row) => [row.id as string, row.application_id as string | null]),
+  );
+  // scout-originated room (application_id IS NULL, 082_scouts.sql) -- resolved
+  // so a new_message notification for a scout chat deep-links to
+  // /messages/scout/[scoutId] instead of falling through to the generic
+  // /messages list, which excludes scout rooms (see listMyConversations).
+  const scoutIdByChatRoom = new Map(
+    (chatRooms ?? []).map((row) => [row.id as string, row.scout_id as string | null]),
   );
 
   // review_received / review_reply_received notifications point at an
@@ -113,6 +124,9 @@ export async function listMyNotifications(
       ? (applicationIdByChatRoom.get(row.related_entity_id) ??
         applicationIdByReview.get(row.related_entity_id) ??
         null)
+      : null,
+    relatedScoutId: row.related_entity_id
+      ? (scoutIdByChatRoom.get(row.related_entity_id) ?? null)
       : null,
     isRead: row.is_read,
     createdAt: row.created_at,

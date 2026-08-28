@@ -28,6 +28,11 @@ export const COMPANY_NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> 
   opportunity_closed: "求人・案件終了",
   review_received: "新着評価",
   review_reply_received: "評価への返信",
+  // scout_received is only ever inserted for engineer_id (private.notify_scout_received(),
+  // 082_scouts.sql) -- a Company account can never actually receive one, but
+  // NotificationType is a single shared union, so this entry exists for
+  // exhaustive Record<> type-completeness only.
+  scout_received: "スカウト受信",
 };
 
 export const COMPANY_NOTIFICATION_TYPE_STYLES: Record<NotificationType, string> = {
@@ -37,6 +42,7 @@ export const COMPANY_NOTIFICATION_TYPE_STYLES: Record<NotificationType, string> 
   opportunity_closed: "bg-gray-100 text-gray-600",
   review_received: "bg-yellow-50 text-yellow-700",
   review_reply_received: "bg-yellow-50 text-yellow-700",
+  scout_received: "bg-purple-50 text-purple-700",
 };
 
 export const COMPANY_NOTIFICATION_FILTER_OPTIONS = [

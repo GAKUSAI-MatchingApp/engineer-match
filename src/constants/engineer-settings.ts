@@ -79,6 +79,68 @@ export const ENGINEER_LINE_SETTINGS = {
 } as const;
 
 // ============================================================
+// メールアドレス設定 -- Review #22 本対応。
+// 正本は auth.users.email (supabase.auth.updateUser({ email })) --
+// public.users.email は on_auth_user_email_updated トリガー
+// (081_public_users_email_sync_and_protection.sql) が確認完了後に追従する
+// だけで、アプリからは一切書き込まない。確認方式はSupabase標準の
+// confirmation link（PKCE, /auth/email-change/callback）。Secure Email
+// Changeの有効/無効はSupabase Dashboard側の設定のためコードからは
+// 断定できず、UI文言はどちらでも成立する一般的な表現にしてある。
+// ============================================================
+
+export const ENGINEER_EMAIL_SETTINGS = {
+  title: "メールアドレス",
+  description: "アカウントのログインに使用するメールアドレスです。",
+  currentEmailLabel: "現在のメールアドレス",
+  changeButtonLabel: "メールアドレスを変更",
+  cancelLabel: "キャンセル",
+
+  // パスワード未設定（OAuth-only）アカウント向けの案内。この構成では
+  // パスワード再認証によるメール変更の本人確認ができず、Supabase側にも
+  // OAuth-onlyユーザー専用の同等な確認手段が用意されていないため、無理に
+  // 実装せず案内のみ表示する（詳細は実装報告のSTEP4を参照）。
+  oauthOnlyNotice:
+    "Google/GitHubなどの外部アカウントでログインしている場合、この画面からのメールアドレス変更方法が異なります。変更をご希望の場合はサポートまでお問い合わせください。",
+
+  form: {
+    newEmailLabel: "新しいメールアドレス",
+    newEmailPlaceholder: "new@example.com",
+    currentPasswordLabel: "現在のパスワード",
+    submitLabel: "確認メールを送信",
+    submittingLabel: "送信中…",
+  },
+
+  validation: {
+    newEmailRequired: "新しいメールアドレスを入力してください。",
+    newEmailInvalid: "メールアドレスの形式が正しくありません。",
+    newEmailSameAsCurrent: "現在のメールアドレスと異なるアドレスを入力してください。",
+    currentPasswordRequired: "現在のパスワードを入力してください。",
+  },
+
+  // 送信成功後、確認完了までの案内。confirmation link方式（OTP方式ではない）
+  // を採用した理由は実装報告を参照。
+  requestSentTitle: "確認メールを送信しました。",
+  requestSentDescription: (newEmail: string) =>
+    `${newEmail} 宛に確認メールを送信しました。メール内のリンクから変更を完了してください。`,
+  requestSentSecureNotice:
+    "セキュリティ設定によっては、現在のメールアドレス宛にも確認メールが届き、両方の確認が完了して初めて変更が反映される場合があります。",
+  resendLabel: "確認メールを再送信",
+  resendingLabel: "再送信中…",
+  resendSuccessMessage: "確認メールを再送信しました。",
+
+  // /auth/email-change/callback からのリダイレクト後に表示するバナー。
+  // Secure Email Change有効時は新旧メール両方の確認が揃って初めて
+  // auth.users.emailが確定するため、リンクを1つ踏んだだけの段階でも
+  // 「変更完了」と断定しない、両方のケースで正しい文言にしてある。
+  confirmedMessage: "メールアドレスの確認が完了しました。反映まで少し時間がかかる場合があります。",
+  confirmationErrorMessage:
+    "確認リンクの有効期限が切れているか、無効です。もう一度メールアドレスの変更手続きをやり直してください。",
+
+  errorGeneric: "メールアドレスの変更に失敗しました。しばらくしてから再度お試しください。",
+} as const;
+
+// ============================================================
 // セキュリティ設定 -- supabase.auth.updateUser({ password })
 // ============================================================
 

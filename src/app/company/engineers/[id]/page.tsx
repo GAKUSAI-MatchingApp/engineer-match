@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Briefcase, MessageSquareOff, Users } from "lucide-react";
+import { ArrowLeft, Briefcase, Users } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { EngineerProfileHero } from "@/components/company/engineers/EngineerProfileHero";
 import { EngineerProfileOverview } from "@/components/company/engineers/EngineerProfileOverview";
+import { EngineerScoutPanel } from "@/components/company/engineers/EngineerScoutPanel";
 import { ApplicantSkills } from "@/components/company/applicants/ApplicantSkills";
 import { ApplicantQualifications } from "@/components/company/applicants/ApplicantQualifications";
 import { ApplicantAssessmentSummary } from "@/components/company/applicants/ApplicantAssessmentSummary";
@@ -20,6 +21,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getSearchableEngineerDetail } from "@/lib/company/engineers";
 import { getCompanyHeaderIdentity } from "@/lib/company/profile";
 import { listEngineerReviews, summarizeReviews } from "@/lib/reviews";
+import { listCompanyOpportunities } from "@/lib/company/jobs";
+import { getScoutStatusForEngineer } from "@/lib/company/scouts";
 
 interface EngineerDetailPageProps {
   params: Promise<{ id: string }>;
@@ -56,6 +59,16 @@ export default async function CompanyEngineerDetailPage({
   }
 
   const reviewSummary = summarizeReviews(reviews);
+
+  const [scoutStatus, opportunities] = authUser
+    ? await Promise.all([
+        getScoutStatusForEngineer(supabase, authUser.id, id),
+        listCompanyOpportunities(supabase, authUser.id),
+      ])
+    : [null, []];
+  const scoutableOpportunities = opportunities
+    .filter((opportunity) => opportunity.status !== "closed")
+    .map((opportunity) => ({ id: opportunity.id, title: opportunity.title }));
 
   return (
     <DashboardShell
@@ -110,17 +123,11 @@ export default async function CompanyEngineerDetailPage({
         </div>
 
         <div className="flex flex-col gap-6 lg:sticky lg:top-24 lg:col-span-1 lg:self-start">
-          <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-            <button
-              type="button"
-              disabled
-              className="inline-flex h-11 w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-xl border border-border bg-muted text-sm font-semibold text-muted-foreground"
-            >
-              <MessageSquareOff className="h-4 w-4" aria-hidden="true" />
-              メッセージを送る
-            </button>
-            <p className="mt-3 text-xs text-muted-foreground">{ENGINEER_DETAIL_META.contactNote}</p>
-          </div>
+          <EngineerScoutPanel
+            engineerId={engineer.id}
+            initialStatus={scoutStatus}
+            opportunities={scoutableOpportunities}
+          />
         </div>
       </div>
     </DashboardShell>

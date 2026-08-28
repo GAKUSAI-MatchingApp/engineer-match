@@ -32,6 +32,7 @@ export const ENGINEER_NOTIFICATION_TYPE_LABELS: Record<NotificationType, string>
   opportunity_closed: "求人・案件終了",
   review_received: "新着評価",
   review_reply_received: "返信への通知",
+  scout_received: "スカウト受信",
 };
 
 export const ENGINEER_NOTIFICATION_TYPE_STYLES: Record<NotificationType, string> = {
@@ -41,6 +42,7 @@ export const ENGINEER_NOTIFICATION_TYPE_STYLES: Record<NotificationType, string>
   opportunity_closed: "bg-gray-100 text-gray-600",
   review_received: "bg-yellow-50 text-yellow-700",
   review_reply_received: "bg-yellow-50 text-yellow-700",
+  scout_received: "bg-purple-50 text-purple-700",
 };
 
 export const ENGINEER_NOTIFICATION_FILTER_OPTIONS = [
@@ -52,6 +54,7 @@ export const ENGINEER_NOTIFICATION_FILTER_OPTIONS = [
   { value: "opportunity_closed", label: "求人・案件終了" },
   { value: "review_received", label: "新着評価" },
   { value: "review_reply_received", label: "返信への通知" },
+  { value: "scout_received", label: "スカウト受信" },
 ] as const;
 export type EngineerNotificationFilter = (typeof ENGINEER_NOTIFICATION_FILTER_OPTIONS)[number]["value"];
 

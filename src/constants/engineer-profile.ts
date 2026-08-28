@@ -455,6 +455,13 @@ export const PROFILE_EDIT_SAVE_NOTICES = {
 
 export const BASIC_INFO_FORM_FIELDS = {
   name: { label: "氏名", placeholder: "山田 太郎" },
+  email: {
+    label: "メールアドレス",
+    helperText: "メールアドレスの変更は設定から行えます。",
+    changeLinkLabel: "変更する",
+    /** Anchors to EngineerEmailSettings' SectionCard id on the settings page. */
+    changeHref: "/engineer/settings#email",
+  },
   jobTitle: { label: "職種", placeholder: "フルスタックエンジニア" },
   jobCategory: { label: "職種カテゴリ" },
   prefecture: { label: "居住地", placeholder: "東京都" },

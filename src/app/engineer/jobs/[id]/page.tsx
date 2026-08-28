@@ -5,6 +5,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { JobDetailHero } from "@/components/jobs/JobDetailHero";
 import { JobDescription } from "@/components/jobs/JobDescription";
 import { RequiredSkills } from "@/components/jobs/RequiredSkills";
+import { CustomRequiredSkillsNote } from "@/components/jobs/CustomRequiredSkillsNote";
 import { CompanyInfo } from "@/components/jobs/CompanyInfo";
 import { ApplySidebar } from "@/components/jobs/ApplySidebar";
 import { ENGINEER_NAV } from "@/constants/dashboard";
@@ -131,6 +132,9 @@ export default async function EngineerJobDetailPage({ params }: JobDetailPagePro
           <JobDescription description={detail.opportunity.description} />
           {detail.requiredSkillNames.length > 0 && (
             <RequiredSkills skills={detail.requiredSkillNames} />
+          )}
+          {detail.opportunity.custom_required_skills_note && (
+            <CustomRequiredSkillsNote note={detail.opportunity.custom_required_skills_note} />
           )}
           {detail.company && <CompanyInfo company={detail.company} />}
         </div>

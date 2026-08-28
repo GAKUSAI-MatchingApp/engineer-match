@@ -65,6 +65,8 @@ export interface JobFormState {
    */
   hourlyWorkStyle: string;
   requiredSkillIds: string[];
+  /** Review #27: free-text supplement for skills absent from the public.skills master. */
+  customRequiredSkillsNote: string;
 }
 
 export function buildInitialFormState(detail?: OpportunityDetail | null): JobFormState {
@@ -89,6 +91,7 @@ export function buildInitialFormState(detail?: OpportunityDetail | null): JobFor
       hourlyIsOnline: "true",
       hourlyWorkStyle: "REMOTE",
       requiredSkillIds: [],
+      customRequiredSkillsNote: "",
     };
   }
 
@@ -118,6 +121,7 @@ export function buildInitialFormState(detail?: OpportunityDetail | null): JobFor
     hourlyIsOnline: hourly ? String(hourly.is_online) : "true",
     hourlyWorkStyle: hourly?.work_style ?? "",
     requiredSkillIds,
+    customRequiredSkillsNote: opportunity.custom_required_skills_note ?? "",
   };
 }
 
@@ -130,6 +134,9 @@ export function validateJobForm(state: JobFormState): string | null {
 
   if (state.requiredSkillIds.length < 1) return JOB_FORM_ERRORS.requiredSkillsMinimum;
   if (state.requiredSkillIds.length > 10) return JOB_FORM_ERRORS.requiredSkillsMaximum;
+  if (state.customRequiredSkillsNote.length > 500) {
+    return JOB_FORM_ERRORS.customRequiredSkillsNoteTooLong;
+  }
 
   if (state.contractType === "employment") {
     if (!state.workStyle) return JOB_FORM_ERRORS.workStyleRequired;
@@ -218,6 +225,7 @@ export function buildOpportunityInput(state: JobFormState): OpportunityInput {
           }
         : null,
     requiredSkillIds: state.requiredSkillIds,
+    customRequiredSkillsNote: state.customRequiredSkillsNote.trim() || null,
   };
 }
 
@@ -646,6 +654,27 @@ export function JobFormFields({
           onChange={(ids) => onChange({ requiredSkillIds: ids })}
           idPrefix={idPrefix}
         />
+        <div className="mt-5 flex flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-custom-required-skills-note`}>
+            {JOB_FORM_FIELDS.customRequiredSkillsNote.label}
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            {JOB_FORM_FIELDS.customRequiredSkillsNote.helperText}
+          </p>
+          <Textarea
+            id={`${idPrefix}-custom-required-skills-note`}
+            value={state.customRequiredSkillsNote}
+            onChange={(event) =>
+              onChange({ customRequiredSkillsNote: event.target.value.slice(0, 500) })
+            }
+            placeholder={JOB_FORM_FIELDS.customRequiredSkillsNote.placeholder}
+            maxLength={500}
+            rows={3}
+          />
+          <p className="text-right text-xs text-muted-foreground">
+            {state.customRequiredSkillsNote.length} / 500
+          </p>
+        </div>
       </ProfileSection>
     </>
   );

@@ -19,6 +19,12 @@ export interface Opportunity {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  /**
+   * Review #27: free-text supplement for required skills that don't exist
+   * in the public.skills master. Display-only on the job detail page --
+   * never included in skill_id-based search/filter (listPublishedOpportunities).
+   */
+  custom_required_skills_note: string | null;
 }
 
 export type CompanyContractType = "employment" | "project" | "hourly";

@@ -21,9 +21,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
 /** Real-data link target for a notification, based on its related entity. */
 function linkFor(notification: NotificationItem): string {
   if (notification.relatedEntityType === "chat_room" && notification.relatedEntityId) {
-    return notification.relatedApplicationId
-      ? `/company/messages/${notification.relatedApplicationId}`
-      : "/company/messages";
+    if (notification.relatedApplicationId) return `/company/messages/${notification.relatedApplicationId}`;
+    // Scout-originated room (application_id IS NULL, 082_scouts.sql) --
+    // /company/messages excludes these, so route to the dedicated scout
+    // chat page instead of a dead-end list.
+    if (notification.relatedScoutId) return `/company/messages/scout/${notification.relatedScoutId}`;
+    return "/company/messages";
   }
   if (notification.relatedEntityType === "engineer_review") {
     // The review (and any engineer reply) is shown on the applicant detail

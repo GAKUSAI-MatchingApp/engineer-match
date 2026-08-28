@@ -3,14 +3,16 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { EngineerPrivacySettings } from "@/components/engineer/settings/EngineerPrivacySettings";
 import { EngineerLineSettings } from "@/components/engineer/settings/EngineerLineSettings";
+import { EngineerEmailSettings } from "@/components/engineer/settings/EngineerEmailSettings";
 import { EngineerSecuritySettings } from "@/components/engineer/settings/EngineerSecuritySettings";
 import { EngineerDangerZone } from "@/components/engineer/settings/EngineerDangerZone";
 import { ENGINEER_NAV } from "@/constants/dashboard";
-import { ENGINEER_SETTINGS_PAGE } from "@/constants/engineer-settings";
+import { ENGINEER_EMAIL_SETTINGS, ENGINEER_SETTINGS_PAGE } from "@/constants/engineer-settings";
 import { SIGN_IN_REQUIRED_LABELS } from "@/constants/applications";
 import { createClient } from "@/lib/supabase/server";
 import { getEngineerHeaderIdentity, getEngineerProfile } from "@/lib/engineer/profile";
 import { getEngineerLineLink } from "@/lib/engineer/line-link";
+import { isPasswordAuthUser } from "@/lib/auth/email-change";
 
 export const metadata: Metadata = {
   title: `${ENGINEER_SETTINGS_PAGE.title} | ENGINEER MATCH`,
@@ -20,13 +22,25 @@ export const metadata: Metadata = {
 export default async function EngineerSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ lineLinked?: string; lineError?: string; active?: string }>;
+  searchParams: Promise<{
+    lineLinked?: string;
+    lineError?: string;
+    active?: string;
+    emailChanged?: string;
+    emailChangeError?: string;
+  }>;
 }) {
   const supabase = await createClient();
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
   const lineCallback = await searchParams;
+
+  const emailNotice = lineCallback.emailChanged
+    ? { status: "success" as const, message: ENGINEER_EMAIL_SETTINGS.confirmedMessage }
+    : lineCallback.emailChangeError
+      ? { status: "error" as const, message: ENGINEER_EMAIL_SETTINGS.confirmationErrorMessage }
+      : null;
 
   const [profile, identity, lineLink] = await Promise.all([
     authUser ? getEngineerProfile(supabase, authUser.id) : Promise.resolve(null),
@@ -60,6 +74,11 @@ export default async function EngineerSettingsPage({
             lineLinked={lineCallback.lineLinked}
             lineError={lineCallback.lineError}
             lineActive={lineCallback.active}
+          />
+          <EngineerEmailSettings
+            email={identity.email}
+            isPasswordUser={isPasswordAuthUser(authUser)}
+            initialNotice={emailNotice}
           />
           <EngineerSecuritySettings />
           <EngineerDangerZone />
