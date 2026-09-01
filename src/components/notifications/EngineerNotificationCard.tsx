@@ -55,62 +55,61 @@ export function EngineerNotificationCard({
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 transition-colors duration-200 ${
+      className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 transition-colors duration-200 hover:bg-muted/60 ${
         notification.isRead ? "border-border bg-surface" : "border-primary/20 bg-primary/5"
       }`}
     >
-      <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${ENGINEER_NOTIFICATION_TYPE_STYLES[notification.type]}`}
-        aria-hidden="true"
+      {/* The whole card (except the "既読にする" button below) is now one
+          link -- clicking the icon, title, body text, badge, or timestamp
+          all navigate, the same way clicking just the title used to. */}
+      <Link
+        href={linkFor(notification)}
+        onClick={() => {
+          if (!notification.isRead) onMarkRead(notification.id);
+        }}
+        className="group flex min-w-0 flex-1 items-start gap-3 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
       >
-        <Icon className="h-4.5 w-4.5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-          <Link
-            href={linkFor(notification)}
-            // Opening the notification's linked content (message thread,
-            // application, review, etc.) should also mark the notification
-            // itself read -- previously only the explicit "既読にする" button
-            // did this, so clicking straight through left the bell badge
-            // stuck even after the underlying content had been viewed.
-            onClick={() => {
-              if (!notification.isRead) onMarkRead(notification.id);
-            }}
-            className="min-w-0 flex-1 rounded-sm text-sm font-semibold text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-          >
-            {notification.title}
-          </Link>
-          {!notification.isRead && (
-            <span
-              className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary"
-              aria-label={ENGINEER_NOTIFICATION_ACTIONS_LABELS.unreadLabel}
-            />
-          )}
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${ENGINEER_NOTIFICATION_TYPE_STYLES[notification.type]}`}
+          aria-hidden="true"
+        >
+          <Icon className="h-4.5 w-4.5" />
         </div>
-        <p className="mt-0.5 text-xs text-muted-foreground">{notification.body}</p>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${ENGINEER_NOTIFICATION_TYPE_STYLES[notification.type]}`}
-          >
-            {ENGINEER_NOTIFICATION_TYPE_LABELS[notification.type]}
-          </span>
-          <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+            <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">
+              {notification.title}
+            </span>
+            {!notification.isRead && (
+              <span
+                className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary"
+                aria-label={ENGINEER_NOTIFICATION_ACTIONS_LABELS.unreadLabel}
+              />
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">{notification.body}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${ENGINEER_NOTIFICATION_TYPE_STYLES[notification.type]}`}
+            >
+              {ENGINEER_NOTIFICATION_TYPE_LABELS[notification.type]}
+            </span>
             <time className="text-[11px] whitespace-nowrap text-muted-foreground">
               {formatDateJa(notification.createdAt)}
             </time>
-            {!notification.isRead && (
-              <button
-                type="button"
-                onClick={() => onMarkRead(notification.id)}
-                className="rounded-sm text-xs font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-              >
-                {ENGINEER_NOTIFICATION_ACTIONS_LABELS.markReadLabel}
-              </button>
-            )}
           </div>
         </div>
-      </div>
+      </Link>
+
+      {!notification.isRead && (
+        <button
+          type="button"
+          onClick={() => onMarkRead(notification.id)}
+          className="mt-1 shrink-0 rounded-sm text-xs font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+        >
+          {ENGINEER_NOTIFICATION_ACTIONS_LABELS.markReadLabel}
+        </button>
+      )}
     </div>
   );
 }
