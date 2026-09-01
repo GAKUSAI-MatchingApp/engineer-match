@@ -299,16 +299,47 @@ export async function sendMessage(
     .single();
 }
 
-/** Marks every unread message from the other participant as read (messages_update_read_receipt RLS). */
+/**
+ * Marks every unread message from the other participant as read
+ * (messages_update_read_receipt RLS), and mirrors that into the `notifications`
+ * row(s) private.notify_new_message() generated for this chat room
+ * (036_chat_mvp_and_message_notifications.sql) so opening the conversation
+ * directly -- not just clicking through from the bell/notifications page --
+ * also clears the bell badge instead of leaving it stuck on an
+ * already-read message. Returns how many notification rows were flipped so
+ * callers can decrement the notifications badge by the right amount.
+ */
 export async function markConversationRead(
   supabase: SupabaseClient,
   chatRoomId: string,
   viewerId: string,
 ) {
-  return supabase
-    .from("messages")
-    .update({ read_at: new Date().toISOString() })
-    .eq("chat_room_id", chatRoomId)
-    .neq("sender_id", viewerId)
-    .is("read_at", null);
+  const [messagesResult, notificationsResult] = await Promise.all([
+    supabase
+      .from("messages")
+      .update({ read_at: new Date().toISOString() })
+      .eq("chat_room_id", chatRoomId)
+      .neq("sender_id", viewerId)
+      .is("read_at", null),
+    supabase
+      .from("notifications")
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .eq("user_id", viewerId)
+      .eq("related_entity_type", "chat_room")
+      .eq("related_entity_id", chatRoomId)
+      .eq("is_read", false)
+      .select("id"),
+  ]);
+
+  if (notificationsResult.error) {
+    console.error(
+      "[chat] failed to mark related notifications read:",
+      notificationsResult.error,
+    );
+  }
+
+  return {
+    error: messagesResult.error,
+    notificationsMarkedCount: notificationsResult.data?.length ?? 0,
+  };
 }

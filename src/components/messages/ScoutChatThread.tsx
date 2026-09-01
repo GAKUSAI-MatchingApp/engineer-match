@@ -90,7 +90,7 @@ export function ScoutChatThread({
   const [refreshError, setRefreshError] = useState(conversation.messageLoadError);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { decrementMessages } = useUnreadCounts();
+  const { decrementMessages, decrementNotifications } = useUnreadCounts();
   // Unread count at initial load -- the mount effect's markConversationRead
   // call marks exactly these as read, so this is what it decrements by.
   const [initialUnreadCount] = useState(
@@ -105,13 +105,25 @@ export function ScoutChatThread({
 
   useEffect(() => {
     const supabase = createClient();
-    markConversationRead(supabase, conversation.chatRoomId, currentUserId).then(() => {
-      if (initialUnreadCount > 0) {
-        decrementMessages(initialUnreadCount);
-        router.refresh();
-      }
-    });
-  }, [conversation.chatRoomId, currentUserId, initialUnreadCount, decrementMessages, router]);
+    markConversationRead(supabase, conversation.chatRoomId, currentUserId).then(
+      ({ notificationsMarkedCount }) => {
+        // Opening the thread directly (not via the bell) previously only
+        // cleared the messages badge -- the related "new_message"
+        // notification, and therefore the bell badge, was left stuck as
+        // unread. markConversationRead now clears both, so mirror that here.
+        if (initialUnreadCount > 0) decrementMessages(initialUnreadCount);
+        if (notificationsMarkedCount > 0) decrementNotifications(notificationsMarkedCount);
+        if (initialUnreadCount > 0 || notificationsMarkedCount > 0) router.refresh();
+      },
+    );
+  }, [
+    conversation.chatRoomId,
+    currentUserId,
+    initialUnreadCount,
+    decrementMessages,
+    decrementNotifications,
+    router,
+  ]);
 
   async function handleRefresh() {
     if (isRefreshing) return;
@@ -140,11 +152,14 @@ export function ScoutChatThread({
       const unreadCount = result.messages.filter(
         (m) => m.senderId !== currentUserId && m.readAt === null,
       ).length;
-      await markConversationRead(supabase, conversation.chatRoomId, currentUserId);
-      if (unreadCount > 0) {
-        decrementMessages(unreadCount);
-        router.refresh();
-      }
+      const { notificationsMarkedCount } = await markConversationRead(
+        supabase,
+        conversation.chatRoomId,
+        currentUserId,
+      );
+      if (unreadCount > 0) decrementMessages(unreadCount);
+      if (notificationsMarkedCount > 0) decrementNotifications(notificationsMarkedCount);
+      if (unreadCount > 0 || notificationsMarkedCount > 0) router.refresh();
     } catch (error) {
       console.error(`[${logPrefix}] failed to refresh messages:`, error);
       setRefreshError(true);
