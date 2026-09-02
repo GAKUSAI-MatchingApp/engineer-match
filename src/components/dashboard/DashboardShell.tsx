@@ -51,6 +51,7 @@ export async function DashboardShell({
     <UnreadCountsProvider
       initialUnreadMessages={unreadMessages}
       initialUnreadNotifications={unreadNotifications}
+      userId={user?.id ?? null}
     >
       <div className="flex min-h-svh bg-background">
         <DashboardSidebar items={navItems} activeHref={activeHref} homeHref={homeHref} />

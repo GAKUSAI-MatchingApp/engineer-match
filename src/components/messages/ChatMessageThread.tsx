@@ -106,10 +106,6 @@ export function ChatMessageThread({
     const supabase = createClient();
     markConversationRead(supabase, conversation.chatRoomId, currentUserId).then(
       ({ notificationsMarkedCount }) => {
-        // Opening the thread directly (not via the bell) previously only
-        // cleared the messages badge -- the related "new_message"
-        // notification, and therefore the bell badge, was left stuck as
-        // unread. markConversationRead now clears both, so mirror that here.
         if (initialUnreadCount > 0) decrementMessages(initialUnreadCount);
         if (notificationsMarkedCount > 0) decrementNotifications(notificationsMarkedCount);
         if (initialUnreadCount > 0 || notificationsMarkedCount > 0) router.refresh();
@@ -123,6 +119,66 @@ export function ChatMessageThread({
     decrementNotifications,
     router,
   ]);
+
+  // Live updates: without this, a new message sent by the other participant
+  // never appears in an already-open thread until the page is refreshed or
+  // the manual refresh button is clicked. Supabase Realtime pushes the new
+  // row to us the moment it's inserted, so we append it immediately and, if
+  // it's from the other participant, mark it read + sync the badges too --
+  // same steps the mount effect above already does for the initial load.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`messages-thread-${conversation.chatRoomId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `chat_room_id=eq.${conversation.chatRoomId}`,
+        },
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            sender_id: string;
+            body: string;
+            sent_at: string;
+            read_at: string | null;
+          };
+
+          setMessages((previous) =>
+            previous.some((message) => message.id === row.id)
+              ? previous
+              : [
+                  ...previous,
+                  {
+                    id: row.id,
+                    senderId: row.sender_id,
+                    body: row.body,
+                    sentAt: row.sent_at,
+                    readAt: row.read_at,
+                  },
+                ],
+          );
+
+          if (row.sender_id !== currentUserId) {
+            markConversationRead(supabase, conversation.chatRoomId, currentUserId).then(
+              ({ notificationsMarkedCount }) => {
+                decrementMessages(1);
+                if (notificationsMarkedCount > 0) decrementNotifications(notificationsMarkedCount);
+                router.refresh();
+              },
+            );
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversation.chatRoomId, currentUserId, decrementMessages, decrementNotifications, router]);
 
   async function handleRefresh() {
     if (isRefreshing) return;
